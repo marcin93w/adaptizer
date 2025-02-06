@@ -14,7 +14,7 @@ import androidx.media3.exoplayer.trackselection.MappingTrackSelector
 class CustomTrackSelector() : MappingTrackSelector() {
 
     override fun selectTracks(
-        mappedTrackInfo: MappingTrackSelector.MappedTrackInfo,
+        mappedTrackInfo: MappedTrackInfo,
         rendererFormatSupports: Array<out Array<out IntArray>>,
         rendererMixedMimeTypeAdaptationSupport: IntArray,
         mediaPeriodId: MediaSource.MediaPeriodId,
@@ -24,12 +24,12 @@ class CustomTrackSelector() : MappingTrackSelector() {
         val trackSelections = arrayOfNulls<ExoTrackSelection>(mappedTrackInfo.rendererCount)
 
         for (i in 0 until mappedTrackInfo.rendererCount) {
-            val isAudio = mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_AUDIO
-
-            val trackGroupArray = mappedTrackInfo.getTrackGroups(i)
-            if (trackGroupArray.length > 0) {
-                trackSelections[i] = FixedTrackSelection(trackGroupArray.get(0), 0)
-                rendererConfiguration[i] = RendererConfiguration.DEFAULT
+            if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_AUDIO) {
+                val trackGroupArray = mappedTrackInfo.getTrackGroups(i)
+                if (trackGroupArray.length > 0) {
+                    trackSelections[i] = FixedTrackSelection(trackGroupArray.get(1), 0)
+                    rendererConfiguration[i] = RendererConfiguration.DEFAULT
+                }
             }
         }
 
