@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         playerView = findViewById(R.id.playerView)
         val btnPlay = findViewById<Button>(R.id.btnPlay)
         val btnStop = findViewById<Button>(R.id.btnStop)
+        val btnChangeTrack = findViewById<Button>(R.id.btnChangeTrack)
 
         val trackSelector = CustomTrackSelector()
         exoPlayer = ExoPlayer.Builder(this)
@@ -52,6 +53,10 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             exoPlayer.pause()
+        }
+
+        btnChangeTrack.setOnClickListener {
+            trackSelector.changeTrack()
         }
     }
 

@@ -13,6 +13,8 @@ import androidx.media3.exoplayer.trackselection.MappingTrackSelector
 @UnstableApi
 class CustomTrackSelector() : MappingTrackSelector() {
 
+    private var trackIndex: Int = 0
+
     override fun selectTracks(
         mappedTrackInfo: MappedTrackInfo,
         rendererFormatSupports: Array<out Array<out IntArray>>,
@@ -26,13 +28,18 @@ class CustomTrackSelector() : MappingTrackSelector() {
         for (i in 0 until mappedTrackInfo.rendererCount) {
             if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_AUDIO) {
                 val trackGroupArray = mappedTrackInfo.getTrackGroups(i)
-                if (trackGroupArray.length > 0) {
-                    trackSelections[i] = FixedTrackSelection(trackGroupArray.get(1), 0)
+                if (trackGroupArray.length > 0 && trackGroupArray.length >= trackIndex) {
+                    trackSelections[i] = FixedTrackSelection(trackGroupArray.get(trackIndex), 0)
                     rendererConfiguration[i] = RendererConfiguration.DEFAULT
                 }
             }
         }
 
         return android.util.Pair(rendererConfiguration, trackSelections)
+    }
+
+    fun changeTrack() {
+        trackIndex = if (trackIndex == 0) 1 else 0
+        this.invalidate()
     }
 }
