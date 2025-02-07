@@ -11,24 +11,24 @@ public:
         {
             midiOutput = juce::MidiOutput::openDevice(devices[1].identifier);
             if (midiOutput)
-                std::cout << "Connected to MIDI device: " + devices[1].name;
+                std::cout << "Connected to MIDI device: " + devices[1].name << std::endl;
         }
         else
         {
-            std::cout << "No MIDI output devices found!";
+            std::cout << "No MIDI output devices found!" << std::endl;
         }
     }
 
     ~VirtualMidiDevice() { midiOutput.reset(); }
 
-    void sendMidiNote()
+    void sendMidiNote(int value)
     {
         if (midiOutput)
         {
-            juce::MidiMessage noteOn = juce::MidiMessage::noteOn(1, 60, (juce::uint8)100);
-            midiOutput->sendMessageNow(noteOn);
+            juce::MidiMessage signal = juce::MidiMessage::controllerEvent(1, 1, value);
+            midiOutput->sendMessageNow(signal);
 
-            std::cout << "MIDI Note Sent: C4 (60)";
+            std::cout << "Signal sent" << std::endl;
         }
     }
 
@@ -36,18 +36,29 @@ private:
     std::unique_ptr<juce::MidiOutput> midiOutput;
 };
 
+int readConsoleInputNumber()
+{
+    int input;
+    std::cin >> input;
+    return input;
+}
+
 int main()
 {
     juce::ConsoleApplication app;
     VirtualMidiDevice virtualMidi;
+	bool isSignalValue;
 
-    std::cout << "Press enter to send";
-    std::cin.get();
+	do 
+    {
+		std::cout << "Press enter value: ";
+		int value = readConsoleInputNumber();
 
-    virtualMidi.sendMidiNote();
-
-    std::cout << "Press enter to exit";
-    std::cin.get();
+		isSignalValue = value >= 0 && value <= 127;
+		if (isSignalValue)
+            virtualMidi.sendMidiNote(value);
+	
+    } while (isSignalValue);
 
     return 0;
 }
