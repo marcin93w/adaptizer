@@ -11,9 +11,7 @@ import androidx.media3.exoplayer.trackselection.FixedTrackSelection
 import androidx.media3.exoplayer.trackselection.MappingTrackSelector
 
 @UnstableApi
-class CustomTrackSelector() : MappingTrackSelector() {
-
-    private var trackIndex: Int = 0
+class ManualTrackSelector(private var trackIndex: Int) : MappingTrackSelector() {
 
     override fun selectTracks(
         mappedTrackInfo: MappedTrackInfo,
@@ -38,8 +36,10 @@ class CustomTrackSelector() : MappingTrackSelector() {
         return android.util.Pair(rendererConfiguration, trackSelections)
     }
 
-    fun changeTrack() {
-        trackIndex = if (trackIndex == 0) 1 else 0
-        this.invalidate()
+    fun changeTrack(trackIndex: Int) {
+        if (this.trackIndex != trackIndex) {
+            this.trackIndex = trackIndex
+            this.invalidate()
+        }
     }
 }

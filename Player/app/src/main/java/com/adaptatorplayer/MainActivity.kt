@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
@@ -12,6 +13,8 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
+import com.adaptatorplayer.adaptator.Adaptator
+import com.adaptatorplayer.adaptator.inputs.VolumeInput
 
 class MainActivity : AppCompatActivity() {
     private lateinit var exoPlayer: ExoPlayer
@@ -25,9 +28,15 @@ class MainActivity : AppCompatActivity() {
         playerView = findViewById(R.id.playerView)
         val btnPlay = findViewById<Button>(R.id.btnPlay)
         val btnStop = findViewById<Button>(R.id.btnStop)
-        val btnChangeTrack = findViewById<Button>(R.id.btnChangeTrack)
+        val debugText = findViewById<TextView>(R.id.debugText)
 
-        val trackSelector = CustomTrackSelector()
+        var adaptator = Adaptator(VolumeInput(this))
+        val trackSelector = ManualTrackSelector(adaptator.getTrackIndex())
+        adaptator.onStateChange {
+            trackSelector.changeTrack(adaptator.getTrackIndex())
+            debugText.text = adaptator.getDebugOutput()
+        }
+
         exoPlayer = ExoPlayer.Builder(this)
             .setTrackSelector(trackSelector)
             .build()
@@ -53,10 +62,6 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             exoPlayer.pause()
-        }
-
-        btnChangeTrack.setOnClickListener {
-            trackSelector.changeTrack()
         }
     }
 
