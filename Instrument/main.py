@@ -14,6 +14,7 @@ else:
 print("Adaptator controller commands: 🎹")
 print("-- Configure controls using 'cc <controlTypeNumber> <minValue> <maxValue> <inputType>'")
 print("-- Set input values using 'set <inputType> <value>'")
+print("-- Send test signal to assign mapping in DAW 'assign <controlTypeNumber>'")
 print("-- Save config 'save <fileName>'")
 print("-- Load config 'load <fileName>'")
 print("-- Exit using 'e' ")
@@ -39,7 +40,13 @@ while True:
         for control_value in control_values:
             cc_message = mido.Message('control_change', control=control_value.typeNumber, value=control_value.value, channel=1)
             outport.send(cc_message)
-            print(f"Sent MIDI CC value: {control_value.value}")
+            print(f"Sent MIDI CC value: {control_value.value} as type: {control_value.typeNumber}")
+
+    if user_input.startswith("assign"):
+        _, controlTypeNumber = user_input.split(" ")
+        cc_message = mido.Message('control_change', control=int(controlTypeNumber), value=100, channel=1)
+        outport.send(cc_message)
+        print(f"Sent MIDI CC value 100 as type: {controlTypeNumber}")
 
     if user_input.startswith("save"):
         _, filename = user_input.split(" ")

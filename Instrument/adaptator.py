@@ -6,8 +6,10 @@ class InputType(Enum):
     VOLUME = 1
 
 class TransformType(Enum):
-    LINEAR = 1
-    REVERSED_LINEAR = 2
+    BINARY_ON = 1
+    BINARY_OFF = 2
+    LINEAR = 3
+    REVERSED_LINEAR = 4
         
 @dataclass
 class ControlConfig:
@@ -42,8 +44,14 @@ class Adaptator:
     def get_control_values(self) -> List[ControlValue]:
         return [ControlValue(control.controlTypeNumber, self._calculate_control_value(control)) for control in self.controls]
 
-    def _calculate_control_value(self, control):
+    def _calculate_control_value(self, control: ControlConfig):
         input_value = self.inputs[control.inputType]
+        
+        if control.transformType == TransformType.BINARY_ON:
+            return control.maxValue if input_value >= control.minInput and input_value <= control.maxInput else control.minValue
+        if control.transformType == TransformType.BINARY_OFF:
+            return control.minValue if input_value >= control.minInput and input_value <= control.maxInput else control.maxValue
+
         limited_input = max(control.minInput, min(control.maxInput, input_value))
         normalized_input = (limited_input - control.minInput) / (control.maxInput - control.minInput)
         
@@ -61,4 +69,4 @@ class Adaptator:
         with open(filename, "r") as file:
             for line in file:
                 controlTypeNumber, minValue, maxValue, inputType, minInput, maxInput, transformType = line.strip().split(" ")
-                self.add_control(int(controlTypeNumber), int(minValue), int(maxValue), inputType, int(minInput), int(maxInput), transformType)
+                self.add_control(int(controlTypeNumber), int(minValue), int(maxValue), InputType[inputType.upper()], int(minInput), int(maxInput), TransformType[transformType.upper()])

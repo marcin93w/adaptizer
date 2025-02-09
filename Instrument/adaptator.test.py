@@ -5,6 +5,15 @@ from parameterized import parameterized
 class AdaptatorTests(unittest.TestCase):
     
     @parameterized.expand([
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_ON, 2, 0),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_ON, 3, 1),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_ON, 5, 1),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_ON, 6, 0),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_OFF, 2, 1),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_OFF, 3, 0),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_OFF, 5, 0),
+        (0, 1, InputType.VOLUME, 3, 5, TransformType.BINARY_OFF, 6, 1),
+
         (0, 127, InputType.VOLUME, 0, 10, TransformType.LINEAR, 5, 64),
         (0, 127, InputType.VOLUME, 0, 10, TransformType.LINEAR, 0, 0),
         (0, 127, InputType.VOLUME, 0, 10, TransformType.LINEAR, 10, 127),
