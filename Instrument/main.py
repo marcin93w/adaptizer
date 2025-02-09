@@ -1,5 +1,5 @@
 import mido
-from adaptator import Adaptator
+from adaptator import Adaptator, InputType
 
 adaptator = Adaptator()
 
@@ -14,6 +14,8 @@ else:
 print("Adaptator controller commands: 🎹")
 print("-- Configure controls using 'cc <controlTypeNumber> <minValue> <maxValue> <inputType>'")
 print("-- Set input values using 'set <inputType> <value>'")
+print("-- Save config 'save <fileName>'")
+print("-- Load config 'load <fileName>'")
 print("-- Exit using 'e' ")
 
 while True:
@@ -25,12 +27,12 @@ while True:
 
     if user_input.startswith("cc"):
         _, controlTypeNumber, minValue, maxValue, inputType = user_input.split(" ")
-        adaptator.add_control(int(controlTypeNumber), int(minValue), int(maxValue), inputType)
+        adaptator.add_control(int(controlTypeNumber), int(minValue), int(maxValue), InputType[inputType.upper()])
         print(f"Added control: {controlTypeNumber} {minValue} {maxValue} {inputType}")
 
     if user_input.startswith("set"):
         _, inputType, value = user_input.split(" ")
-        adaptator.set_input(inputType, int(value))
+        adaptator.set_input(InputType[inputType.upper()], int(value))
         print(f"Set input: {inputType} {value}")
 
         control_values = adaptator.get_control_values()
@@ -38,5 +40,15 @@ while True:
             cc_message = mido.Message('control_change', control=control_value.typeNumber, value=control_value.value, channel=1)
             outport.send(cc_message)
             print(f"Sent MIDI CC value: {control_value.value}")
+
+    if user_input.startswith("save"):
+        _, filename = user_input.split(" ")
+        adaptator.save_to_file(filename)
+        print(f"Saved config to file: {filename}")
+
+    if user_input.startswith("load"):
+        _, filename = user_input.split(" ")
+        adaptator.load_from_file(filename)
+        print(f"Loaded config from file: {filename}")
 
 print("Goodbye! 🎹")
