@@ -46,6 +46,10 @@ class Adaptator:
         input_value = self.inputs[control.inputType]
         limited_input = max(control.minInput, min(control.maxInput, input_value))
         normalized_input = (limited_input - control.minInput) / (control.maxInput - control.minInput)
+        
+        if control.transformType == TransformType.REVERSED_LINEAR:
+            normalized_input = 1 - normalized_input
+        
         return int(round(control.minValue + normalized_input * (control.maxValue - control.minValue)))
     
     def save_to_file(self, filename):

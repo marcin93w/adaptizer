@@ -19,7 +19,23 @@ class AdaptatorTests(unittest.TestCase):
         (0, 127, InputType.VOLUME, 5, 10, TransformType.LINEAR, 9, 102),
         (100, 105, InputType.VOLUME, 5, 10, TransformType.LINEAR, 9, 104),
         (0, 1, InputType.VOLUME, 5, 6, TransformType.LINEAR, 5, 0),
-        (0, 1, InputType.VOLUME, 5, 6, TransformType.LINEAR, 6, 1)
+        (0, 1, InputType.VOLUME, 5, 6, TransformType.LINEAR, 6, 1),
+        
+        (0, 127, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 5, 64),
+        (0, 127, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 0, 127),
+        (0, 127, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 10, 0),
+        (0, 127, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 9, 13),
+        (60, 80, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 1, 78),
+        (60, 80, InputType.VOLUME, 0, 10, TransformType.REVERSED_LINEAR, 9, 62),
+        (0, 127, InputType.VOLUME, 0, 3, TransformType.REVERSED_LINEAR, 1, 85),
+        (0, 127, InputType.VOLUME, 0, 3, TransformType.REVERSED_LINEAR, 3, 0),
+        (0, 127, InputType.VOLUME, 0, 3, TransformType.REVERSED_LINEAR, 10, 0),
+        (0, 127, InputType.VOLUME, 5, 10, TransformType.REVERSED_LINEAR, 5, 127),
+        (0, 127, InputType.VOLUME, 5, 10, TransformType.REVERSED_LINEAR, 2, 127),
+        (0, 127, InputType.VOLUME, 5, 10, TransformType.REVERSED_LINEAR, 9, 25),
+        (100, 105, InputType.VOLUME, 5, 10, TransformType.REVERSED_LINEAR, 9, 101),
+        (0, 1, InputType.VOLUME, 5, 6, TransformType.REVERSED_LINEAR, 5, 1),
+        (0, 1, InputType.VOLUME, 5, 6, TransformType.REVERSED_LINEAR, 6, 0)
     ])
     def test_adaptator_input_to_control_transform(self, min_in, max_in, input_type, min_out, max_out, transform_type, input_value, expected_value):
         adaptator = Adaptator()
