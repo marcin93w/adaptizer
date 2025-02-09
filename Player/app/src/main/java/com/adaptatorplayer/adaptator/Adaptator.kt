@@ -13,10 +13,7 @@ class Adaptator(private var volumeInput: VolumeInput) {
     }
 
     fun getTrackIndex(): Int {
-        return when (getState().volume) {
-            in 0..25 -> 0
-            else -> 1
-        }
+        return getState().volume
     }
 
     fun getDebugOutput(): String {

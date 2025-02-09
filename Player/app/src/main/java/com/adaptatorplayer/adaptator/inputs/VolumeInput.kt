@@ -12,7 +12,7 @@ class VolumeInput(private val context: Context) : AdaptatorInput {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        return (currentVolume * 100) / maxVolume
+        return (currentVolume * 10) / (maxVolume+1)
     }
 
     override fun onChange(listener: () -> Unit) {

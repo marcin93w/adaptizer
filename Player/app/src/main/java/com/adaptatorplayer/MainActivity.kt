@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         playerView.player = exoPlayer
 
-        val rawResourceId = R.raw.output
+        val rawResourceId = R.raw.adaptator_sample
         val rawUri = Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).path(
             rawResourceId.toString()
         ).build()
