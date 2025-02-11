@@ -1,35 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:gravity="center"
+    android:orientation="vertical"
     android:padding="20dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="50dp"
+        android:text="Adaptizer PoC"
+        android:textSize="36dp"/>
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="50dp"
+        android:text="Increase volume or shake the device to change the intensity"
+        android:textSize="20dp"/>
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginBottom="20dp" />
-
-    <Button
-        android:id="@+id/btnPlay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="▶ Play" />
-
-    <Button
-        android:id="@+id/btnStop"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="⏹ Stop"
-        android:layout_marginTop="10dp"/>
+        android:layout_height="100dp"
+        android:layout_marginBottom="20dp"
+        app:use_artwork="true" />
 
     <TextView
         android:id="@+id/debugText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        >
-    </TextView>
+        android:layout_marginTop="10dp" />
+
 </LinearLayout>

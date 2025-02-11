@@ -1,10 +1,10 @@
 package com.adaptizerplayer
 
 import android.os.Bundle
-import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -12,10 +12,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.ui.PlayerView
 import com.adaptizerplayer.adaptizer.Adaptizer
-import com.adaptizerplayer.adaptizer.inputs.VolumeInput
-import androidx.core.net.toUri
 import com.adaptizerplayer.adaptizer.AdaptizerInput
 import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
+import com.adaptizerplayer.adaptizer.inputs.VolumeInput
 
 class MainActivity : AppCompatActivity() {
     private lateinit var exoPlayer: ExoPlayer
@@ -28,8 +27,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         playerView = findViewById(R.id.playerView)
-        val btnPlay = findViewById<Button>(R.id.btnPlay)
-        val btnStop = findViewById<Button>(R.id.btnStop)
         val debugText = findViewById<TextView>(R.id.debugText)
 
         val volumeInput = VolumeInput(this)
@@ -50,6 +47,9 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         playerView.player = exoPlayer
+        playerView.setControllerShowTimeoutMs(0)
+        playerView.setUseController(true)
+        playerView.showController()
 
         val dashManifestUri = "https://jablka.agro.pl/_adaptizer/manifest.mpd".toUri()
         val mediaItem = MediaItem.fromUri(dashManifestUri)
@@ -58,14 +58,6 @@ class MainActivity : AppCompatActivity() {
 
         exoPlayer.setMediaSource(dashMediaSource)
         exoPlayer.prepare()
-
-        btnPlay.setOnClickListener {
-            exoPlayer.play()
-        }
-
-        btnStop.setOnClickListener {
-            exoPlayer.pause()
-        }
     }
 
     override fun onDestroy() {
