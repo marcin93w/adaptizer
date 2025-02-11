@@ -7,11 +7,12 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.RendererConfiguration
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.ExoTrackSelection
-import androidx.media3.exoplayer.trackselection.FixedTrackSelection
 import androidx.media3.exoplayer.trackselection.MappingTrackSelector
 
 @UnstableApi
-class ManualTrackSelector(private var trackIndex: Int) : MappingTrackSelector() {
+class AdaptizerTrackSelector(private var trackIndex: Int) : MappingTrackSelector() {
+
+    private var trackSelection: AdaptizerTrackSelection? = null
 
     override fun selectTracks(
         mappedTrackInfo: MappedTrackInfo,
@@ -26,8 +27,9 @@ class ManualTrackSelector(private var trackIndex: Int) : MappingTrackSelector() 
         for (i in 0 until mappedTrackInfo.rendererCount) {
             if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_AUDIO) {
                 val trackGroupArray = mappedTrackInfo.getTrackGroups(i)
-                if (trackGroupArray.length > 0 && trackGroupArray.length >= trackIndex) {
-                    trackSelections[i] = FixedTrackSelection(trackGroupArray.get(trackIndex), 0)
+                if (trackGroupArray.length > 0) {
+                    trackSelection = AdaptizerTrackSelection(trackGroupArray.get(0), intArrayOf(0,1,2,3,4,5,6,7,8,9), trackIndex)
+                    trackSelections[i] = trackSelection
                     rendererConfiguration[i] = RendererConfiguration.DEFAULT
                 }
             }
@@ -37,9 +39,7 @@ class ManualTrackSelector(private var trackIndex: Int) : MappingTrackSelector() 
     }
 
     fun changeTrack(trackIndex: Int) {
-        if (this.trackIndex != trackIndex) {
-            this.trackIndex = trackIndex
-            this.invalidate()
-        }
+        this.trackIndex = trackIndex
+        trackSelection?.setSelectedTrack(trackIndex)
     }
 }
