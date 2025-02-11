@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AdaptatorPlayer"
+rootProject.name = "AdaptizerPlayer"
 include(":app")

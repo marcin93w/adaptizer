@@ -5,11 +5,11 @@
 }
 
 android {
-    namespace = "com.adaptatorplayer"
+    namespace = "com.adaptizerplayer"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.adaptatorplayer"
+        applicationId = "com.adaptizerplayer"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
