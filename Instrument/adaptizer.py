@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Dict
 
 class InputType(Enum):
-    VOLUME = 1
+    INTENSITY = 1
 
 class TransformType(Enum):
     BINARY_ON = 1
@@ -26,10 +26,10 @@ class ControlValue:
     typeNumber: int
     value: int
 
-class Adaptator:
+class Adaptizer:
     def __init__(self):
         self.controls: List[ControlConfig] = []
-        self.inputs: Dict[InputType, int] = {InputType.VOLUME: 0}
+        self.inputs: Dict[InputType, int] = {InputType.INTENSITY: 0}
 
     def add_control(self, controlTypeNumber, minValue, maxValue, inputType, minInput, maxInput, transformType):
         for existing_control in self.controls:

@@ -1,17 +1,17 @@
 import mido
-from adaptator import Adaptator, InputType
+from adaptizer import Adaptizer, InputType
 
-adaptator = Adaptator()
+adaptizer = Adaptizer()
 
 output_names = mido.get_output_names()
-outport_name = next((name for name in output_names if name.lower().startswith('adaptator')), None)
+outport_name = next((name for name in output_names if name.lower().startswith('adaptizer')), None)
 
 if outport_name:
     outport = mido.open_output(outport_name)
 else:
-    raise RuntimeError("No MIDI output found for Adaptator")
+    raise RuntimeError("No MIDI output found for Adaptizer")
 
-print("Adaptator controller commands: 🎹")
+print("Adaptizer controller commands: 🎹")
 print("-- Configure controls using 'cc <controlTypeNumber> <minValue> <maxValue> <inputType>'")
 print("-- Set input values using 'set <inputType> <value>'")
 print("-- Send test signal to assign mapping in DAW 'assign <controlTypeNumber>'")
@@ -28,15 +28,15 @@ while True:
 
     if user_input.startswith("cc"):
         _, controlTypeNumber, minValue, maxValue, inputType = user_input.split(" ")
-        adaptator.add_control(int(controlTypeNumber), int(minValue), int(maxValue), InputType[inputType.upper()])
+        adaptizer.add_control(int(controlTypeNumber), int(minValue), int(maxValue), InputType[inputType.upper()])
         print(f"Added control: {controlTypeNumber} {minValue} {maxValue} {inputType}")
 
     if user_input.startswith("set"):
         _, inputType, value = user_input.split(" ")
-        adaptator.set_input(InputType[inputType.upper()], int(value))
+        adaptizer.set_input(InputType[inputType.upper()], int(value))
         print(f"Set input: {inputType} {value}")
 
-        control_values = adaptator.get_control_values()
+        control_values = adaptizer.get_control_values()
         for control_value in control_values:
             cc_message = mido.Message('control_change', control=control_value.typeNumber, value=control_value.value, channel=1)
             outport.send(cc_message)
@@ -50,12 +50,12 @@ while True:
 
     if user_input.startswith("save"):
         _, filename = user_input.split(" ")
-        adaptator.save_to_file(filename)
+        adaptizer.save_to_file(filename)
         print(f"Saved config to file: {filename}")
 
     if user_input.startswith("load"):
         _, filename = user_input.split(" ")
-        adaptator.load_from_file(filename)
+        adaptizer.load_from_file(filename)
         print(f"Loaded config from file: {filename}")
 
 print("Goodbye! 🎹")
