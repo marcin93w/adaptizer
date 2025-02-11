@@ -25,7 +25,7 @@ class AdaptizerTrackSelection(
     ) {
     }
 
-    override fun getSelectedIndex(): Int = selectedTrack
+    override fun getSelectedIndex(): Int = indexOf(selectedTrack)
     override fun getSelectionReason(): Int = C.SELECTION_REASON_ADAPTIVE
     override fun getSelectionData(): Any? = null
 

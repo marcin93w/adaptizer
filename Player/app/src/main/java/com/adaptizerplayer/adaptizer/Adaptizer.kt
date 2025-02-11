@@ -1,22 +1,27 @@
 package com.adaptizerplayer.adaptizer
 
+import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
 import com.adaptizerplayer.adaptizer.inputs.VolumeInput
 
-class Adaptizer(private var volumeInput: VolumeInput) {
+class Adaptizer(private var volumeInput: VolumeInput,
+                private var accelerometerInput: AccelerometerInput) {
+
     private fun getState(): AdaptizerState {
         val volume = volumeInput.getCurrentValue()
-        return AdaptizerState(volume)
+        val acceleration = accelerometerInput.getCurrentValue()
+        return AdaptizerState(volume, acceleration)
     }
 
     fun onStateChange(onChange: (AdaptizerState) -> Unit) {
-        volumeInput.onChange { onChange(getState()) }
+        volumeInput.registerChangeListener { onChange(getState()) }
+        accelerometerInput.registerChangeListener { onChange(getState()) }
     }
 
     fun getTrackIndex(): Int {
-        return getState().volume
+        return getState().intensity
     }
 
     fun getDebugOutput(): String {
-        return "Volume: ${getState().volume}"
+        return "Intensity: ${getState().intensity} (Vol: ${getState().volume}, Acc: ${getState().acceleration})"
     }
 }

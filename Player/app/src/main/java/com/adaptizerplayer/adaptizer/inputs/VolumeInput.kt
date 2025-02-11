@@ -15,7 +15,7 @@ class VolumeInput(private val context: Context) : AdaptizerInput {
         return (currentVolume * 10) / (maxVolume+1)
     }
 
-    override fun onChange(listener: () -> Unit) {
+    override fun registerChangeListener(listener: () -> Unit) {
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -25,5 +25,11 @@ class VolumeInput(private val context: Context) : AdaptizerInput {
             }
         }
         context.registerReceiver(receiver, filter)
+    }
+
+    override fun initialize() {
+    }
+
+    override fun release() {
     }
 }

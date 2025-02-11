@@ -39,7 +39,9 @@ class AdaptizerTrackSelector(private var trackIndex: Int) : MappingTrackSelector
     }
 
     fun changeTrack(trackIndex: Int) {
-        this.trackIndex = trackIndex
-        trackSelection?.setSelectedTrack(trackIndex)
+        if (this.trackIndex != trackIndex) {
+            this.trackIndex = trackIndex
+            trackSelection?.setSelectedTrack(trackIndex)
+        }
     }
 }

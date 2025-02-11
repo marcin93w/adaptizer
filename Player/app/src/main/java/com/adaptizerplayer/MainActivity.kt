@@ -14,10 +14,13 @@ import androidx.media3.ui.PlayerView
 import com.adaptizerplayer.adaptizer.Adaptizer
 import com.adaptizerplayer.adaptizer.inputs.VolumeInput
 import androidx.core.net.toUri
+import com.adaptizerplayer.adaptizer.AdaptizerInput
+import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
 
 class MainActivity : AppCompatActivity() {
     private lateinit var exoPlayer: ExoPlayer
     private lateinit var playerView: PlayerView
+    private var inputs: List<AdaptizerInput> = emptyList()
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +32,12 @@ class MainActivity : AppCompatActivity() {
         val btnStop = findViewById<Button>(R.id.btnStop)
         val debugText = findViewById<TextView>(R.id.debugText)
 
-        var adaptizer = Adaptizer(VolumeInput(this))
+        val volumeInput = VolumeInput(this)
+        val accelerometerInput = AccelerometerInput(this)
+        inputs = listOf(volumeInput, accelerometerInput)
+        inputs.forEach { it.initialize() }
+
+        var adaptizer = Adaptizer(volumeInput, accelerometerInput)
         val trackSelector = AdaptizerTrackSelector(adaptizer.getTrackIndex())
 
         adaptizer.onStateChange {
@@ -63,5 +71,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         exoPlayer.release()
+        inputs.forEach { it.release() }
     }
 }

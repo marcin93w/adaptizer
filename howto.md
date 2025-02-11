@@ -35,6 +35,6 @@ ffmpeg -i 1_9.wav -map 0:a -c:a libopus -b:a 128k output9.webm
   input=output7.webm,stream=audio,output=audio7_dash.webm `
   input=output8.webm,stream=audio,output=audio8_dash.webm `
   input=output9.webm,stream=audio,output=audio9_dash.webm `
-  --segment_duration 1.846153846 `
+  --segment_duration 0.923076923 `
   --mpd_output manifest.mpd
 ```

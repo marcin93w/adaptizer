@@ -2,5 +2,7 @@ package com.adaptizerplayer.adaptizer
 
 interface AdaptizerInput {
     fun getCurrentValue(): Int
-    fun onChange(listener: () -> Unit)
+    fun registerChangeListener(listener: () -> Unit)
+    fun initialize()
+    fun release()
 }
