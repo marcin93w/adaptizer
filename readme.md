@@ -17,14 +17,12 @@ Prerequisites:
 
 Setup:
 1. Add new loopback port in loopMIDI, use `Adaptizer` as a name.
+1. Update path of shaka packager executable in [dash-converter.ps1](Instrument/dash-converter.ps1) script.
+
+Usage:
 1. Setup `Adaptizer` MIDI port as a MIDI remote in your DAW.
-1. Run python [main.py](Instrument/main.py).
+1. Run 'python [main.py](Instrument/main.py)' to start Adaptizer.
 1. Add MIDI map for controls in your DAW (You can use `assign <controlTypeNumber>` to send test signal from Adaptizer).
 1. Configure controls in Adaptizer to map them to user context input (or use `load conf.adp` to import example configuration).
 1. Run `set INTENSITY <0-9>` to test your controls while playing song in DAW.
-
-Export:
-1. Export your song in wav format on every input value (use `0.wav`, `1.wav`, etc as file names).
-1. Put shaka packager executable in the same directory, or adjust location in [dash-converter.ps1](Instrument/dash-converter.ps1) script.
-1. Run `dash-converter.ps1 <bpm-of-your-song>` 
-1. Host files together with the generated manifest.
+1. When your song is ready, run `e <outputPath> <bpm>` to export in DASH format (only Ableton is supported for now).

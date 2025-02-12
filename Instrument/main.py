@@ -12,7 +12,7 @@ print("-- Set input values using 'set <inputType> <value>'")
 print("-- Send test signal to assign mapping in DAW 'assign <controlTypeNumber>'")
 print("-- Save config 'save <fileName>'")
 print("-- Load config 'load <fileName>'")
-print("-- Export Ableton project 'e <outputPath>'")
+print("-- Export Ableton project 'e <outputPath> <bpm>'")
 print("-- Exit using 'q' ")
 
 try:
@@ -49,9 +49,9 @@ try:
             print(f"Loaded config from file: {filename}")
 
         if user_input.startswith("e"):
-            _, outputPath = user_input.split(" ")
+            _, outputPath, bpm = user_input.split(" ")  
             exporter = Exporter(adaptizer, AbletonExporter(), midi_controller)
-            exporter.export(outputPath)
+            exporter.export(outputPath, int(bpm))
 
 finally:
     midi_controller.close()

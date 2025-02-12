@@ -71,11 +71,11 @@ class Adaptizer:
                 controlTypeNumber, minValue, maxValue, inputType, minInput, maxInput, transformType = line.strip().split(" ")
                 self.add_control(int(controlTypeNumber), int(minValue), int(maxValue), InputType[inputType.upper()], int(minInput), int(maxInput), TransformType[transformType.upper()])
 
-    def start_export(self) -> int:
+    def start_export(self) -> tuple[int, int]:
         self.inputs[InputType.INTENSITY] = 0
-        return 0
+        return 0, 9
 
     def continue_export(self) -> tuple[bool, int, int]:
         self.inputs[InputType.INTENSITY] += 1
         trackIndex = self.inputs[InputType.INTENSITY]
-        return (self.inputs[InputType.INTENSITY] < 10, trackIndex, 9)
+        return (trackIndex, 9)
