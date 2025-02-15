@@ -12,6 +12,8 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.ui.PlayerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.adaptizerplayer.adaptizer.Adaptizer
 import com.adaptizerplayer.adaptizer.AdaptizerInput
 import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
@@ -28,6 +30,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
         playerView = findViewById(R.id.playerView)
         val debugText = findViewById<TextView>(R.id.debugText)
 
@@ -54,16 +58,17 @@ class MainActivity : AppCompatActivity() {
         playerView.showController()
 
         lifecycleScope.launch {
-            playFirstSong()
+            val songsRepository = SongsRepository()
+            val songs = songsRepository.fetchSongs()
+            recyclerView.adapter = SongsAdapter(songs)
+            playSong(songs[0])
         }
     }
 
     @OptIn(UnstableApi::class)
-    suspend fun playFirstSong() {
-        val songsRepository = SongsRepository()
-        val song = songsRepository.fetchSongs().firstOrNull()
+    suspend fun playSong(song: Song) {
 
-        val dashManifestUri = "https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/${song!!.storageLocation}/manifest.mpd".toUri()
+        val dashManifestUri = "https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/${song.storageLocation}/manifest.mpd".toUri()
         val mediaItem = MediaItem.fromUri(dashManifestUri)
         val dashMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory())
             .createMediaSource(mediaItem)
