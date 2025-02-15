@@ -5,6 +5,7 @@ import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -15,6 +16,7 @@ import com.adaptizerplayer.adaptizer.Adaptizer
 import com.adaptizerplayer.adaptizer.AdaptizerInput
 import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
 import com.adaptizerplayer.adaptizer.inputs.VolumeInput
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var exoPlayer: ExoPlayer
@@ -51,7 +53,17 @@ class MainActivity : AppCompatActivity() {
         playerView.setUseController(true)
         playerView.showController()
 
-        val dashManifestUri = "https://jablka.agro.pl/_adaptizer/manifest.mpd".toUri()
+        lifecycleScope.launch {
+            playFirstSong()
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    suspend fun playFirstSong() {
+        val songsRepository = SongsRepository()
+        val song = songsRepository.fetchSongs().firstOrNull()
+
+        val dashManifestUri = "https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/${song!!.storageLocation}/manifest.mpd".toUri()
         val mediaItem = MediaItem.fromUri(dashManifestUri)
         val dashMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory())
             .createMediaSource(mediaItem)
