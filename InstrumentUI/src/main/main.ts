@@ -18,13 +18,14 @@ const createWindow = () => {
 
   appState = new AppState(mainWindow);
 
-  mainWindow.loadFile("src/index.html");
+  mainWindow.loadFile("dist/renderer/index.html");
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 
   createMenu(appState);
+  mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);

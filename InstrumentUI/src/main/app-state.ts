@@ -1,5 +1,5 @@
-import Project from "./project";
-import { IAppState, projectOpenedEvent } from "./app-state.interface";
+import Project from "../shared/project";
+import { IAppState, projectOpenedEvent } from "../shared/app-state.interface";
 import { BrowserWindow } from "electron";
 
 export class AppState implements IAppState {    

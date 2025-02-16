@@ -1,7 +1,7 @@
 import { Menu } from "electron";
 import { AppState } from "./app-state";
 import { openProject, saveProject } from "./project-manager";
-import Project from "./project";
+import Project from "../shared/project";
 
 export const createMenu = (appState: AppState) => {
   const template = [

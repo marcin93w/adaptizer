@@ -2,12 +2,12 @@
   "name": "adaptizer-instrumentui",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
-    "start": "tsc && electron .",
-    "debug": "tsc && electron --inspect=9222 .",
-    "build": "tsc",
-    "package": "electron-builder",
+    "start": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html && electron .",
+    "debug": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html && electron --inspect=9222 .",
+    "build": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html",
+    "package": "electron-builder", 
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

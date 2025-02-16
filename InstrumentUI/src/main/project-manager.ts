@@ -1,5 +1,5 @@
 import { dialog } from "electron";
-import Project from "./project";
+import Project from "../shared/project";
 import { writeFile } from 'fs';
 
 export async function openProject(): Promise<Project | null> {

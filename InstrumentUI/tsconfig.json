@@ -8,7 +8,7 @@
       "moduleResolution": "Node",
       "allowJs": true,
       "noImplicitAny": false,
-      "sourceMap": true,
-    }
+      "sourceMap": true
+    },
   }
   
