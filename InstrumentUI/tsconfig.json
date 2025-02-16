@@ -8,7 +8,10 @@
       "moduleResolution": "Node",
       "allowJs": true,
       "noImplicitAny": false,
-      "sourceMap": true
+      "sourceMap": true,
+      "jsx": "react",
+      "esModuleInterop": true
     },
+    "include": ["src/**/*.ts", "src/**/*.tsx"]
   }
   

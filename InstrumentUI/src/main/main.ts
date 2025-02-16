@@ -18,7 +18,7 @@ const createWindow = () => {
 
   appState = new AppState(mainWindow);
 
-  mainWindow.loadFile("dist/renderer/index.html");
+  mainWindow.loadFile("../renderer/index.html");
 
   mainWindow.on("closed", () => {
     mainWindow = null;

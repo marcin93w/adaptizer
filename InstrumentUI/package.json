@@ -2,21 +2,28 @@
   "name": "adaptizer-instrumentui",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/main/main.js",
   "scripts": {
-    "start": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html && electron .",
-    "debug": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html && electron --inspect=9222 .",
-    "build": "tsc && copy src\\renderer\\index.html dist\\renderer\\index.html",
-    "package": "electron-builder", 
+    "start": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./ && electron dist/main/main.js",
+    "debug": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./ && electron dist/main/main.js --inspect=9222 .",
+    "build": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./",
+    "package": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.13.4",
+    "@types/react": "^19.0.9",
+    "@types/react-dom": "^19.0.3",
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
+    "parcel": "^2.13.3",
+    "process": "^0.11.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
