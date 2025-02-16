@@ -1,6 +1,7 @@
 package com.adaptizerplayer
 
 import android.os.Bundle
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     private lateinit var exoPlayer: ExoPlayer
     private lateinit var playerView: PlayerView
+    private lateinit var nowPlayingTitle: TextView
     private var inputs: List<AdaptizerInput> = emptyList()
 
     @OptIn(UnstableApi::class)
@@ -33,7 +35,8 @@ class MainActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         playerView = findViewById(R.id.playerView)
-        val debugText = findViewById<TextView>(R.id.debugText)
+        val intensityProgressBar = findViewById<ProgressBar>(R.id.intensityProgressBar)
+        nowPlayingTitle = findViewById<TextView>(R.id.nowPlayingTitle)
 
         val volumeInput = VolumeInput(this)
         val accelerometerInput = AccelerometerInput(this)
@@ -45,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 
         adaptizer.onStateChange {
             trackSelector.changeTrack(adaptizer.getTrackIndex())
-            debugText.text = adaptizer.getDebugOutput()
+            intensityProgressBar.progress = adaptizer.getTrackIndex()
         }
 
         exoPlayer = ExoPlayer.Builder(this)
@@ -60,14 +63,26 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val songsRepository = SongsRepository()
             val songs = songsRepository.fetchSongs()
-            recyclerView.adapter = SongsAdapter(songs)
-            playSong(songs[0])
+
+            val adapter = SongsAdapter(songs)
+            adapter.setOnItemClickListener { song ->
+                playSong(song)
+            }
+            recyclerView.adapter = adapter
+
+            prepareSong(songs[0])
         }
     }
 
-    @OptIn(UnstableApi::class)
-    suspend fun playSong(song: Song) {
+    fun playSong(song: Song) {
+        prepareSong(song)
+        exoPlayer.play()
+    }
 
+    @OptIn(UnstableApi::class)
+    fun prepareSong(song: Song) {
+        nowPlayingTitle.text = "${song.author} - ${song.name}"
+        
         val dashManifestUri = "https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/${song.storageLocation}/manifest.mpd".toUri()
         val mediaItem = MediaItem.fromUri(dashManifestUri)
         val dashMediaSource = DashMediaSource.Factory(DefaultHttpDataSource.Factory())
