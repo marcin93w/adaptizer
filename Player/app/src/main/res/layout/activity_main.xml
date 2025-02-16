@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:title="ADAPTIZER"
+        app:logo="@mipmap/logo_title"
         android:layout_marginTop="48dp"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
@@ -38,10 +38,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:tooltipText="Change volume or shake your phone to increase intensity">
+        android:padding="16dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -72,7 +69,7 @@
             android:id="@+id/nowPlayingArt"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@mipmap/logo"
+            android:src="@mipmap/album_art"
             android:scaleType="centerCrop"
             android:contentDescription="AlbumArt"/>
 
