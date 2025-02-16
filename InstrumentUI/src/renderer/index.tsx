@@ -8,9 +8,20 @@ const App = () => {
 
     React.useEffect(() => window.electronAPI.onProjectOpened(setProject), []);
     
-    return <div>
+    return <div id="main-container">
         <MidiConnectionWarning />
-        <h1>{project?.name ?? "Open or create a project to get started"}</h1>
+        <div id="project-name"><h2>{project?.name ?? "New project"}</h2></div>
+        <div id="configurator">
+            <div id="inputs">
+                <div className="input-item">Volume</div>
+                <div className="input-item selected">Intensity</div>
+                <div className="input-item">Expression</div>
+            </div>
+            <div id="input-value">
+            </div>
+            <div id="outputs">
+            </div>
+        </div>
     </div>;
 };
 

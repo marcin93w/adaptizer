@@ -6,6 +6,7 @@
     "start": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./ && electron dist/main/main.js",
     "debug": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./ && electron dist/main/main.js --inspect=9222 .",
     "build": "tsc && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./",
+    "dev-renderer": "tsc && parcel src/renderer/index.html",
     "package": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
