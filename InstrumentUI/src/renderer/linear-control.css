@@ -1,0 +1,74 @@
+.linear-control {
+    background-color: #f8f9fa;
+    width: 200px;
+    border: 3px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    color: #888;
+}
+
+.control.selected {
+    border-color: #FF5722;
+    width: 400px;
+}
+
+.control-label {
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #f8f9fa;
+}
+
+.control-setting {
+    padding: 7px 0;
+}
+
+.range-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-container label {
+    flex-shrink: 0;
+}
+
+.range-value {
+    color: #f8f9fa;
+}
+
+.range-track {
+    height: 6px;
+    margin: 0 10px;
+    width: calc(100% - 20px);
+    background-color: #ddd;
+    border-radius: 4px;
+    position: relative;
+}
+
+.range-track-highlight {
+    position: absolute;
+    height: 100%;
+    background-color: #FF5722;
+    border-radius: 4px;
+}
+
+.range-thumb {
+    height: 16px;
+    width: 16px;
+    background-color: #FF5722;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.control-value {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+    color: #FF5722;
+}
+
+

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import Project from "../shared/project";
 import { MidiConnectionWarning } from "./midi-connection-warning";
 import AdaptizerKnob from "./adaptizer-knob";
+import { LinearControl } from "./linear-control";
 
 const App = () => {
     const [project, setProject] = React.useState<Project | null>(null);
@@ -21,7 +22,10 @@ const App = () => {
             <div id="input-value">
                 <AdaptizerKnob min={0} max={9} step={1} />
             </div>
-            <div id="outputs">
+            <div id="controls">
+                <LinearControl isSelected={true} />
+                <LinearControl isSelected={false} />
+                <LinearControl isSelected={false} />
             </div>
         </div>
     </div>;

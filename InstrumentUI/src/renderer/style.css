@@ -35,3 +35,11 @@ body {
     background-color: #FF5722;
     color: #f8f9fa;
 }
+
+#controls {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: row;
+    gap: 1rem;
+    padding: 1rem;
+}

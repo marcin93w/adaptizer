@@ -16,7 +16,8 @@
   "dependencies": {
     "framer-motion": "^12.4.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-range": "^1.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",

@@ -15,7 +15,6 @@ export const MidiConnectionWarning: React.FC = () => {
       backgroundColor: '#fff3cd',
       color: '#856404',
       padding: '1rem',
-      borderRadius: '4px',
       border: '1px solid #ffeeba',
       display: 'flex',
       alignItems: 'center',
