@@ -1,0 +1,52 @@
+@use "../variables" as *;
+
+#configurator {
+    margin-top: 1rem;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+#inputs {
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.input-item {
+    padding: 1rem;
+    border: 1px solid $border-color;
+    cursor: pointer;
+    background-color: $element-background-color;
+}
+
+.input-item.selected {
+    background-color: $brand-color;
+    color: $accent-text-color;
+}
+
+#controls {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: row;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.add-control-button {
+    padding: 1rem;
+    border: 3px solid $border-color;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: $accent-text-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-control-button:hover {
+    border-color: $brand-color;
+}
+

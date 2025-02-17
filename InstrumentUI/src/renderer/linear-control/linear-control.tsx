@@ -1,20 +1,37 @@
 import React from "react";
 import { Range } from 'react-range';
 import { useState } from 'react';
-import './linear-control.css';
+import './linear-control.scss';
+import { ControlConfig, TransformType } from "../../shared/project";
 
-export const LinearControl: React.FC<{isSelected?: boolean}> = ({isSelected = false}) => {
-    const [midiRangeValues, setMidiRangeValues] = useState([0, 127]);
-    const [inputRangeValues, setInputRangeValues] = useState([0, 9]);
+interface LinearControlProps {
+    control: ControlConfig;
+    isSelected: boolean;
+    setSelectedControl: (control: ControlConfig | null) => void;
+}
+
+const transformTypeOptions = [
+    { value: TransformType.LINEAR, label: 'Linear' },
+    { value: TransformType.REVERSED_LINEAR, label: 'Reversed linear' },
+];
+
+export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, setSelectedControl }) => {
+    const [midiRangeValues, setMidiRangeValues] = useState([control.midiMin, control.midiMax]);
+    const [inputRangeValues, setInputRangeValues] = useState([control.inputMin, control.inputMax]);
+    const [transformType, setTransformType] = useState(control.transformType);
 
     if (isSelected) {
         return <div className="linear-control control selected">
-            <div className="control-label">Channel 1</div>
+            <div className="control-label" onClick={() => setSelectedControl(null)}>CC {control.controlNumber}</div>
             <div className="control-setting">
                 <label>Transform type: </label>
-                <select>
-                    <option value="linear">Linear</option>
-                    <option value="reversed-linear">Reversed linear</option>
+                <select value={transformType} onChange={(e) => {
+                    setTransformType(e.target.value as TransformType);
+                    control.transformType = e.target.value as TransformType;
+                }}>
+                    {transformTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                 </select>
             </div>
             <div className="range-container control-setting">
@@ -27,6 +44,8 @@ export const LinearControl: React.FC<{isSelected?: boolean}> = ({isSelected = fa
                     max={9}
                     onChange={(newValues) => {
                         setInputRangeValues(newValues);
+                        control.inputMin = newValues[0];
+                        control.inputMax = newValues[1];
                     }}
                     renderTrack={({ props, children }) => (
                         <div
@@ -62,7 +81,8 @@ export const LinearControl: React.FC<{isSelected?: boolean}> = ({isSelected = fa
                     max={127}
                     onChange={(newValues) => {
                         setMidiRangeValues(newValues);
-                        console.log('Min:', newValues[0], 'Max:', newValues[1]);
+                        control.midiMin = newValues[0];
+                        control.midiMax = newValues[1];
                     }}
                     renderTrack={({ props, children }) => (
                         <div
@@ -88,12 +108,12 @@ export const LinearControl: React.FC<{isSelected?: boolean}> = ({isSelected = fa
                 />
                 <span className="range-value">{midiRangeValues[1]}</span>
             </div>
-            <div className="control-value">50</div>
+            <div className="control-value" onClick={() => setSelectedControl(null)}>50</div>
         </div>; 
     } else {
-        return <div className="linear-control control">
-            <div className="control-label">Channel 1</div>
-            <div className="control-setting">Type: Linear</div>
+        return <div onClick={() => setSelectedControl(control)} className="linear-control control">
+            <div className="control-label">CC {control.controlNumber}</div>
+            <div className="control-setting">Type: {transformTypeOptions.find(option => option.value === transformType)?.label}</div>
             <div className="control-setting">Input range: {inputRangeValues[0]} .. {inputRangeValues[1]}</div>
             <div className="control-setting">MIDI range: {midiRangeValues[0]} .. {midiRangeValues[1]}</div>
             <div className="control-value">50</div>

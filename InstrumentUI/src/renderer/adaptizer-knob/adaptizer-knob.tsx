@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import "./adaptizer-knob.css";
+import "./adaptizer-knob.scss";
 
 const AdaptizerKnob = ({ min = 0, max = 100, step = 1 }) => {
   const [value, setValue] = useState((max - min) / 2); // Default to midpoint
