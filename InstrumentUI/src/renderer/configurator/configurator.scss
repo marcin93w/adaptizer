@@ -20,6 +20,10 @@
     background-color: $element-background-color;
 }
 
+.input-item:hover {
+    color: $accent-text-color;
+}
+
 .input-item.selected {
     background-color: $brand-color;
     color: $accent-text-color;
