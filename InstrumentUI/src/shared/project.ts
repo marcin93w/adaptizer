@@ -1,3 +1,5 @@
+import { Control } from "./control";
+
 export enum InputType {
   VOLUME = "volume",
   INTENSITY = "intensity",
@@ -12,40 +14,29 @@ export enum TransformType {
 export class InputConfig {
   constructor(
     public type: InputType,
-    public controls: ControlConfig[],
-  ) {}
-}
-
-export class ControlConfig {
-  constructor(
-    public controlNumber: number,
-    public transformType: TransformType,
-    public inputMin: number,
-    public inputMax: number,
-    public midiMin: number,
-    public midiMax: number,
+    public controls: Map<number, Control>,
   ) {}
 }
 
 class Project {
   constructor(public name: string) {}
 
-  private _config: InputConfig = new InputConfig(InputType.INTENSITY, [new ControlConfig(1, TransformType.LINEAR, 0, 9, 0, 127)]);
+  private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map([[1, new Control(1, TransformType.LINEAR, 0, 9, 0, 127)]]));
 
   setInputType(inputType: InputType) {
     this._config.type = inputType;
   }
 
-  addControl(control: ControlConfig) {
-    this._config.controls.push(control);
+  addControl(control: Control) {
+    this._config.controls.set(control.controlNumber, control);
   }
 
   getInputType() {
     return this._config.type;
   }
 
-  getControls() {
-    return this._config.controls;
+  getControls(): Control[] {
+    return Array.from(this._config.controls.values());
   }
 
   toJson() {

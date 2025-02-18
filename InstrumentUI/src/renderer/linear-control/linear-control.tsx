@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Range } from 'react-range';
 import { useState } from 'react';
 import './linear-control.scss';
-import { ControlConfig, TransformType } from "../../shared/project";
+import { TransformType } from "../../shared/project";
+import { Control } from "../../shared/control";
 
 interface LinearControlProps {
-    control: ControlConfig;
+    control: Control;
     isSelected: boolean;
-    setSelectedControl: (control: ControlConfig | null) => void;
+    setSelectedControl: (control: Control | null) => void;
+    inputValue: number;
 }
 
 const transformTypeOptions = [
@@ -15,10 +17,19 @@ const transformTypeOptions = [
     { value: TransformType.REVERSED_LINEAR, label: 'Reversed linear' },
 ];
 
-export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, setSelectedControl }) => {
+export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, setSelectedControl, inputValue }) => {
     const [midiRangeValues, setMidiRangeValues] = useState([control.midiMin, control.midiMax]);
     const [inputRangeValues, setInputRangeValues] = useState([control.inputMin, control.inputMax]);
     const [transformType, setTransformType] = useState(control.transformType);
+    const [midiValue, setMidiValue] = useState(control.calculateControlValue(inputValue));
+
+    control.registerControlChangedListener(() => {
+        setMidiValue(control.calculateControlValue(inputValue));
+    });
+
+    useEffect(() => {
+        setMidiValue(control.calculateControlValue(inputValue));
+    }, [inputValue]);
 
     if (isSelected) {
         return <div className="linear-control control selected">
@@ -108,7 +119,7 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
                 />
                 <span className="range-value">{midiRangeValues[1]}</span>
             </div>
-            <div className="control-value" onClick={() => setSelectedControl(null)}>50</div>
+            <div className="control-value" onClick={() => setSelectedControl(null)}>{midiValue}</div>
         </div>; 
     } else {
         return <div onClick={() => setSelectedControl(control)} className="linear-control control">
@@ -116,7 +127,7 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
             <div className="control-setting">Type: {transformTypeOptions.find(option => option.value === transformType)?.label}</div>
             <div className="control-setting">Input range: {inputRangeValues[0]} .. {inputRangeValues[1]}</div>
             <div className="control-setting">MIDI range: {midiRangeValues[0]} .. {midiRangeValues[1]}</div>
-            <div className="control-value">50</div>
+            <div className="control-value">{midiValue}</div>
         </div>;
     }
 };

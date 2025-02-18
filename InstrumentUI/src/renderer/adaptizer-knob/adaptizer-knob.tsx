@@ -1,11 +1,24 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./adaptizer-knob.scss";
 
-const AdaptizerKnob = ({ min = 0, max = 100, step = 1 }) => {
+interface AdaptizerKnobProps {
+    min?: number;
+    max?: number;
+    step?: number;
+    onChange: (value: number) => void;
+}
+
+const AdaptizerKnob = ({ min = 0, max = 10, step = 1, onChange }: AdaptizerKnobProps) => {
   const [value, setValue] = useState((max - min) / 2); // Default to midpoint
   const angleRange = 270; // Knob rotation range (-135° to 135°)
   const startAngle = -135;
   const isDragging = useRef(false);
+
+  const roundedValue = () => Math.round(value);
+
+  useEffect(() => {
+    onChange?.(roundedValue());
+  }, [value]);
 
   // Convert value to rotation angle
   const valueToAngle = (value) => startAngle + (value / max) * angleRange;
@@ -40,7 +53,7 @@ const AdaptizerKnob = ({ min = 0, max = 100, step = 1 }) => {
       >
         <div className="knob-indicator" />
       </div>
-      <p className="knob-value">{Math.round(value)}</p>
+      <p className="knob-value">{roundedValue()}</p>
     </div>
   );
 };
