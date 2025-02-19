@@ -11,7 +11,7 @@ export const createMenu = (appState: AppState) => {
         {
             label: 'New Project',
             click: () => {
-                appState.openProject(new Project("New Project"));
+                appState.openProject(new Project().toDto());
             }
         }, {
             label: 'Open Project',

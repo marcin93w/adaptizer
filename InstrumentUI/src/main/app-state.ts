@@ -1,17 +1,20 @@
-import Project from "../shared/project";
-import { IAppState, projectOpenedEvent } from "../shared/app-state.interface";
-import { BrowserWindow } from "electron";
+import { ProjectDto } from "../shared/project";
+import { projectOpenedEvent, projectUpdatedEvent } from "../shared/actions";
+import { BrowserWindow, ipcMain } from "electron";
 
-export class AppState implements IAppState {    
+export class AppState {    
     mainWindow: BrowserWindow;
-    project: Project | null;
+    project: ProjectDto | null;
 
     constructor(mainWindow: BrowserWindow) {
         this.project = null;
         this.mainWindow = mainWindow;
+        ipcMain.on(projectUpdatedEvent, (event, project: ProjectDto) => {
+            this.project = project;
+        });
     }
 
-    openProject(project: Project) {
+    openProject(project: ProjectDto) {
         this.project = project;
         this.mainWindow.webContents.send(projectOpenedEvent, project);
     }

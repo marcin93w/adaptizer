@@ -6,24 +6,29 @@ import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
 import { LinearControl } from "../linear-control/linear-control";
 
 export default function Configurator({ project }: { project: Project }) {
-  const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
-  const [controls, setControls] = React.useState(project.getControls());
-  const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
-  const [inputValue, setInputValue] = React.useState(0);
+    const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
+    const [controls, setControls] = React.useState(project.getControls());
+    const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
+    const [inputValue, setInputValue] = React.useState(0);
   
-  const handleInputChange = (input: InputType) => {
-    setSelectedInput(input);
-    project.setInputType(input);
-  };
+    React.useEffect(() => {
+        setControls(project.getControls());
+        setSelectedInput(project.getInputType());
+    }, [project]);
 
-  const addNewControl = () => {
-      const newControl = new Control(project.getControls().length + 1, TransformType.LINEAR, 0, 9, 0, 127);
-      project.addControl(newControl);
-      setControls(project.getControls());
-      setSelectedControl(newControl);
-  }
+    const handleInputChange = (input: InputType) => {
+        setSelectedInput(input);
+        project.setInputType(input);
+    };
 
-  return <div id="configurator">
+    const addNewControl = () => {
+        const newControl = new Control(project.getControls().length + 1, TransformType.LINEAR, 0, 9, 0, 127);
+        project.addControl(newControl);
+        setControls(project.getControls());
+        setSelectedControl(newControl);
+    }
+
+    return <div id="configurator">
         <div id="inputs">
             <div className={`input-item ${selectedInput === InputType.VOLUME ?  "selected" : ""}`} onClick={() => handleInputChange(InputType.VOLUME)} >Volume</div>
             <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>

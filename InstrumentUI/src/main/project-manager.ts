@@ -1,8 +1,8 @@
 import { dialog } from "electron";
-import Project from "../shared/project";
+import Project, { ProjectDto } from "../shared/project";
 import { writeFile } from 'fs';
 
-export async function openProject(): Promise<Project | null> {
+export async function openProject(): Promise<ProjectDto | null> {
     return dialog.showOpenDialog({
             properties: ['openFile'],
             filters: [{ name: 'Adaptizer Project', extensions: ['adz'] }]
@@ -11,23 +11,22 @@ export async function openProject(): Promise<Project | null> {
                 const filePath = result.filePaths[0];
                 const projectName = filePath.split('\\').pop()?.split('.').shift();
 
-                // const fs = require('fs');
-                // const fileContent = fs.readFileSync(filePath, 'utf-8');
-                // const projectData = JSON.parse(fileContent);
-                const project = new Project(projectName);
-                return Promise.resolve(project);
+                const fs = require('fs');
+                const fileContent = fs.readFileSync(filePath, 'utf-8');
+                const projectData = JSON.parse(fileContent);
+                return Promise.resolve(projectData);
             }
             return Promise.resolve(null);
         });
 }
 
-export async function saveProject(project: Project): Promise<void> {
+export async function saveProject(project: ProjectDto): Promise<void> {
     return dialog.showSaveDialog({
         filters: [{ name: 'Adaptizer Project', extensions: ['adz'] }]
     }).then(async (result: any) => {
         if (result.filePath) {
             const filePath = result.filePath;
-            const projectData = JSON.stringify(project.toJson());
+            const projectData = JSON.stringify(project);
             await writeFile(filePath, projectData, (err: any) => {
                 if (err) {
                     console.error(err);

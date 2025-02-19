@@ -1,11 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { projectOpenedEvent } from "../shared/app-state.interface";
-import Project from "../shared/project";
+import { projectOpenedEvent, projectUpdatedEvent } from "../shared/actions";
+import { ProjectDto } from "../shared/project";
 
 declare global {
   interface Window {
       electronAPI: {
-          onProjectOpened: (callback: (project: Project) => void) => void;
+          onProjectOpened: (callback: (project: ProjectDto) => void) => void;
+          sendProjectUpdated: (project: ProjectDto) => void;
       }
   }
 }
@@ -13,5 +14,8 @@ declare global {
 contextBridge.exposeInMainWorld("electronAPI", {
   onProjectOpened: (callback) => {
     ipcRenderer.on(projectOpenedEvent, (_, data) => callback(data));
+  },
+  sendProjectUpdated: (project: ProjectDto) => {
+    ipcRenderer.send(projectUpdatedEvent, project);
   }
 });

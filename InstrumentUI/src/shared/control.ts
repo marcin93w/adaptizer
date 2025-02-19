@@ -1,5 +1,13 @@
 import { TransformType } from "./project";
 
+export interface ControlDto {
+  controlNumber: number;
+  transformType: TransformType;
+  inputMin: number;
+  inputMax: number;
+  midiMin: number;
+  midiMax: number;
+}
 
 export class Control {
   constructor(
@@ -78,5 +86,20 @@ export class Control {
       }
       
       return Math.round(this.midiMin + normalizedInput * (this.midiMax - this.midiMin));
+  }
+
+  toDto(): ControlDto {
+    return {
+      controlNumber: this.controlNumber,
+      transformType: this.transformType,
+      inputMin: this.inputMin,
+      inputMax: this.inputMax,
+      midiMin: this.midiMin,
+      midiMax: this.midiMax
+    };
+  }
+
+  static fromDto(dto: ControlDto): Control {
+    return new Control(dto.controlNumber, dto.transformType, dto.inputMin, dto.inputMax, dto.midiMin, dto.midiMax);
   }
 }

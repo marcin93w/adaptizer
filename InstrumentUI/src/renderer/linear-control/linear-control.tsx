@@ -29,7 +29,7 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
 
     useEffect(() => {
         setMidiValue(control.calculateControlValue(inputValue));
-    }, [inputValue]);
+    }, [inputValue, control]);
 
     if (isSelected) {
         return <div className="linear-control control selected">
