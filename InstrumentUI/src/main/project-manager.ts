@@ -1,4 +1,5 @@
-import Project, { ProjectDto } from "../shared/project";
+import Project from "../renderer/domain/project";
+import { ProjectDto } from "../shared/dtos";
 import { projectOpenedEvent, projectUpdatedEvent } from "../shared/actions";
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import { writeFile } from "fs";

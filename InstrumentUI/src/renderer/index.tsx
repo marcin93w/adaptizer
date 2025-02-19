@@ -1,24 +1,25 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import Project, { ProjectDto } from "../shared/project";
-import { MidiConnectionWarning } from "./midi-connection-warning/midi-connection-warning";
-import Configurator from "./configurator/configurator";
+import Project from "./domain/project";
+import { ProjectDto } from "../shared/dtos";
+import { MidiConnectionWarning } from "./components/midi-connection-warning/midi-connection-warning";
+import Configurator from "./components/configurator/configurator";
 
 const App = () => {
     const [project, setProject] = React.useState<Project>(new Project());
 
-    const setupUpdateListener = (p: Project) => {
-        p.registerProjectUpdatedListener(() => {
-            window.electronAPI.sendProjectUpdated(p.toDto());
+    useEffect(() => {
+        project.registerProjectUpdatedListener(() => {
+            window.electronAPI.sendProjectUpdated(project.toDto());
         });
-    }
+    }, [project]);
 
-    setupUpdateListener(project);
-    window.electronAPI.onProjectOpened((projectDto: ProjectDto) => {
-        const openedProject = Project.fromDto(projectDto);
-        setupUpdateListener(openedProject);
-        setProject(openedProject);
-    });
+    useEffect(() => {
+        window.electronAPI.onProjectOpened((projectDto: ProjectDto) => {
+            const openedProject = Project.fromDto(projectDto);
+            setProject(openedProject);
+        });
+    }, []);
     
     return <div id="main-container">
         <MidiConnectionWarning />

@@ -1,13 +1,5 @@
-import { TransformType } from "./project";
-
-export interface ControlDto {
-  controlNumber: number;
-  transformType: TransformType;
-  inputMin: number;
-  inputMax: number;
-  midiMin: number;
-  midiMax: number;
-}
+import { ControlDto } from "../../shared/dtos";
+import { TransformType } from "../../shared/dtos";
 
 export class Control {
   constructor(

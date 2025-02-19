@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import MidiService from '../midi-service';
+import MidiService from '../../services/midi-service';
 import './midi-connection-warning.scss';
 
 export const MidiConnectionWarning: React.FC = () => {

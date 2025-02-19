@@ -1,6 +1,8 @@
 import React from "react";
-import Project, { TransformType, InputType } from "../../shared/project";
-import { Control } from "../../shared/control";
+import Project from "../../domain/project";
+import { TransformType } from "../../../shared/dtos";
+import { InputType } from "../../../shared/dtos";
+import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
 import { LinearControl } from "../linear-control/linear-control";

@@ -1,26 +1,12 @@
-import { Control, ControlDto } from "./control";
-
-export enum InputType {
-  VOLUME = "volume",
-  INTENSITY = "intensity",
-  EXPRESSION = "expression",
-}
-
-export enum TransformType {
-  LINEAR = "linear",
-  REVERSED_LINEAR = "reversed-linear",
-}
+import { Control } from "./control";
+import { ControlDto, InputType, TransformType } from "../../shared/dtos";
+import { ProjectDto } from "../../shared/dtos";
 
 export class InputConfig {
   constructor(
     public type: InputType,
     public controls: Map<number, Control>,
   ) {}
-}
-
-export interface ProjectDto {
-  inputType: InputType;
-  controls: ControlDto[];
 }
 
 class Project {

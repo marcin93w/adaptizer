@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { Range } from 'react-range';
 import { useState } from 'react';
 import './linear-control.scss';
-import { TransformType } from "../../shared/project";
-import { Control } from "../../shared/control";
+import { TransformType } from "../../../shared/dtos";
+import { Control } from "../../domain/control";
 
 interface LinearControlProps {
     control: Control;

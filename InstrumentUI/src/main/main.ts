@@ -8,8 +8,8 @@ let projectManager: ProjecManager | null = null;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 800,
     webPreferences: {
       nodeIntegration: true,
       preload: join(__dirname, "preload.js"),

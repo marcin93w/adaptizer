@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { projectOpenedEvent, projectUpdatedEvent } from "../shared/actions";
-import { ProjectDto } from "../shared/project";
+import { ProjectDto } from "../shared/dtos";
 
 declare global {
   interface Window {
