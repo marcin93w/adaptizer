@@ -1,9 +1,7 @@
 import { Menu } from "electron";
-import { AppState } from "./app-state";
-import { openProject, saveProject } from "./project-manager";
-import Project from "../shared/project";
+import { ProjecManager } from "./project-manager";
 
-export const createMenu = (appState: AppState) => {
+export const createMenu = (pojectManager: ProjecManager) => {
   const template = [
     {
         label: 'File',
@@ -11,23 +9,17 @@ export const createMenu = (appState: AppState) => {
         {
             label: 'New Project',
             click: () => {
-                appState.openProject(new Project().toDto());
+                pojectManager.newProject();
             }
         }, {
             label: 'Open Project',
             click: () => {
-                openProject().then((project) => {
-                    if (project) {
-                        appState.openProject(project);
-                    }
-                });
+                pojectManager.openProject();
             }   
         }, {
             label: 'Save Project',
             click: async () => {
-                if (appState.getProject()) {
-                    await saveProject(appState.getProject()!);
-                }
+                await pojectManager.saveProject();
             }
         }]
     }];

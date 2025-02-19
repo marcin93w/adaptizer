@@ -1,10 +1,10 @@
 import { app, BrowserWindow } from "electron";
 import { createMenu } from "./menu";
 import { join } from "path";
-import { AppState } from "./app-state";
+import { ProjecManager } from "./project-manager";
 
 let mainWindow: BrowserWindow | null = null;
-let appState: AppState | null = null;
+let projectManager: ProjecManager | null = null;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -16,7 +16,7 @@ const createWindow = () => {
     },
   });
 
-  appState = new AppState(mainWindow);
+  projectManager = new ProjecManager(mainWindow);
 
   mainWindow.loadFile("../renderer/index.html");
 
@@ -24,7 +24,7 @@ const createWindow = () => {
     mainWindow = null;
   });
 
-  createMenu(appState);
+  createMenu(projectManager);
   mainWindow.webContents.openDevTools();
 }
 
