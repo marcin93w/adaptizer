@@ -14,6 +14,7 @@ class Project {
 
   private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map([[1, new Control(1, TransformType.LINEAR, 0, 9, 0, 127)]]));
   private _projectUpdatedListeners: (() => void)[] = [];
+  private _controlAddedListeners: ((control: Control) => void)[] = [];
 
   setInputType(inputType: InputType) {
     this._config.type = inputType;
@@ -25,6 +26,7 @@ class Project {
     control.registerControlChangedListener(() => {
       this.notifyProjectUpdated();
     });
+    this.notifyControlAdded(control);
     this.notifyProjectUpdated();
   }
 
@@ -40,8 +42,16 @@ class Project {
     this._projectUpdatedListeners.push(listener);
   }
 
+  registerControlAddedListener(listener: (control: Control) => void) {
+    this._controlAddedListeners.push(listener);
+  }
+
   private notifyProjectUpdated() {
     this._projectUpdatedListeners.forEach(listener => listener());
+  }
+
+  private notifyControlAdded(control: Control) {
+    this._controlAddedListeners.forEach(listener => listener(control));
   }
 
   toDto(): ProjectDto {

@@ -22,6 +22,13 @@ class MidiService {
   isOutputMissing() {
     return this.outputMissing;
   }
+
+  sendMidiMessage(controlNumber: number, midiValue: number) {
+    if (this.midiOutput) {
+      this.midiOutput.send([0xB0, controlNumber, midiValue]);
+      return;
+    }
+  }
 }
 
 export default MidiService.getInstance();
