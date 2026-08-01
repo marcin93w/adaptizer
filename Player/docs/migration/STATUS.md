@@ -25,11 +25,15 @@ One commit per migration step, in merge order.
 | C01 | `2dd3a0d` | C | 11 new Jest tests green; `tsc --noEmit` clean. |
 | B03 | `c8311af` | B | `:adaptive-audio:test` 36/36 green (14 existing + 22 new Robolectric); `assembleDebug` green. |
 | A02 | `5da146e` | A | `npm run verify` exits 0; each gate proven to fail on a deliberate violation (lint 1, typecheck 2, test 1). |
+| D01 | `02bfaec` | D | `npm run verify` green; 10 focused facade/mock Jest tests and Codegen type assertions green. |
+| B04 | `3a6987d` | B | `:adaptive-audio:test` BUILD SUCCESSFUL with 0 failures; deterministic instrumentation suite and opt-in live-CDN smoke test added. |
+| C02 | `74ba566` | C | `npm run verify` green; 26 Jest tests, including 4 catalog component tests; no device or network required. |
+| A03 | `208c837` | A / D | `mobile/android :app:assembleDebug` BUILD SUCCESSFUL with Codegen/New Architecture; focused JS checks green. |
 
 ### Current green baseline
 
-- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 12 tests).
-- `cd Player && ./gradlew :adaptive-audio:test` -> 36 tests, 0 failures, JVM only.
+- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 26 tests).
+- `cd Player && ./gradlew :adaptive-audio:test` -> BUILD SUCCESSFUL, 0 failures, JVM only.
 - `cd Player && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (legacy app).
 - `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell).
 
@@ -38,30 +42,29 @@ legacy app remains the production artifact.
 
 ---
 
-## 2. In progress (not committed)
+## 2. In progress
 
-Two steps were mid-flight when this file was written. Their working-tree changes
-are **uncommitted** and unverified — treat them as incomplete and re-check before
-building on them.
+The D01 and B04 changes that were previously mid-flight are now committed and verified.
+No migration-step changes remain uncommitted.
 
 | Step | Uncommitted paths | State |
 | --- | --- | --- |
-| D01 | `mobile/src/specs/`, `mobile/src/native/`, `mobile/package.json` | Codegen spec, typed facade and mock. Not verified. |
-| B04 | `adaptive-audio/src/androidTest/`, `adaptive-audio/src/test/.../player/`, `adaptive-audio/build.gradle.kts`, `player/AdaptiveAudioEngine.kt`, `player/AdaptizerTrackSelector.kt` | Engine characterization tests. Note it has modified two **production** files — review those edits closely; only a minimal, justified test seam is in scope. |
+| D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; no migration-step files remain uncommitted. |
 
-To resume: run `npm run verify`, `:adaptive-audio:test` and
-`:adaptive-audio:connectedDebugAndroidTest`, review the production-file diffs,
-then commit as `D01: ...` and `B04: ...`.
+The connected Android test gate remains pending because the emulator was offline.
+Re-run `:adaptive-audio:connectedDebugAndroidTest` after restoring an online
+emulator before signing off B04 completely.
 
 ---
 
 ## 3. Not started
 
-`A03`, `C02`, `C03`, `A04`, `B05`, `C04`, `D03`, `I01`, `I02`, `R01`, `R02`.
+`C03`, `A04`, `B05`, `C04`, `D03`, `I01`, `I02`, `R01`, `R02`.
 
-Dependency order from the plan still applies. The next ready steps once D01 and
-B04 land are **A03** (TurboModule scaffold; needs A01 + D01) and **C02**
-(catalog screen against the D01 mock; needs C01 + D01).
+Dependency order from the plan still applies. The next ready steps are **A04**
+(connect the real engine; needs A03 + B04), **C03** (connect the catalog API;
+needs C01 + C02), **B05** (physical-device input acceptance; needs B04), and
+**D03** (bridge contract/release evidence; needs A03 + D02).
 
 ---
 
