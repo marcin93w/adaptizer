@@ -109,6 +109,20 @@ class AdaptiveAudioEngine(private val context: Context) {
             return trackSelector?.currentSelectedIndex()
         }
 
+    /** Requested adaptation index, or `null` before initialization / after release. */
+    val requestedTrackIndex: Int?
+        get() {
+            checkMainThread()
+            return trackSelector?.requestedTrackIndex
+        }
+
+    /** Number of audio representations detected in the prepared manifest. */
+    val availableTrackCount: Int?
+        get() {
+            checkMainThread()
+            return trackSelector?.availableTrackCount
+        }
+
     /**
      * Builds the [ExoPlayer] with an [AdaptizerTrackSelector] seeded at [initialTrackIndex] -
      * mirroring the legacy `MainActivity`, which computed the intensity synchronously and built

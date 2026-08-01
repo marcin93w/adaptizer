@@ -31,6 +31,13 @@ class AdaptizerTrackSelector(private var trackIndex: Int) : MappingTrackSelector
     }
 
     private var trackSelection: AdaptizerTrackSelection? = null
+    private var detectedTrackCount: Int? = null
+
+    val requestedTrackIndex: Int
+        get() = trackIndex
+
+    val availableTrackCount: Int?
+        get() = detectedTrackCount
 
     init {
         validateTrackIndex(trackIndex)
@@ -51,6 +58,7 @@ class AdaptizerTrackSelector(private var trackIndex: Int) : MappingTrackSelector
                 val trackGroupArray = mappedTrackInfo.getTrackGroups(i)
                 if (trackGroupArray.length > 0) {
                     val group = trackGroupArray.get(0)
+                    detectedTrackCount = group.length
                     if (group.length != EXPECTED_TRACK_COUNT) {
                         throw AdaptiveAudioManifestException(EXPECTED_TRACK_COUNT, group.length)
                     }

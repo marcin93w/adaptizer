@@ -17,8 +17,7 @@ export interface AppConfig {
   /**
    * Base URL of the media storage bucket that DASH manifests are served
    * from. Building the per-song manifest URL (`{mediaBaseUrl}/{storageLocation}/manifest.mpd`)
-   * is the responsibility of a later migration step (C03); this module
-   * only exposes the base URL.
+   * is assembled by `src/data/dashUrl.ts`.
    */
   readonly mediaBaseUrl: string;
 }

@@ -29,10 +29,12 @@ One commit per migration step, in merge order.
 | B04 | `3a6987d` + `42be4af` | B | JVM tests BUILD SUCCESSFUL with 0 failures; instrumentation runner dependency fixed; connected fixture preflight is blocked by emulator-to-host `10.0.2.2:8099` networking (`EPERM`). |
 | C02 | `74ba566` | C | `npm run verify` green; 26 Jest tests, including 4 catalog component tests; no device or network required. |
 | A03 | `208c837` | A / D | `mobile/android :app:assembleDebug` BUILD SUCCESSFUL with Codegen/New Architecture; focused JS checks green. |
+| A04 | `53d4dfc` | A / B | Transport bridge and shared engine dependency landed; RN Android `assembleDebug` and legacy `assembleDebug` green. |
+| C03 | working tree | C | Repository-backed catalog, cancellation protection, empty/error/retry/refresh states and centralized DASH URL helper; `npm run verify` green with 31 Jest tests. |
 
 ### Current green baseline
 
-- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 26 tests).
+- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 31 tests).
 - `cd Player && ./gradlew :adaptive-audio:test` -> BUILD SUCCESSFUL, 0 failures, JVM only.
 - `cd Player && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (legacy app).
 - `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell plus the shared adaptive-audio bridge).
@@ -44,14 +46,16 @@ legacy app remains the production artifact.
 
 ## 2. In progress
 
-The D01 and B04 changes that were previously mid-flight are now committed and verified.
-A04 is implemented in the working tree and has passed its compile/build gates; it
-has not been committed yet.
+The A04 change is committed. C03 is implemented in the working tree and has passed
+the full mobile verification gate. B05 and C04 are implemented in the working tree;
+their automated compile/build gates are green, but native playback, physical sensor
+response and deterministic fixture playback still need device/emulator evidence.
 
 | Step | Uncommitted paths | State |
 | --- | --- | --- |
-| D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; no migration-step files remain uncommitted. |
-| A04 | `adaptive-audio/**`, `mobile/android/**`, `mobile/src/native/AdaptiveAudio.ts`, `mobile/src/specs/NativeAdaptiveAudio.ts` | Transport bridge implemented; shared engine dependency, main-thread dispatch and playback/progress/error event paths compile cleanly. Host teardown is wired in code; deterministic media harness/manual playback remains pending. Awaiting commit; UI remains on the C02 mock until C04. |
+| D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; JVM checks are green, while the connected fixture preflight remains blocked by emulator-to-host networking. |
+| B05 | `adaptive-audio/**`, `mobile/android/app/src/main/java/com/adaptizerplayer/rn/adaptiveaudio/NativeAdaptiveAudioModule.kt` | Kotlin initializes/releases native inputs, routes Adaptizer decisions to the native selector, and emits typed intensity/track events. `:adaptive-audio:test` and RN Android `assembleDebug` are green; physical shake and connected fixture checks remain pending. |
+| C04 | `mobile/App.tsx`, `mobile/__tests__/App.test.tsx` | Production defaults use the availability-safe real facade; repository/player injection keeps tests deterministic. `npm run verify` and RN Android `assembleDebug` are green; live prepare/play/pause/seek remains pending. |
 
 The connected Android test gate reaches the runner, but the deterministic fixture
 preflight cannot connect to host loopback `10.0.2.2:8099` in this environment
@@ -62,12 +66,11 @@ with emulator-to-host networking available before signing off B04 completely.
 
 ## 3. Not started
 
-`C03`, `B05`, `C04`, `D03`, `I01`, `I02`, `R01`, `R02`.
+`D03`, `I01`, `I02`, `R01`, `R02`.
 
-Dependency order from the plan still applies. The next ready steps are **C03**
-(connect the catalog API; needs C01 + C02), **B05** (enable Kotlin-owned
-adaptation; needs A04 + B04), and **D03** (bridge contract/release evidence;
-needs A04 + B04 + C04).
+Dependency order from the plan still applies. **D03** is the next implementation
+step after C04; it needs Android end-to-end/lifecycle coverage and can reuse the
+existing deterministic fixture once emulator-to-host networking is available.
 
 ---
 

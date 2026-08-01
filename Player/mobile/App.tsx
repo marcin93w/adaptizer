@@ -1,42 +1,30 @@
 /**
- * Adaptizer Player - C02 catalog presentation backed by the D01 mock.
+ * Adaptizer Player - C04 catalog and controls backed by the native facade.
  *
  * @format
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { CatalogScreen } from './src/ui/CatalogScreen';
-import type { Song } from './src/domain/song';
-import { createMockAdaptiveAudio } from './src/native/mockAdaptiveAudio';
+import { songsApi } from './src/data/songsApi';
+import { adaptiveAudio } from './src/native/AdaptiveAudio';
+import type { SongsRepository } from './src/domain/song';
+import type { AdaptiveAudioFacade } from './src/native/AdaptiveAudio';
 
-const DEMO_SONGS: readonly Song[] = [
-  {
-    id: 1,
-    author: 'The Adaptizers',
-    album: 'Motion',
-    name: 'Signal in Motion',
-    storageLocation: 'mock://catalog/signal-in-motion',
-  },
-  {
-    id: 2,
-    author: 'Pulse Assembly',
-    album: 'Ten Levels',
-    name: 'Orange Horizon',
-    storageLocation: 'mock://catalog/orange-horizon',
-  },
-  {
-    id: 3,
-    author: 'Dynamic Range',
-    album: 'Accelerate',
-    name: 'Shake the Room',
-    storageLocation: 'mock://catalog/shake-the-room',
-  },
-];
+export interface AppProps {
+  readonly player?: AdaptiveAudioFacade;
+  readonly repository?: SongsRepository;
+}
 
-function App(): React.JSX.Element {
-  const player = useMemo(() => createMockAdaptiveAudio(), []);
+function App({
+  player = adaptiveAudio,
+  repository = songsApi,
+}: AppProps): React.JSX.Element {
+  // Keep the facade injectable at the screen boundary: tests and Storybook
+  // pass the deterministic mock directly, while the production defaults
+  // resolve the availability-safe TurboModule facade here.
 
-  return <CatalogScreen songs={DEMO_SONGS} player={player} />;
+  return <CatalogScreen player={player} repository={repository} />;
 }
 
 export default App;

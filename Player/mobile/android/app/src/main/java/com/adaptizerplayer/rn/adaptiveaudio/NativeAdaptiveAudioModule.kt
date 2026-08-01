@@ -1,13 +1,21 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.adaptizerplayer.rn.adaptiveaudio
 
 import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import com.adaptizerplayer.adaptiveaudio.adaptizer.Adaptizer
+import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerState
+import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.AccelerometerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.VolumeInput
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngine
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngineStateException
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioListener
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioManifestException
+import com.adaptizerplayer.adaptiveaudio.player.AdaptizerTrackSelector
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioUnsupportedTrackException
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.LifecycleEventListener
@@ -16,12 +24,12 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 
 /**
- * A04 transport-only bridge for [AdaptiveAudioEngine].
+ * B05 native adaptation bridge for [AdaptiveAudioEngine].
  *
  * Commands may arrive on React Native's module queue, while Media3 must be
- * accessed from Android's main thread. This class is therefore deliberately a
- * thin main-thread dispatcher and event translator. Adaptation inputs and
- * track-selection policy remain disabled here until B05.
+ * accessed from Android's main thread. Adaptizer and both device inputs are
+ * initialized and released with this module; JS only observes their typed
+ * intensity/track events and has no track-selection command.
  */
 @ReactModule(name = NativeAdaptiveAudioSpec.NAME)
 class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
@@ -30,7 +38,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   companion object {
     const val NAME: String = NativeAdaptiveAudioSpec.NAME
 
-    const val INITIAL_TRACK_INDEX = 0
+    const val EXPECTED_TRACK_COUNT = AdaptizerTrackSelector.EXPECTED_TRACK_COUNT
     const val PROGRESS_INTERVAL_MS = 250L
 
     const val STATE_IDLE = "idle"
@@ -43,6 +51,8 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
 
   private val mainHandler = Handler(Looper.getMainLooper())
   private var engine: AdaptiveAudioEngine? = null
+  private var adaptizer: Adaptizer? = null
+  private var inputs: List<AdaptizerInput> = emptyList()
   private var sourceId: String? = null
   private var playRequested = false
   private var explicitlyPaused = false
@@ -73,6 +83,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
           } else {
             reportPlaybackState(STATE_READY)
           }
+          emitCurrentTrackChanged()
         }
         Player.STATE_ENDED -> {
           playRequested = false
@@ -115,11 +126,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
               null
             } ?: sourceUri
 
-        val activeEngine = engine ?: AdaptiveAudioEngine(reactApplicationContext).also {
-          it.addListener(engineListener)
-          it.initialize(INITIAL_TRACK_INDEX)
-          engine = it
-        }
+        val activeEngine = engine ?: createActiveEngine()
         stopProgressUpdates()
         sourceId = requestedSourceId
         playRequested = false
@@ -189,7 +196,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   override fun onHostPause() = Unit
 
   override fun onHostDestroy() {
-    releaseInternal(emitIdle = false)
+    onMain { releaseInternal(emitIdle = false) }
   }
 
   override fun invalidate() {
@@ -202,6 +209,50 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       action()
     } else {
       mainHandler.post(action)
+    }
+  }
+
+  private fun createActiveEngine(): AdaptiveAudioEngine {
+    val volumeInput = VolumeInput(reactApplicationContext)
+    val accelerometerInput = AccelerometerInput(reactApplicationContext)
+    val newAdaptizer = Adaptizer(volumeInput, accelerometerInput)
+    newAdaptizer.onStateChange { state -> onAdaptizerStateChanged(state) }
+
+    val newInputs = listOf<AdaptizerInput>(volumeInput, accelerometerInput)
+    val newEngine = AdaptiveAudioEngine(reactApplicationContext)
+    try {
+      // Match the legacy ordering: listeners are wired before native inputs
+      // begin reporting, and the initial selector index uses live input state.
+      inputs = newInputs
+      adaptizer = newAdaptizer
+      newInputs.forEach { it.initialize() }
+      newEngine.addListener(engineListener)
+      newEngine.initialize(newAdaptizer.getTrackIndex())
+      engine = newEngine
+      emitIntensityChanged(newAdaptizer.getCurrentState())
+      return newEngine
+    } catch (error: Exception) {
+      newInputs.asReversed().forEach { it.release() }
+      inputs = emptyList()
+      adaptizer = null
+      throw error
+    }
+  }
+
+  private fun onAdaptizerStateChanged(state: AdaptizerState) {
+    onMain {
+      if (released) return@onMain
+      emitIntensityChanged(state)
+
+      val activeEngine = engine ?: return@onMain
+      try {
+        // This is the only native track-selection path. The JS contract has
+        // no setIntensity/selectTrack command by design.
+        activeEngine.changeTrack(state.intensity)
+        emitCurrentTrackChanged(state.intensity)
+      } catch (error: Exception) {
+        reportCommandError(error)
+      }
     }
   }
 
@@ -229,7 +280,10 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     stopProgressUpdates()
     engine?.removeListener(engineListener)
     engine?.release()
+    inputs.asReversed().forEach { it.release() }
     engine = null
+    adaptizer = null
+    inputs = emptyList()
     sourceId = null
     playRequested = false
     explicitlyPaused = false
@@ -264,6 +318,42 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         })
   }
 
+  private fun emitIntensityChanged(state: AdaptizerState) {
+    emitOnIntensityChanged(
+        Arguments.createMap().apply {
+          putInt("intensity", state.intensity)
+          putInt("volume", state.volume)
+          putInt("acceleration", state.acceleration)
+        })
+  }
+
+  private fun emitCurrentTrackChanged(requestedIndex: Int? = null) {
+    val activeEngine = engine ?: return
+    val selectedIndex = activeEngine.selectedTrackIndex ?: return
+    val availableCount = activeEngine.availableTrackCount ?: return
+    val request = requestedIndex ?: activeEngine.requestedTrackIndex ?: return
+
+    // The selector rejects non-contract manifests before creating a
+    // selection. Keep this guard at the bridge boundary too so a malformed or
+    // future selector cannot send an invalid typed event to JS.
+    if (availableCount != EXPECTED_TRACK_COUNT ||
+        request !in 0 until availableCount ||
+        selectedIndex !in 0 until availableCount) {
+      reportPlayerError(
+          "unsupported_track",
+          "Track selection is outside the supported $EXPECTED_TRACK_COUNT-track contract.",
+          false)
+      return
+    }
+
+    emitOnTrackChanged(
+        Arguments.createMap().apply {
+          putInt("requestedIndex", request)
+          putInt("selectedIndex", selectedIndex)
+          putInt("availableCount", availableCount)
+        })
+  }
+
   private fun durationForEvent(durationMs: Long): Long =
       if (durationMs < 0L || durationMs == Long.MAX_VALUE) -1L else durationMs
 
@@ -282,7 +372,9 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       is AdaptiveAudioEngineStateException ->
           reportPlayerError("not_initialized", error.message ?: "Adaptive audio is not prepared.", false)
       is AdaptiveAudioUnsupportedTrackException ->
-          reportPlayerError("unsupported_track", error.message ?: "Unsupported audio track.", true)
+          reportPlayerError("unsupported_track", error.message ?: "Unsupported audio track.", false)
+      is AdaptiveAudioManifestException ->
+          reportPlayerError("manifest", error.message ?: "Unsupported audio manifest.", false)
       else -> reportPlayerError("lifecycle", error.message ?: "Adaptive audio command failed.", false)
     }
   }

@@ -16,7 +16,10 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SongsFetchCancelledError, songsApi } from '../data/songsApi';
+import { buildDashManifestUrl } from '../data/dashUrl';
 import type { Song } from '../domain/song';
+import type { SongsRepository } from '../domain/song';
 import type { AdaptiveAudioFacade } from '../native/AdaptiveAudio';
 import type {
   PlaybackState,
@@ -30,19 +33,19 @@ const titleLogo = require('../assets/logo_title.png');
 const SEEK_STEP_MS = 15_000;
 
 export interface CatalogScreenProps {
-  readonly songs: readonly Song[];
   readonly player: AdaptiveAudioFacade;
-  readonly catalogLoading?: boolean;
+  /** Defaults to the live HTTP repository; tests inject a deterministic fake. */
+  readonly repository?: SongsRepository;
 }
 
 export function CatalogScreen({
-  songs,
   player,
-  catalogLoading = false,
+  repository = songsApi,
 }: CatalogScreenProps): React.JSX.Element {
-  const [selectedSongId, setSelectedSongId] = useState<number | null>(
-    songs[0]?.id ?? null,
-  );
+  const [songs, setSongs] = useState<readonly Song[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<unknown>(null);
+  const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
   const [progress, setProgress] = useState<ProgressEvent>({
     positionMs: 0,
@@ -51,10 +54,72 @@ export function CatalogScreen({
   });
   const [intensity, setIntensity] = useState(0);
   const [error, setError] = useState<PlayerErrorEvent | null>(null);
-  const hasPreparedInitialSong = useRef(false);
+  const requestId = useRef(0);
+  const abortController = useRef<AbortController | null>(null);
+  const playAfterPrepare = useRef(false);
+
+  const loadSongs = useCallback(() => {
+    const currentRequestId = ++requestId.current;
+    abortController.current?.abort();
+
+    const controller = new AbortController();
+    abortController.current = controller;
+    setCatalogLoading(true);
+    setCatalogError(null);
+
+    repository
+      .fetchSongs(controller.signal)
+      .then(nextSongs => {
+        if (currentRequestId !== requestId.current) {
+          return;
+        }
+        setSongs(nextSongs);
+        setCatalogLoading(false);
+      })
+      .catch(fetchError => {
+        if (
+          currentRequestId !== requestId.current ||
+          controller.signal.aborted ||
+          fetchError instanceof SongsFetchCancelledError
+        ) {
+          return;
+        }
+        setSongs([]);
+        setCatalogError(fetchError);
+        setCatalogLoading(false);
+      })
+      .finally(() => {
+        if (currentRequestId === requestId.current) {
+          abortController.current = null;
+        }
+      });
+  }, [repository]);
+
+  useEffect(() => {
+    loadSongs();
+    return () => {
+      requestId.current += 1;
+      abortController.current?.abort();
+      abortController.current = null;
+    };
+  }, [loadSongs]);
+
+  useEffect(() => {
+    setSelectedSongId(currentSelectedSongId => {
+      if (
+        currentSelectedSongId !== null &&
+        songs.some(song => song.id === currentSelectedSongId)
+      ) {
+        return currentSelectedSongId;
+      }
+      return songs.length > 0 ? songs[0].id : null;
+    });
+  }, [songs]);
 
   const selectedSong = useMemo(
-    () => songs.find(song => song.id === selectedSongId) ?? songs[0] ?? null,
+    () =>
+      songs.find(song => song.id === selectedSongId) ??
+      (songs.length > 0 ? songs[0] : null),
     [selectedSongId, songs],
   );
 
@@ -84,23 +149,33 @@ export function CatalogScreen({
   }, [player]);
 
   useEffect(() => {
-    if (catalogLoading || !selectedSong || !player.isAvailable) {
+    if (
+      catalogLoading ||
+      catalogError !== null ||
+      !selectedSong ||
+      !player.isAvailable
+    ) {
       return;
     }
-    player.prepare(selectedSong.storageLocation, metadataFor(selectedSong));
+    const shouldStartPlayback = playAfterPrepare.current;
+    playAfterPrepare.current = false;
+
+    player.prepare(
+      buildDashManifestUrl(selectedSong.storageLocation),
+      metadataFor(selectedSong),
+    );
 
     // The first song is prepared but not started. Selecting another song is an
-    // explicit play action, so the effect starts it after the new source has
-    // been installed rather than issuing prepare() twice from the row handler.
-    if (hasPreparedInitialSong.current) {
+    // explicit play action, so refreshes do not unexpectedly start playback.
+    if (shouldStartPlayback) {
       player.play();
     }
-    hasPreparedInitialSong.current = true;
-  }, [catalogLoading, player, selectedSong]);
+  }, [catalogError, catalogLoading, player, selectedSong]);
 
   const selectSong = useCallback((song: Song) => {
     setError(null);
     setPlaybackState('buffering');
+    playAfterPrepare.current = true;
     setSelectedSongId(song.id);
   }, []);
 
@@ -141,13 +216,32 @@ export function CatalogScreen({
       </View>
 
       <View style={styles.catalog}>
-        <Text accessibilityRole="header" style={styles.sectionTitle}>
-          SONGS
-        </Text>
+        <View style={styles.catalogHeading}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>
+            SONGS
+          </Text>
+          <Pressable
+            accessibilityLabel="Refresh songs"
+            accessibilityRole="button"
+            disabled={catalogLoading}
+            onPress={loadSongs}
+            style={({ pressed }) => [
+              styles.refreshButton,
+              pressed ? styles.pressed : null,
+              catalogLoading ? styles.disabled : null,
+            ]}
+          >
+            <Text style={styles.refreshButtonText}>
+              {catalogLoading ? 'Refreshing' : 'Refresh'}
+            </Text>
+          </Pressable>
+        </View>
         <CatalogBody
+          error={catalogError}
           loading={catalogLoading}
           songs={songs}
           selectedSongId={selectedSong?.id ?? null}
+          onRetry={loadSongs}
           onSelect={selectSong}
         />
       </View>
@@ -236,14 +330,18 @@ export function CatalogScreen({
 }
 
 function CatalogBody({
+  error,
   loading,
   songs,
   selectedSongId,
+  onRetry,
   onSelect,
 }: {
+  error: unknown;
   loading: boolean;
   songs: readonly Song[];
   selectedSongId: number | null;
+  onRetry: () => void;
   onSelect: (song: Song) => void;
 }): React.JSX.Element {
   if (loading) {
@@ -254,6 +352,31 @@ function CatalogBody({
         <Text style={styles.centerMessageBody}>
           Tuning the catalog for you.
         </Text>
+      </View>
+    );
+  }
+
+  if (error !== null) {
+    return (
+      <View
+        accessibilityLabel="Song catalog error"
+        style={styles.centerMessage}
+      >
+        <Text style={styles.centerMessageTitle}>Could not load songs</Text>
+        <Text style={styles.centerMessageBody}>
+          {catalogErrorMessage(error)}
+        </Text>
+        <Pressable
+          accessibilityLabel="Retry loading songs"
+          accessibilityRole="button"
+          onPress={onRetry}
+          style={({ pressed }) => [
+            styles.retryButton,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </Pressable>
       </View>
     );
   }
@@ -366,6 +489,13 @@ function metadataFor(song: Song) {
   return { id: String(song.id), title: song.name, artist: song.author };
 }
 
+function catalogErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.length > 0) {
+    return error.message;
+  }
+  return 'The catalog is unavailable right now. Try again.';
+}
+
 function playbackStatus(
   playbackState: PlaybackState,
   error: PlayerErrorEvent | null,
@@ -422,6 +552,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.line,
   },
+  catalogHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 14,
+  },
   sectionTitle: {
     paddingHorizontal: 20,
     paddingTop: 15,
@@ -430,6 +566,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 2,
+  },
+  refreshButton: {
+    borderRadius: 15,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    backgroundColor: colors.elevated,
+  },
+  refreshButtonText: {
+    color: colors.accent,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   songList: { paddingHorizontal: 12, paddingBottom: 12 },
   songRow: {
@@ -475,6 +624,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyGlyph: { color: colors.accent, fontSize: 38 },
+  retryButton: {
+    marginTop: 16,
+    borderRadius: 18,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+  },
+  retryButtonText: {
+    color: '#1A0E09',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
   tip: {
     backgroundColor: '#37312E',
     paddingHorizontal: 20,

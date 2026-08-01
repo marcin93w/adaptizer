@@ -18,6 +18,10 @@ class Adaptizer(private var volumeInput: AdaptizerInput,
         return getState().intensity
     }
 
+    fun getCurrentState(): AdaptizerState {
+        return getState()
+    }
+
     fun getDebugOutput(): String {
         return "Intensity: ${getState().intensity} (Vol: ${getState().volume}, Acc: ${getState().acceleration})"
     }

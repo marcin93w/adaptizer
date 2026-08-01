@@ -29,4 +29,12 @@ class AdaptizerTrackSelectorTest {
         assertEquals(10, error.requestedIndex)
         assertEquals(10, error.availableTrackCount)
     }
+
+    @Test
+    fun `selector exposes the native requested index before a manifest is prepared`() {
+        val selector = AdaptizerTrackSelector(4)
+
+        assertEquals(4, selector.requestedTrackIndex)
+        assertEquals(null, selector.availableTrackCount)
+    }
 }
