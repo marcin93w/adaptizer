@@ -44,6 +44,7 @@ dependencies {
     // against the D02 DASH fixture - see src/androidTest and test-media/README.md. These need a
     // real ExoPlayer + DashMediaSource + Looper, which Robolectric does not faithfully provide.
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.media3.exoplayer)
     androidTestImplementation(libs.androidx.media3.exoplayer.dash)
 }
