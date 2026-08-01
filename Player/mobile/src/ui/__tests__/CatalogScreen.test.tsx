@@ -190,11 +190,26 @@ describe('CatalogScreen', () => {
     expect(player.playCallCount).toBe(0);
   });
 
-  it('renders player states and errors emitted by the injected mock', async () => {
+  it('renders progress, intensity, track events, and retries recoverable errors', async () => {
     const repository = createRepository(SONGS);
     const { renderer, player } = await renderScreen(repository);
 
     await ReactTestRenderer.act(async () => {
+      player.emitProgress({
+        positionMs: 45_000,
+        durationMs: 120_000,
+        bufferedMs: 60_000,
+      });
+      player.emitIntensityChanged({
+        intensity: 7,
+        volume: 6,
+        acceleration: 8,
+      });
+      player.emitTrackChanged({
+        requestedIndex: 7,
+        selectedIndex: 6,
+        availableCount: 10,
+      });
       player.emitPlaybackState({ state: 'playing', sourceId: '1' });
     });
     expect(
@@ -205,6 +220,25 @@ describe('CatalogScreen', () => {
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Pause playback' }),
     ).toBeDefined();
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Selected audio track' }),
+    ).toBeDefined();
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Selected audio track' })
+        .props.children,
+    ).toEqual(['Track index ', 6, ' / ', 10]);
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Playback position' })
+        .props.children,
+    ).toEqual(['0:45', ' /', ' ', '2:00']);
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Buffered position' })
+        .props.children,
+    ).toEqual(['Buffered ', '1:00']);
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Playback intensity' })
+        .props.accessibilityValue,
+    ).toEqual({ min: 0, max: 9, now: 7 });
 
     await ReactTestRenderer.act(async () => {
       player.emitPlayerError({
@@ -219,5 +253,78 @@ describe('CatalogScreen', () => {
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Player status: Error' }),
     ).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Retry playback' })
+        .props.onPress();
+    });
+    expect(player.playCallCount).toBe(1);
+    expect(
+      renderer.root.findByProps({
+        accessibilityLabel: 'Player status: Buffering',
+      }),
+    ).toBeDefined();
+  });
+
+  it('routes transport controls through the injected facade and clamps seeks', async () => {
+    const repository = createRepository(SONGS);
+    const { renderer, player } = await renderScreen(repository);
+
+    await ReactTestRenderer.act(async () => {
+      player.emitProgress({
+        positionMs: 5_000,
+        durationMs: 20_000,
+        bufferedMs: 10_000,
+      });
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Play playback' })
+        .props.onPress();
+    });
+    expect(player.playCallCount).toBe(1);
+
+    await ReactTestRenderer.act(async () => {
+      player.emitPlaybackState({ state: 'playing', sourceId: '1' });
+    });
+
+    await ReactTestRenderer.act(async () => {
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Pause playback' })
+        .props.onPress();
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Seek back 15 seconds' })
+        .props.onPress();
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Seek forward 15 seconds' })
+        .props.onPress();
+    });
+
+    expect(player.pauseCallCount).toBe(1);
+    expect(player.seekToCalls).toEqual([0, 20_000]);
+  });
+
+  it('shows a safe unavailable state and disables native transport', async () => {
+    const repository = createRepository(SONGS);
+    const player = createMockAdaptiveAudio();
+    player.setAvailable(false);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <CatalogScreen player={player} repository={repository} />,
+      );
+    });
+
+    expect(
+      renderer!.root.findByProps({ accessibilityRole: 'alert' }),
+    ).toBeDefined();
+    expect(JSON.stringify(renderer!.toJSON())).toContain(
+      'The audio player is unavailable.',
+    );
+    expect(
+      renderer!.root.findByProps({ accessibilityLabel: 'Play playback' }).props
+        .disabled,
+    ).toBe(true);
+    expect(player.prepareCalls).toHaveLength(0);
   });
 });

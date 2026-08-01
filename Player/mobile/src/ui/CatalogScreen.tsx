@@ -20,17 +20,27 @@ import { SongsFetchCancelledError, songsApi } from '../data/songsApi';
 import { buildDashManifestUrl } from '../data/dashUrl';
 import type { Song } from '../domain/song';
 import type { SongsRepository } from '../domain/song';
-import type { AdaptiveAudioFacade } from '../native/AdaptiveAudio';
+import {
+  AdaptiveAudioUnavailableError,
+  type AdaptiveAudioFacade,
+} from '../native/AdaptiveAudio';
 import type {
   PlaybackState,
   PlayerErrorEvent,
   ProgressEvent,
+  TrackChangedEvent,
 } from '../native/types';
 
 const albumArt = require('../assets/album_art.png');
 const titleLogo = require('../assets/logo_title.png');
 
 const SEEK_STEP_MS = 15_000;
+
+const INITIAL_PROGRESS: ProgressEvent = {
+  positionMs: 0,
+  durationMs: -1,
+  bufferedMs: 0,
+};
 
 export interface CatalogScreenProps {
   readonly player: AdaptiveAudioFacade;
@@ -47,12 +57,9 @@ export function CatalogScreen({
   const [catalogError, setCatalogError] = useState<unknown>(null);
   const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
-  const [progress, setProgress] = useState<ProgressEvent>({
-    positionMs: 0,
-    durationMs: -1,
-    bufferedMs: 0,
-  });
+  const [progress, setProgress] = useState<ProgressEvent>(INITIAL_PROGRESS);
   const [intensity, setIntensity] = useState(0);
+  const [track, setTrack] = useState<TrackChangedEvent | null>(null);
   const [error, setError] = useState<PlayerErrorEvent | null>(null);
   const requestId = useRef(0);
   const abortController = useRef<AbortController | null>(null);
@@ -142,6 +149,7 @@ export function CatalogScreen({
       player.addIntensityChangedListener(event => {
         setIntensity(Math.max(0, Math.min(9, event.intensity)));
       }),
+      player.addTrackChangedListener(setTrack),
       player.addPlayerErrorListener(setError),
     ];
 
@@ -160,31 +168,46 @@ export function CatalogScreen({
     const shouldStartPlayback = playAfterPrepare.current;
     playAfterPrepare.current = false;
 
-    player.prepare(
-      buildDashManifestUrl(selectedSong.storageLocation),
-      metadataFor(selectedSong),
-    );
+    setProgress(INITIAL_PROGRESS);
+    setTrack(null);
 
-    // The first song is prepared but not started. Selecting another song is an
-    // explicit play action, so refreshes do not unexpectedly start playback.
-    if (shouldStartPlayback) {
-      player.play();
+    try {
+      player.prepare(
+        buildDashManifestUrl(selectedSong.storageLocation),
+        metadataFor(selectedSong),
+      );
+
+      // The first song is prepared but not started. Selecting another song is
+      // an explicit play action, so refreshes do not unexpectedly start
+      // playback.
+      if (shouldStartPlayback) {
+        player.play();
+      }
+    } catch (commandError) {
+      setPlaybackState('idle');
+      setError(toPlayerCommandError(commandError, player.isAvailable));
     }
   }, [catalogError, catalogLoading, player, selectedSong]);
 
   const selectSong = useCallback((song: Song) => {
     setError(null);
+    setProgress(INITIAL_PROGRESS);
+    setTrack(null);
     setPlaybackState('buffering');
     playAfterPrepare.current = true;
     setSelectedSongId(song.id);
   }, []);
 
   const togglePlayback = useCallback(() => {
-    setError(null);
-    if (playbackState === 'playing') {
-      player.pause();
-    } else {
-      player.play();
+    try {
+      setError(null);
+      if (playbackState === 'playing') {
+        player.pause();
+      } else {
+        player.play();
+      }
+    } catch (commandError) {
+      setError(toPlayerCommandError(commandError, player.isAvailable));
     }
   }, [playbackState, player]);
 
@@ -192,14 +215,43 @@ export function CatalogScreen({
     (deltaMs: number) => {
       const lastPosition =
         progress.durationMs >= 0 ? progress.durationMs : Infinity;
-      player.seekTo(
-        Math.max(0, Math.min(lastPosition, progress.positionMs + deltaMs)),
-      );
+      try {
+        player.seekTo(
+          Math.max(0, Math.min(lastPosition, progress.positionMs + deltaMs)),
+        );
+      } catch (commandError) {
+        setError(toPlayerCommandError(commandError, player.isAvailable));
+      }
     },
     [player, progress.durationMs, progress.positionMs],
   );
 
-  const controlsDisabled = catalogLoading || selectedSong == null;
+  const retryPlayback = useCallback(() => {
+    if (!selectedSong || !player.isAvailable) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setPlaybackState('buffering');
+
+      if (error?.recoverable) {
+        player.play();
+      } else {
+        player.prepare(
+          buildDashManifestUrl(selectedSong.storageLocation),
+          metadataFor(selectedSong),
+        );
+        player.play();
+      }
+    } catch (commandError) {
+      setPlaybackState('idle');
+      setError(toPlayerCommandError(commandError, player.isAvailable));
+    }
+  }, [error, player, selectedSong]);
+
+  const controlsDisabled =
+    catalogLoading || selectedSong == null || !player.isAvailable;
   const status = playbackStatus(playbackState, error);
 
   return (
@@ -283,12 +335,37 @@ export function CatalogScreen({
         </View>
 
         {error ? (
-          <Text accessibilityRole="alert" style={styles.errorMessage}>
-            {error.message}
-          </Text>
+          <View>
+            <Text accessibilityRole="alert" style={styles.errorMessage}>
+              {error.message}
+            </Text>
+            {error.recoverable && selectedSong && player.isAvailable ? (
+              <Pressable
+                accessibilityLabel="Retry playback"
+                accessibilityRole="button"
+                onPress={retryPlayback}
+                style={({ pressed }) => [
+                  styles.retryButton,
+                  pressed ? styles.pressed : null,
+                ]}
+              >
+                <Text style={styles.retryButtonText}>Retry playback</Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
 
-        <IntensityMeter value={intensity} />
+        <View style={styles.telemetryRow}>
+          <IntensityMeter value={intensity} />
+          {track ? (
+            <Text
+              accessibilityLabel="Selected audio track"
+              style={styles.trackText}
+            >
+              Track index {track.selectedIndex} / {track.availableCount}
+            </Text>
+          ) : null}
+        </View>
 
         <View style={styles.transport}>
           <TransportButton
@@ -321,9 +398,15 @@ export function CatalogScreen({
             onPress={() => seekBy(SEEK_STEP_MS)}
           />
         </View>
-        <Text accessibilityLabel="Playback position" style={styles.timeText}>
-          {formatTime(progress.positionMs)} / {formatTime(progress.durationMs)}
-        </Text>
+        <View style={styles.timeRow}>
+          <Text accessibilityLabel="Playback position" style={styles.timeText}>
+            {formatTime(progress.positionMs)} /{' '}
+            {formatTime(progress.durationMs)}
+          </Text>
+          <Text accessibilityLabel="Buffered position" style={styles.timeText}>
+            Buffered {formatTime(progress.bufferedMs)}
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -523,6 +606,24 @@ function formatTime(timeMs: number): string {
   return `${minutes}:${String(totalSeconds % 60).padStart(2, '0')}`;
 }
 
+function toPlayerCommandError(
+  error: unknown,
+  isAvailable: boolean,
+): PlayerErrorEvent {
+  const unavailable =
+    !isAvailable || error instanceof AdaptiveAudioUnavailableError;
+  return {
+    code: unavailable ? 'not_initialized' : 'lifecycle',
+    message:
+      error instanceof Error && error.message.length > 0
+        ? error.message
+        : unavailable
+        ? 'The audio player is unavailable.'
+        : 'The audio player command failed.',
+    recoverable: false,
+  };
+}
+
 const colors = {
   background: '#12100F',
   surface: '#211E1C',
@@ -696,6 +797,7 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: 12,
   },
+  telemetryRow: { marginTop: 14 },
   intensityRow: { marginTop: 14 },
   intensityLabelRow: {
     flexDirection: 'row',
@@ -746,10 +848,20 @@ const styles = StyleSheet.create({
   },
   secondaryControlText: { color: colors.text, fontSize: 13, fontWeight: '800' },
   timeText: {
-    marginTop: 2,
     color: colors.muted,
     fontSize: 10,
     textAlign: 'center',
+  },
+  timeRow: {
+    marginTop: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  trackText: {
+    marginTop: 6,
+    color: colors.muted,
+    fontSize: 10,
+    textAlign: 'right',
   },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.35 },
