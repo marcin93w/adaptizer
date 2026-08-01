@@ -34,6 +34,9 @@ class AdaptiveAudioEngineStateException(message: String) : IllegalStateException
 interface AdaptiveAudioListener {
     fun onPlaybackStateChanged(playbackState: Int)
     fun onPlayerError(error: PlaybackException)
+
+    /** Called when ExoPlayer starts or stops actively advancing playback. */
+    fun onIsPlayingChanged(isPlaying: Boolean) {}
 }
 
 /**
@@ -62,6 +65,10 @@ class AdaptiveAudioEngine(private val context: Context) {
         override fun onPlayerError(error: PlaybackException) {
             listeners.forEach { it.onPlayerError(error) }
         }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            listeners.forEach { it.onIsPlayingChanged(isPlaying) }
+        }
     }
 
     /**
@@ -86,6 +93,13 @@ class AdaptiveAudioEngine(private val context: Context) {
         get() {
             checkMainThread()
             return exoPlayer?.duration ?: C.TIME_UNSET
+        }
+
+    /** Current buffered position in milliseconds, or `0` before initialization / after release. */
+    val bufferedPositionMs: Long
+        get() {
+            checkMainThread()
+            return exoPlayer?.bufferedPosition ?: 0L
         }
 
     /** Read-only B04 seam for asserting the selected representation after Media3 preparation. */

@@ -35,7 +35,7 @@ One commit per migration step, in merge order.
 - `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 26 tests).
 - `cd Player && ./gradlew :adaptive-audio:test` -> BUILD SUCCESSFUL, 0 failures, JVM only.
 - `cd Player && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (legacy app).
-- `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell).
+- `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell plus the shared adaptive-audio bridge).
 
 Rollback is still a plain branch revert: every change so far is additive and the
 legacy app remains the production artifact.
@@ -45,11 +45,13 @@ legacy app remains the production artifact.
 ## 2. In progress
 
 The D01 and B04 changes that were previously mid-flight are now committed and verified.
-No migration-step changes remain uncommitted.
+A04 is implemented in the working tree and has passed its compile/build gates; it
+has not been committed yet.
 
 | Step | Uncommitted paths | State |
 | --- | --- | --- |
 | D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; no migration-step files remain uncommitted. |
+| A04 | `adaptive-audio/**`, `mobile/android/**`, `mobile/src/native/AdaptiveAudio.ts`, `mobile/src/specs/NativeAdaptiveAudio.ts` | Transport bridge implemented; shared engine dependency, main-thread dispatch and playback/progress/error event paths compile cleanly. Host teardown is wired in code; deterministic media harness/manual playback remains pending. Awaiting commit; UI remains on the C02 mock until C04. |
 
 The connected Android test gate reaches the runner, but the deterministic fixture
 preflight cannot connect to host loopback `10.0.2.2:8099` in this environment
@@ -60,12 +62,12 @@ with emulator-to-host networking available before signing off B04 completely.
 
 ## 3. Not started
 
-`C03`, `A04`, `B05`, `C04`, `D03`, `I01`, `I02`, `R01`, `R02`.
+`C03`, `B05`, `C04`, `D03`, `I01`, `I02`, `R01`, `R02`.
 
-Dependency order from the plan still applies. The next ready steps are **A04**
-(connect the real engine; needs A03 + B04), **C03** (connect the catalog API;
-needs C01 + C02), **B05** (physical-device input acceptance; needs B04), and
-**D03** (bridge contract/release evidence; needs A03 + D02).
+Dependency order from the plan still applies. The next ready steps are **C03**
+(connect the catalog API; needs C01 + C02), **B05** (enable Kotlin-owned
+adaptation; needs A04 + B04), and **D03** (bridge contract/release evidence;
+needs A04 + B04 + C04).
 
 ---
 

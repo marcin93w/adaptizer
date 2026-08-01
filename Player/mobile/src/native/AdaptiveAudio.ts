@@ -5,13 +5,13 @@
  * playback. It exists for two reasons:
  *
  * 1. Availability. `NativeAdaptiveAudio` is Android-only and is not
- *    registered at all until migration step A03 lands (A04 connects the
- *    real engine). `TurboModuleRegistry.getEnforcing` — which the raw
+ *    registered unless the Android host includes the A03 package (A04
+ *    connects the real engine). `TurboModuleRegistry.getEnforcing` — which the raw
  *    Codegen spec's default export uses — throws synchronously at import
  *    time if the module isn't registered. This facade never imports that
  *    default export; it resolves the module lazily via the non-throwing
  *    `TurboModuleRegistry.get`, so importing this file is always safe (on
- *    iOS, in tests, and before A03/A04 land), and callers get a typed
+ *    iOS and in tests), and callers get a typed
  *    `isAvailable` flag instead of a crash.
  * 2. Injectability. C02 and C04 must be able to substitute
  *    `src/native/mockAdaptiveAudio.ts` for this facade without patching
@@ -45,8 +45,8 @@ const NATIVE_MODULE_NAME = 'NativeAdaptiveAudio';
 
 /**
  * Thrown when a command is issued on a facade whose native module is not
- * available (`isAvailable === false`) — wrong platform (iOS), or this
- * repo state predates A03/A04. Callers should check `isAvailable` and
+ * available (`isAvailable === false`) — wrong platform (iOS), or an Android
+ * host that has not registered the package. Callers should check `isAvailable` and
  * present a typed "unavailable" state (per the migration plan's C04 step)
  * rather than let this propagate as an unhandled error.
  */
@@ -54,7 +54,7 @@ export class AdaptiveAudioUnavailableError extends Error {
   constructor() {
     super(
       `${NATIVE_MODULE_NAME} is not available. It is Android-only and is ` +
-        'not registered on this build until migration steps A03/A04 land. ' +
+        'not registered on this build. ' +
         'Check `isAvailable` before issuing commands.',
     );
     this.name = 'AdaptiveAudioUnavailableError';
@@ -71,7 +71,7 @@ export class AdaptiveAudioUnavailableError extends Error {
 export interface AdaptiveAudioFacade {
   /**
    * `true` once the native module is registered and resolvable. `false`
-   * on iOS, and on Android before migration steps A03/A04 land. Never
+   * on iOS, and on an Android host where the package is not registered. Never
    * throws.
    */
   readonly isAvailable: boolean;

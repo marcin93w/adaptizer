@@ -1,6 +1,45 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+
+dependencyResolutionManagement {
+    // React Native's Gradle plugin adds Maven Central to project repositories;
+    // allow that plugin-managed repository while keeping the shared module's
+    // repository declarations explicit below.
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        google()
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("libs") {
+            version("agp", "8.9.0-beta01")
+            version("kotlin", "2.1.20")
+            version("coreKtx", "1.10.1")
+            version("junit", "4.13.2")
+            version("junitVersion", "1.1.5")
+            version("testRunner", "1.5.2")
+            version("media3", "1.5.1")
+            version("coroutines", "1.7.3")
+            version("robolectric", "4.14.1")
+
+            plugin("android-library", "com.android.library").versionRef("agp")
+            plugin("kotlin-android", "org.jetbrains.kotlin.android").versionRef("kotlin")
+
+            library("androidx-core-ktx", "androidx.core", "core-ktx").versionRef("coreKtx")
+            library("junit", "junit", "junit").versionRef("junit")
+            library("androidx-junit", "androidx.test.ext", "junit").versionRef("junitVersion")
+            library("androidx-test-runner", "androidx.test", "runner").versionRef("testRunner")
+            library("androidx-media3-exoplayer", "androidx.media3", "media3-exoplayer").versionRef("media3")
+            library("androidx-media3-exoplayer-dash", "androidx.media3", "media3-exoplayer-dash").versionRef("media3")
+            library("kotlinx-coroutines-android", "org.jetbrains.kotlinx", "kotlinx-coroutines-android").versionRef("coroutines")
+            library("robolectric", "org.robolectric", "robolectric").versionRef("robolectric")
+        }
+    }
+}
+
 rootProject.name = 'com.adaptizerplayer.rn'
 include ':app'
+include ':adaptive-audio'
+project(':adaptive-audio').projectDir = file('../../adaptive-audio')
 includeBuild('../node_modules/@react-native/gradle-plugin')

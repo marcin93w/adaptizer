@@ -4,9 +4,9 @@
  * This is the machine-readable half of the frozen bridge contract in
  * `Player/docs/migration/bridge-contract.md` (migration step D01, Lane D,
  * approved under M01). It defines the exact commands and events; it does
- * not implement them. **No native implementation exists yet.** A03
- * scaffolds the Android package/registration and A04 connects the real
- * `AdaptiveAudioEngine`. Until then, looking this module up at runtime
+ * not implement them. A03 scaffolded the Android package/registration
+ * and A04 connects the real `AdaptiveAudioEngine`; B05/C04 will add
+ * adaptation and product integration. Looking this module up at runtime
  * (`TurboModuleRegistry.getEnforcing`, which this file uses, as Codegen
  * specs conventionally do) throws — application code must never import
  * this file's default export directly. Use the availability-checked
