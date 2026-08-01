@@ -1,4 +1,4 @@
-package com.adaptizerplayer
+package com.adaptizerplayer.adaptiveaudio.player
 
 import androidx.media3.common.C
 import androidx.media3.common.Timeline
