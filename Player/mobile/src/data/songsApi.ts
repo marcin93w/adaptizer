@@ -1,5 +1,5 @@
-import {config} from '../config';
-import type {Song, SongsRepository} from '../domain/song';
+import { config } from '../config';
+import type { Song, SongsRepository } from '../domain/song';
 
 /**
  * Stable error codes for the songs API. Deliberately aligned with the
@@ -31,7 +31,7 @@ export class SongsApiError extends Error {
   constructor(
     code: SongsApiErrorCode,
     message: string,
-    options?: {status?: number; cause?: unknown},
+    options?: { status?: number; cause?: unknown },
   ) {
     super(message);
     this.name = 'SongsApiError';
@@ -62,7 +62,7 @@ function isAbortError(error: unknown): boolean {
     typeof error === 'object' &&
     error !== null &&
     'name' in error &&
-    (error as {name?: unknown}).name === 'AbortError'
+    (error as { name?: unknown }).name === 'AbortError'
   );
 }
 
@@ -120,7 +120,7 @@ export class HttpSongsRepository implements SongsRepository {
 
     let response: Response;
     try {
-      response = await fetch(`${this.baseUrl}${SONGS_PATH}`, {signal});
+      response = await fetch(`${this.baseUrl}${SONGS_PATH}`, { signal });
     } catch (error) {
       if (isAbortError(error) || signal?.aborted) {
         throw new SongsFetchCancelledError();
@@ -134,7 +134,7 @@ export class HttpSongsRepository implements SongsRepository {
       throw new SongsApiError(
         'network',
         `Songs API responded with status ${response.status}`,
-        {status: response.status},
+        { status: response.status },
       );
     }
 
@@ -145,9 +145,13 @@ export class HttpSongsRepository implements SongsRepository {
       if (isAbortError(error) || signal?.aborted) {
         throw new SongsFetchCancelledError();
       }
-      throw new SongsApiError('unknown', 'Songs API response was not valid JSON', {
-        cause: error,
-      });
+      throw new SongsApiError(
+        'unknown',
+        'Songs API response was not valid JSON',
+        {
+          cause: error,
+        },
+      );
     }
 
     if (!Array.isArray(body)) {

@@ -1,4 +1,4 @@
-import {config} from '../../config';
+import { config } from '../../config';
 import {
   HttpSongsRepository,
   SongsApiError,
@@ -26,7 +26,8 @@ describe('HttpSongsRepository.fetchSongs', () => {
 
   beforeEach(() => {
     mockFetch = jest.fn();
-    (globalThis as {fetch: typeof fetch}).fetch = mockFetch as unknown as typeof fetch;
+    (globalThis as { fetch: typeof fetch }).fetch =
+      mockFetch as unknown as typeof fetch;
   });
 
   it('resolves with the mapped songs on a successful multi-song response', async () => {
@@ -115,7 +116,7 @@ describe('HttpSongsRepository.fetchSongs', () => {
   });
 
   it('rejects with a typed error when the body is a JSON object instead of an array', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(200, {not: 'an array'}));
+    mockFetch.mockResolvedValueOnce(jsonResponse(200, { not: 'an array' }));
 
     const repository = new HttpSongsRepository();
 

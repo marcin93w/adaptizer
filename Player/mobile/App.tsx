@@ -9,14 +9,27 @@
  */
 
 import React from 'react';
-import { StatusBar, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import {
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 
 // Keep in sync with mobile/android/app/build.gradle (applicationId / namespace).
 // This is a temporary debug-only application ID so the RN shell can be
 // installed side by side with the legacy com.adaptizerplayer app.
 const APPLICATION_ID = 'com.adaptizerplayer.rn';
 
-const reactNativeVersion = require('react-native/package.json').version as string;
+// Read from Platform.constants rather than deep-importing
+// react-native/package.json, which the RN ESLint config rejects.
+const { major, minor, patch, prerelease } =
+  Platform.constants.reactNativeVersion;
+const reactNativeVersion = `${major}.${minor}.${patch}${
+  prerelease ? `-${prerelease}` : ''
+}`;
 const appVersion = (require('./package.json').version as string) ?? 'unknown';
 const buildType = __DEV__ ? 'debug' : 'release';
 
@@ -27,14 +40,31 @@ function App(): React.JSX.Element {
     <View style={[styles.container, isDarkMode ? styles.dark : styles.light]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <View style={styles.content}>
-        <Text style={[styles.title, isDarkMode ? styles.textDark : styles.textLight]}>
+        <Text
+          style={[
+            styles.title,
+            isDarkMode ? styles.textDark : styles.textLight,
+          ]}
+        >
           Adaptizer Player
         </Text>
         <View style={styles.metadata}>
-          <MetadataRow label="React Native" value={reactNativeVersion} dark={isDarkMode} />
-          <MetadataRow label="App version" value={appVersion} dark={isDarkMode} />
+          <MetadataRow
+            label="React Native"
+            value={reactNativeVersion}
+            dark={isDarkMode}
+          />
+          <MetadataRow
+            label="App version"
+            value={appVersion}
+            dark={isDarkMode}
+          />
           <MetadataRow label="Build type" value={buildType} dark={isDarkMode} />
-          <MetadataRow label="Application ID" value={APPLICATION_ID} dark={isDarkMode} />
+          <MetadataRow
+            label="Application ID"
+            value={APPLICATION_ID}
+            dark={isDarkMode}
+          />
         </View>
       </View>
     </View>
@@ -52,8 +82,12 @@ function MetadataRow({
 }): React.JSX.Element {
   return (
     <View style={styles.row}>
-      <Text style={[styles.label, dark ? styles.textDark : styles.textLight]}>{label}</Text>
-      <Text style={[styles.value, dark ? styles.textDark : styles.textLight]}>{value}</Text>
+      <Text style={[styles.label, dark ? styles.textDark : styles.textLight]}>
+        {label}
+      </Text>
+      <Text style={[styles.value, dark ? styles.textDark : styles.textLight]}>
+        {value}
+      </Text>
     </View>
   );
 }
