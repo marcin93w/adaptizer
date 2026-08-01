@@ -30,14 +30,16 @@ One commit per migration step, in merge order.
 | C02 | `74ba566` | C | `npm run verify` green; 26 Jest tests, including 4 catalog component tests; no device or network required. |
 | A03 | `208c837` | A / D | `mobile/android :app:assembleDebug` BUILD SUCCESSFUL with Codegen/New Architecture; focused JS checks green. |
 | A04 | `53d4dfc` | A / B | Transport bridge and shared engine dependency landed; RN Android `assembleDebug` and legacy `assembleDebug` green. |
-| C03 | working tree | C | Repository-backed catalog, cancellation protection, empty/error/retry/refresh states and centralized DASH URL helper; `npm run verify` green with 31 Jest tests. |
+| C03 | `b881fdd` | C | Repository-backed catalog, cancellation protection, empty/error/retry/refresh states and centralized DASH URL helper; `npm run verify` green with 33 Jest tests after the C04 additions. |
 
 ### Current green baseline
 
-- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 31 tests).
+- `cd Player/mobile && npm run verify` -> exit 0 (format, lint at `--max-warnings=0`, typecheck, 33 tests).
 - `cd Player && ./gradlew :adaptive-audio:test` -> BUILD SUCCESSFUL, 0 failures, JVM only.
 - `cd Player && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (legacy app).
 - `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell plus the shared adaptive-audio bridge).
+- `cd Player/mobile/android && ./gradlew :app:compileDebugAndroidTestKotlin` -> BUILD SUCCESSFUL.
+- `cd Player/mobile/android && ./gradlew :app:connectedDebugAndroidTest` -> BUILD SUCCESSFUL, 5/5 on `Medium_Phone_API_35` with Metro running and `adb reverse tcp:8081 tcp:8081`.
 
 Rollback is still a plain branch revert: every change so far is additive and the
 legacy app remains the production artifact.
@@ -46,31 +48,36 @@ legacy app remains the production artifact.
 
 ## 2. In progress
 
-The A04 change is committed. C03 is implemented in the working tree and has passed
-the full mobile verification gate. B05 and C04 are implemented in the working tree;
-their automated compile/build gates are green, but native playback, physical sensor
-response and deterministic fixture playback still need device/emulator evidence.
+The A04, C03, B05 and C04 implementation changes are committed. D03 is now
+implemented and committed as `8c6b19b`; its host/module lifecycle suite is green on
+an API-35 emulator when the RN debug host is run with Metro. Native playback,
+physical sensor response and deterministic Media3 fixture playback still need
+their respective evidence.
 
 | Step | Uncommitted paths | State |
 | --- | --- | --- |
 | D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; JVM checks are green, while the connected fixture preflight remains blocked by emulator-to-host networking. |
-| B05 | `adaptive-audio/**`, `mobile/android/app/src/main/java/com/adaptizerplayer/rn/adaptiveaudio/NativeAdaptiveAudioModule.kt` | Kotlin initializes/releases native inputs, routes Adaptizer decisions to the native selector, and emits typed intensity/track events. `:adaptive-audio:test` and RN Android `assembleDebug` are green; physical shake and connected fixture checks remain pending. |
-| C04 | `mobile/App.tsx`, `mobile/__tests__/App.test.tsx` | Production defaults use the availability-safe real facade; repository/player injection keeps tests deterministic. `npm run verify` and RN Android `assembleDebug` are green; live prepare/play/pause/seek remains pending. |
+| B05 | None | Kotlin initializes/releases native inputs, routes Adaptizer decisions to the native selector, and emits typed intensity/track events. JVM tests and Android builds are green; physical shake, live playback and connected fixture checks remain pending. |
+| C04 | None | The real availability-safe facade is the production default; the screen wires transport, progress, intensity, track telemetry, recoverable retry and unavailable-module states while preserving injected mocks. `npm run verify` is green with 33 tests; live prepare/play/pause/seek remains pending. |
+| D03 | None | Added Android host launch/recreation, module registration/idempotent invalidation and deterministic Adaptizer-input instrumentation tests. `:app:compileDebugAndroidTestKotlin` and `:app:connectedDebugAndroidTest` are green (5/5 with Metro); physical sensor checks remain manual. |
 
 The connected Android test gate reaches the runner, but the deterministic fixture
 preflight cannot connect to host loopback `10.0.2.2:8099` in this environment
 (`SocketException: EPERM`). Re-run `:adaptive-audio:connectedDebugAndroidTest`
 with emulator-to-host networking available before signing off B04 completely.
+The D03 RN host tests additionally require Metro for the debug APK; the verified
+local command was `npm start -- --reset-cache`, `adb reverse tcp:8081 tcp:8081`,
+then `:app:connectedDebugAndroidTest`.
 
 ---
 
 ## 3. Not started
 
-`D03`, `I01`, `I02`, `R01`, `R02`.
+`I01`, `I02`, `R01`, `R02`.
 
-Dependency order from the plan still applies. **D03** is the next implementation
-step after C04; it needs Android end-to-end/lifecycle coverage and can reuse the
-existing deterministic fixture once emulator-to-host networking is available.
+Dependency order from the plan still applies. **I01** is now the next implementation
+step after B05, C04 and D03. It must close parity gaps without claiming the still-
+blocked fixture, physical-sensor or production-release evidence as complete.
 
 ---
 
