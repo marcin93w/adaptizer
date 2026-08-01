@@ -88,6 +88,13 @@ class AdaptiveAudioEngine(private val context: Context) {
             return exoPlayer?.duration ?: C.TIME_UNSET
         }
 
+    /** Read-only B04 seam for asserting the selected representation after Media3 preparation. */
+    val selectedTrackIndex: Int?
+        get() {
+            checkMainThread()
+            return trackSelector?.currentSelectedIndex()
+        }
+
     /**
      * Builds the [ExoPlayer] with an [AdaptizerTrackSelector] seeded at [initialTrackIndex] -
      * mirroring the legacy `MainActivity`, which computed the intensity synchronously and built
