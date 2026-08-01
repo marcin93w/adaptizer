@@ -26,7 +26,7 @@ One commit per migration step, in merge order.
 | B03 | `c8311af` | B | `:adaptive-audio:test` 36/36 green (14 existing + 22 new Robolectric); `assembleDebug` green. |
 | A02 | `5da146e` | A | `npm run verify` exits 0; each gate proven to fail on a deliberate violation (lint 1, typecheck 2, test 1). |
 | D01 | `02bfaec` | D | `npm run verify` green; 10 focused facade/mock Jest tests and Codegen type assertions green. |
-| B04 | `3a6987d` | B | `:adaptive-audio:test` BUILD SUCCESSFUL with 0 failures; deterministic instrumentation suite and opt-in live-CDN smoke test added. |
+| B04 | `3a6987d` + `42be4af` | B | JVM tests BUILD SUCCESSFUL with 0 failures; instrumentation runner dependency fixed; connected fixture preflight is blocked by emulator-to-host `10.0.2.2:8099` networking (`EPERM`). |
 | C02 | `74ba566` | C | `npm run verify` green; 26 Jest tests, including 4 catalog component tests; no device or network required. |
 | A03 | `208c837` | A / D | `mobile/android :app:assembleDebug` BUILD SUCCESSFUL with Codegen/New Architecture; focused JS checks green. |
 
@@ -51,9 +51,10 @@ No migration-step changes remain uncommitted.
 | --- | --- | --- |
 | D01 / B04 | None | Landed as `02bfaec` and `3a6987d`; no migration-step files remain uncommitted. |
 
-The connected Android test gate remains pending because the emulator was offline.
-Re-run `:adaptive-audio:connectedDebugAndroidTest` after restoring an online
-emulator before signing off B04 completely.
+The connected Android test gate reaches the runner, but the deterministic fixture
+preflight cannot connect to host loopback `10.0.2.2:8099` in this environment
+(`SocketException: EPERM`). Re-run `:adaptive-audio:connectedDebugAndroidTest`
+with emulator-to-host networking available before signing off B04 completely.
 
 ---
 
