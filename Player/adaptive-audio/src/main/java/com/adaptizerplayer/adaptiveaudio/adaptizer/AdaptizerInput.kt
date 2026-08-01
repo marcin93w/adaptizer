@@ -1,4 +1,4 @@
-package com.adaptizerplayer.adaptizer
+package com.adaptizerplayer.adaptiveaudio.adaptizer
 
 interface AdaptizerInput {
     fun getCurrentValue(): Int

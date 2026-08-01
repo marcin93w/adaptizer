@@ -15,10 +15,10 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.adaptizerplayer.adaptizer.Adaptizer
-import com.adaptizerplayer.adaptizer.AdaptizerInput
-import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
-import com.adaptizerplayer.adaptizer.inputs.VolumeInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.Adaptizer
+import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.AccelerometerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.VolumeInput
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {

@@ -1,10 +1,7 @@
-package com.adaptizerplayer.adaptizer
+package com.adaptizerplayer.adaptiveaudio.adaptizer
 
-import com.adaptizerplayer.adaptizer.inputs.AccelerometerInput
-import com.adaptizerplayer.adaptizer.inputs.VolumeInput
-
-class Adaptizer(private var volumeInput: VolumeInput,
-                private var accelerometerInput: AccelerometerInput) {
+class Adaptizer(private var volumeInput: AdaptizerInput,
+                private var accelerometerInput: AdaptizerInput) {
 
     private fun getState(): AdaptizerState {
         val volume = volumeInput.getCurrentValue()

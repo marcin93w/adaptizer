@@ -1,4 +1,4 @@
-package com.adaptizerplayer.adaptizer
+package com.adaptizerplayer.adaptiveaudio.adaptizer
 
 import kotlin.math.round
 

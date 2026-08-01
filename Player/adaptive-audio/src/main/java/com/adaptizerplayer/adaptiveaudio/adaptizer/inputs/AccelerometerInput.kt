@@ -1,11 +1,11 @@
-package com.adaptizerplayer.adaptizer.inputs
+package com.adaptizerplayer.adaptiveaudio.adaptizer.inputs
 
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import com.adaptizerplayer.adaptizer.AdaptizerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

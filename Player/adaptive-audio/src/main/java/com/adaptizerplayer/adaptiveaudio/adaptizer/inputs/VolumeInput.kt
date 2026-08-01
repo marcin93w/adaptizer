@@ -1,11 +1,11 @@
-package com.adaptizerplayer.adaptizer.inputs
+package com.adaptizerplayer.adaptiveaudio.adaptizer.inputs
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
-import com.adaptizerplayer.adaptizer.AdaptizerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
 
 class VolumeInput(private val context: Context) : AdaptizerInput {
     override fun getCurrentValue(): Int {
