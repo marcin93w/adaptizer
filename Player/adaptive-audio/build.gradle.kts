@@ -20,6 +20,12 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -29,4 +35,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.dash)
 
     testImplementation(libs.junit)
+    // Robolectric lets these tests exercise real Context/AudioManager/
+    // SensorManager behavior (receiver registration, stream volume shadows,
+    // sensor availability) on the plain JVM, without an emulator/device.
+    testImplementation(libs.robolectric)
 }

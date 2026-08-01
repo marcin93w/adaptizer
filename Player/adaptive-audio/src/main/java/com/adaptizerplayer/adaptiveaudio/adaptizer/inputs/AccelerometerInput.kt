@@ -9,6 +9,8 @@ import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -23,25 +25,61 @@ class AccelerometerInput(context: Context) : AdaptizerInput, SensorEventListener
     private val accelerometer: Sensor? =
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
+    /**
+     * True when this device reports an accelerometer sensor. Devices without
+     * one (some tablets/emulators/form factors) must not crash: initialize()
+     * and release() are safe no-ops for sensor registration in that case, and
+     * getCurrentValue() simply keeps returning 0 forever since onSensorChanged
+     * is never invoked.
+     */
+    val isAvailable: Boolean = accelerometer != null
+
     private var changeListener: () -> Unit = {}
     private var currentValue: Int = 0
 
     private var lastUpdateTime: Long = 0L
     private var throttleJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Main)
+
+    // Owned per initialize()/release() cycle rather than created once at
+    // construction time: release() cancels it outright (so nothing queued on
+    // it can run again), and initialize() creates a brand new one, so a
+    // subsequent initialize() after release() is not stuck launching
+    // coroutines onto a scope that was already torn down.
+    private var scope: CoroutineScope? = null
+
     private val throttleIntervalMs: Long = 2000
     private val stopDelayMs: Long = 2000
     private var isThrottling: Boolean = false
 
+    // Tracks whether the sensor listener/scope are currently registered, so
+    // initialize() and release() are both idempotent.
+    private var isInitialized: Boolean = false
+
     override fun initialize() {
+        if (isInitialized) {
+            // Already initialized - must not double-register the listener.
+            return
+        }
+        isInitialized = true
+        scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         accelerometer?.also { sensor ->
             sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
 
     override fun release() {
+        if (!isInitialized) {
+            // Not initialized (either never initialized, or already
+            // released) - nothing to tear down, and must not throw.
+            return
+        }
+        isInitialized = false
         sensorManager.unregisterListener(this)
         isThrottling = false
+        throttleJob?.cancel()
+        throttleJob = null
+        scope?.cancel()
+        scope = null
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -66,7 +104,8 @@ class AccelerometerInput(context: Context) : AdaptizerInput, SensorEventListener
     }
 
     private fun startThrottling() {
-        throttleJob = scope.launch {
+        val activeScope = scope ?: return
+        throttleJob = activeScope.launch {
             while (isThrottling) {
                 val now = System.currentTimeMillis()
                 if (now - lastUpdateTime > stopDelayMs) {
@@ -90,4 +129,13 @@ class AccelerometerInput(context: Context) : AdaptizerInput, SensorEventListener
     override fun registerChangeListener(listener: () -> Unit) {
         changeListener = listener
     }
+
+    /**
+     * Internal test seam: whether the throttle coroutine is currently active.
+     * `internal` rather than `private` so JVM unit tests in this module (which
+     * cannot exercise real sensor hardware) can assert that release()
+     * promptly cancels the throttle job rather than leaving it running.
+     */
+    internal val isThrottleJobActive: Boolean
+        get() = throttleJob?.isActive == true
 }
