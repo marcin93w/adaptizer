@@ -1,140 +1,42 @@
 /**
- * Adaptizer Player - React Native shell
- *
- * A01: static placeholder screen only. Displays the app title and build
- * metadata so the scaffold can be verified end to end. Real UI arrives
- * in C02 - no player, sensor, networking or navigation code belongs here.
+ * Adaptizer Player - C02 catalog presentation backed by the D01 mock.
  *
  * @format
  */
 
-import React from 'react';
-import {
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import React, { useMemo } from 'react';
+import { CatalogScreen } from './src/ui/CatalogScreen';
+import type { Song } from './src/domain/song';
+import { createMockAdaptiveAudio } from './src/native/mockAdaptiveAudio';
 
-// Keep in sync with mobile/android/app/build.gradle (applicationId / namespace).
-// This is a temporary debug-only application ID so the RN shell can be
-// installed side by side with the legacy com.adaptizerplayer app.
-const APPLICATION_ID = 'com.adaptizerplayer.rn';
-
-// Read from Platform.constants rather than deep-importing
-// react-native/package.json, which the RN ESLint config rejects.
-const { major, minor, patch, prerelease } =
-  Platform.constants.reactNativeVersion;
-const reactNativeVersion = `${major}.${minor}.${patch}${
-  prerelease ? `-${prerelease}` : ''
-}`;
-const appVersion = (require('./package.json').version as string) ?? 'unknown';
-const buildType = __DEV__ ? 'debug' : 'release';
+const DEMO_SONGS: readonly Song[] = [
+  {
+    id: 1,
+    author: 'The Adaptizers',
+    album: 'Motion',
+    name: 'Signal in Motion',
+    storageLocation: 'mock://catalog/signal-in-motion',
+  },
+  {
+    id: 2,
+    author: 'Pulse Assembly',
+    album: 'Ten Levels',
+    name: 'Orange Horizon',
+    storageLocation: 'mock://catalog/orange-horizon',
+  },
+  {
+    id: 3,
+    author: 'Dynamic Range',
+    album: 'Accelerate',
+    name: 'Shake the Room',
+    storageLocation: 'mock://catalog/shake-the-room',
+  },
+];
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const player = useMemo(() => createMockAdaptiveAudio(), []);
 
-  return (
-    <View style={[styles.container, isDarkMode ? styles.dark : styles.light]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <View style={styles.content}>
-        <Text
-          style={[
-            styles.title,
-            isDarkMode ? styles.textDark : styles.textLight,
-          ]}
-        >
-          Adaptizer Player
-        </Text>
-        <View style={styles.metadata}>
-          <MetadataRow
-            label="React Native"
-            value={reactNativeVersion}
-            dark={isDarkMode}
-          />
-          <MetadataRow
-            label="App version"
-            value={appVersion}
-            dark={isDarkMode}
-          />
-          <MetadataRow label="Build type" value={buildType} dark={isDarkMode} />
-          <MetadataRow
-            label="Application ID"
-            value={APPLICATION_ID}
-            dark={isDarkMode}
-          />
-        </View>
-      </View>
-    </View>
-  );
+  return <CatalogScreen songs={DEMO_SONGS} player={player} />;
 }
-
-function MetadataRow({
-  label,
-  value,
-  dark,
-}: {
-  label: string;
-  value: string;
-  dark: boolean;
-}): React.JSX.Element {
-  return (
-    <View style={styles.row}>
-      <Text style={[styles.label, dark ? styles.textDark : styles.textLight]}>
-        {label}
-      </Text>
-      <Text style={[styles.value, dark ? styles.textDark : styles.textLight]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  light: {
-    backgroundColor: '#ffffff',
-  },
-  dark: {
-    backgroundColor: '#121212',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 32,
-  },
-  metadata: {
-    alignSelf: 'stretch',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  label: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  textLight: {
-    color: '#111111',
-  },
-  textDark: {
-    color: '#f2f2f2',
-  },
-});
 
 export default App;
