@@ -63,6 +63,12 @@ describe('CatalogScreen', () => {
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Refresh songs' }),
     ).toBeDefined();
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Player status: Idle' }),
+    ).toBeDefined();
+    expect(JSON.stringify(renderer.toJSON())).toContain(
+      'The Adaptizers - Signal in Motion',
+    );
     expect(player.prepareCalls).toEqual([
       {
         sourceUri: buildDashManifestUrl(SONGS[0].storageLocation),
@@ -248,7 +254,7 @@ describe('CatalogScreen', () => {
       });
     });
     expect(JSON.stringify(renderer.toJSON())).toContain(
-      'The catalog stream is unavailable.',
+      'Playback network error. Check your connection and try again.',
     );
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Player status: Error' }),
@@ -319,7 +325,7 @@ describe('CatalogScreen', () => {
       renderer!.root.findByProps({ accessibilityRole: 'alert' }),
     ).toBeDefined();
     expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'The audio player is unavailable.',
+      'Adaptive audio playback is unavailable on this device.',
     );
     expect(
       renderer!.root.findByProps({ accessibilityLabel: 'Play playback' }).props

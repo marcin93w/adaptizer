@@ -134,7 +134,7 @@ export function CatalogScreen({
     if (!player.isAvailable) {
       setError({
         code: 'not_initialized',
-        message: 'The audio player is unavailable.',
+        message: 'Adaptive audio playback is unavailable on this device.',
         recoverable: false,
       });
       return;
@@ -318,7 +318,9 @@ export function CatalogScreen({
           <View style={styles.nowPlayingCopy}>
             <Text style={styles.eyebrow}>NOW PLAYING</Text>
             <Text numberOfLines={1} style={styles.nowPlayingTitle}>
-              {selectedSong?.name ?? 'Choose a song'}
+              {selectedSong
+                ? `${selectedSong.author} - ${selectedSong.name}`
+                : 'Choose a song'}
             </Text>
             <Text numberOfLines={1} style={styles.nowPlayingArtist}>
               {selectedSong?.author ?? 'Your selection will appear here'}
@@ -337,7 +339,7 @@ export function CatalogScreen({
         {error ? (
           <View>
             <Text accessibilityRole="alert" style={styles.errorMessage}>
-              {error.message}
+              {playerErrorMessage(error)}
             </Text>
             {error.recoverable && selectedSong && player.isAvailable ? (
               <Pressable
@@ -587,7 +589,7 @@ function playbackStatus(
     return { label: 'Error' };
   }
   const labels: Record<PlaybackState, string> = {
-    idle: 'Loading',
+    idle: 'Idle',
     buffering: 'Buffering',
     ready: 'Ready',
     playing: 'Playing',
@@ -614,14 +616,35 @@ function toPlayerCommandError(
     !isAvailable || error instanceof AdaptiveAudioUnavailableError;
   return {
     code: unavailable ? 'not_initialized' : 'lifecycle',
-    message:
-      error instanceof Error && error.message.length > 0
-        ? error.message
-        : unavailable
-        ? 'The audio player is unavailable.'
-        : 'The audio player command failed.',
+    message: unavailable
+      ? 'Adaptive audio playback is unavailable on this device.'
+      : error instanceof Error && error.message.length > 0
+      ? error.message
+      : 'The audio player command failed.',
     recoverable: false,
   };
+}
+
+function playerErrorMessage(error: PlayerErrorEvent): string {
+  switch (error.code) {
+    case 'network':
+      return 'Playback network error. Check your connection and try again.';
+    case 'manifest':
+      return "This song's audio manifest is unavailable.";
+    case 'unsupported_track':
+      return 'This song has an unsupported audio track.';
+    case 'decoder':
+      return 'This device could not decode the audio.';
+    case 'not_initialized':
+      if (error.message.toLowerCase().includes('unavailable')) {
+        return 'Adaptive audio playback is unavailable on this device.';
+      }
+      return 'The audio player is not ready. Select a song and try again.';
+    case 'lifecycle':
+      return 'The audio player needs to be restarted. Select the song again.';
+    case 'unknown':
+      return error.message || 'The audio player encountered an unknown error.';
+  }
 }
 
 const colors = {
@@ -669,6 +692,10 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   refreshButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 15,
     paddingHorizontal: 11,
     paddingVertical: 6,
@@ -726,6 +753,10 @@ const styles = StyleSheet.create({
   },
   emptyGlyph: { color: colors.accent, fontSize: 38 },
   retryButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 16,
     borderRadius: 18,
     backgroundColor: colors.accent,
