@@ -40,6 +40,7 @@ One commit per migration step, in merge order.
 - `cd Player/mobile/android && ./gradlew assembleDebug` -> BUILD SUCCESSFUL (RN shell plus the shared adaptive-audio bridge).
 - `cd Player/mobile/android && ./gradlew :app:compileDebugAndroidTestKotlin` -> BUILD SUCCESSFUL.
 - `cd Player/mobile/android && ./gradlew :app:connectedDebugAndroidTest` -> BUILD SUCCESSFUL, 5/5 on `Medium_Phone_API_35` with Metro running and `adb reverse tcp:8081 tcp:8081`.
+- `cd Player/mobile/android && ./gradlew :app:processReleaseMainManifest` -> BUILD SUCCESSFUL; the merged release manifest resolves `android:usesCleartextTraffic="false"` (debug remains `true` only for Metro).
 
 Rollback is still a plain branch revert: every change so far is additive and the
 legacy app remains the production artifact.
@@ -60,6 +61,8 @@ their respective evidence.
 | B05 | None | Kotlin initializes/releases native inputs, routes Adaptizer decisions to the native selector, and emits typed intensity/track events. JVM tests and Android builds are green; physical shake, live playback and connected fixture checks remain pending. |
 | C04 | None | The real availability-safe facade is the production default; the screen wires transport, progress, intensity, track telemetry, recoverable retry and unavailable-module states while preserving injected mocks. `npm run verify` is green with 33 tests; live prepare/play/pause/seek remains pending. |
 | D03 | None | Added Android host launch/recreation, module registration/idempotent invalidation and deterministic Adaptizer-input instrumentation tests. `:app:compileDebugAndroidTestKotlin` and `:app:connectedDebugAndroidTest` are green (5/5 with Metro); physical sensor checks remain manual. |
+| I01 | None | The UI parity slice is committed as `499b632`: legacy now-playing title format, accurate idle status, user-facing player error guidance and 44dp retry/refresh targets. `npm run verify` remains green with 33 tests; full physical-device flow and live/audible playback are still pending. |
+| I02 | `mobile/android/app/build.gradle` | Started security hardening: debug cleartext is explicitly limited to Metro, while release cleartext is explicitly disabled. Release manifest processing resolved `android:usesCleartextTraffic="false"`; performance measurements and real-device resilience checks remain pending. |
 
 The connected Android test gate reaches the runner, but the deterministic fixture
 preflight cannot connect to host loopback `10.0.2.2:8099` in this environment
@@ -73,11 +76,13 @@ then `:app:connectedDebugAndroidTest`.
 
 ## 3. Not started
 
-`I01`, `I02`, `R01`, `R02`.
+`R01`, `R02`.
 
-Dependency order from the plan still applies. **I01** is now the next implementation
-step after B05, C04 and D03. It must close parity gaps without claiming the still-
-blocked fixture, physical-sensor or production-release evidence as complete.
+Dependency order from the plan still applies. **I02** is the next implementation
+step after the committed I01 UI slice. I01 remains in progress until the physical
+M00 flow and live/audible playback evidence are captured; neither I01 nor I02 may
+claim the fixture, physical-sensor, performance or production-release evidence as
+complete.
 
 ---
 
