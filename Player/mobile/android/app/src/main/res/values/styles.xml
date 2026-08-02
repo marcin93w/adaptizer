@@ -4,6 +4,9 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Edge-to-edge paints both system bars transparent, so this is what shows
+             behind them. Mirrors `colors.background` in src/ui/CatalogScreen.tsx. -->
+        <item name="android:windowBackground">#12100F</item>
     </style>
 
 </resources>
