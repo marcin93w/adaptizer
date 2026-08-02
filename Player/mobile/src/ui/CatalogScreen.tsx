@@ -270,7 +270,9 @@ export function CatalogScreen({
 
   return (
     <SafeAreaView accessibilityLabel="Adaptizer Player" style={styles.screen}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      {/* No `backgroundColor`: edge-to-edge ignores it. The Android theme's
+          `windowBackground` colours the status bar strip instead. */}
+      <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Image
           accessibilityLabel="Adaptizer Player"
