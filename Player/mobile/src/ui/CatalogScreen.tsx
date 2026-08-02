@@ -156,6 +156,31 @@ export function CatalogScreen({
     return () => subscriptions.forEach(subscription => subscription.remove());
   }, [player]);
 
+  const startSong = useCallback(
+    (song: Song, shouldStartPlayback: boolean) => {
+      setProgress(INITIAL_PROGRESS);
+      setTrack(null);
+
+      try {
+        player.prepare(
+          buildDashManifestUrl(song.storageLocation),
+          metadataFor(song),
+        );
+
+        // The first song is prepared but not started. Selecting a song is an
+        // explicit play action, so refreshes do not unexpectedly start
+        // playback.
+        if (shouldStartPlayback) {
+          player.play();
+        }
+      } catch (commandError) {
+        setPlaybackState('idle');
+        setError(toPlayerCommandError(commandError, player.isAvailable));
+      }
+    },
+    [player],
+  );
+
   useEffect(() => {
     if (
       catalogLoading ||
@@ -167,36 +192,25 @@ export function CatalogScreen({
     }
     const shouldStartPlayback = playAfterPrepare.current;
     playAfterPrepare.current = false;
+    startSong(selectedSong, shouldStartPlayback);
+  }, [catalogError, catalogLoading, player, selectedSong, startSong]);
 
-    setProgress(INITIAL_PROGRESS);
-    setTrack(null);
+  const selectSong = useCallback(
+    (song: Song) => {
+      setError(null);
+      setProgress(INITIAL_PROGRESS);
+      setTrack(null);
+      setPlaybackState('buffering');
 
-    try {
-      player.prepare(
-        buildDashManifestUrl(selectedSong.storageLocation),
-        metadataFor(selectedSong),
-      );
-
-      // The first song is prepared but not started. Selecting another song is
-      // an explicit play action, so refreshes do not unexpectedly start
-      // playback.
-      if (shouldStartPlayback) {
-        player.play();
+      const isCurrent = song.id === selectedSong?.id;
+      playAfterPrepare.current = !isCurrent;
+      setSelectedSongId(song.id);
+      if (isCurrent && player.isAvailable) {
+        startSong(song, true);
       }
-    } catch (commandError) {
-      setPlaybackState('idle');
-      setError(toPlayerCommandError(commandError, player.isAvailable));
-    }
-  }, [catalogError, catalogLoading, player, selectedSong]);
-
-  const selectSong = useCallback((song: Song) => {
-    setError(null);
-    setProgress(INITIAL_PROGRESS);
-    setTrack(null);
-    setPlaybackState('buffering');
-    playAfterPrepare.current = true;
-    setSelectedSongId(song.id);
-  }, []);
+    },
+    [player, selectedSong, startSong],
+  );
 
   const togglePlayback = useCallback(() => {
     try {
