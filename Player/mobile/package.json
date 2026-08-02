@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:device": "node scripts/run-device.js",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "lint": "eslint . --max-warnings=0",

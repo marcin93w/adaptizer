@@ -63,13 +63,55 @@ cd mobile
 npm install
 ```
 
-Run on Android (emulator running or device connected):
+### Run on a connected device (recommended)
+
+Use two terminals. First, start the Metro dev server and leave it running:
 
 ```powershell
-npm run android
+cd mobile
+npm start
 ```
 
-Or build a debug APK directly with Gradle:
+Then, in a second terminal, build, install and launch on the device:
+
+```powershell
+cd mobile
+npm run android:device
+```
+
+`android:device` runs `scripts/run-device.js`, which sets `JAVA_HOME`, picks the
+single ready ADB device, sets up `adb reverse` for Metro, runs
+`app:installDebug`, and launches the app. If more than one device is attached it
+stops and asks you to pick one:
+
+```powershell
+npm run android:device -- --device <serial>
+```
+
+Get serials with `adb devices -l`. `--port 8082` overrides the Metro port (it
+must match the port `npm start` is using).
+
+> **`npm run android` does not work in this environment.** The React Native CLI
+> shells out to the bare name `gradlew.bat`, which cmd.exe will not resolve from
+> the current directory, so the build fails with
+> `'gradlew.bat' is not recognized`. `npm run android:device` invokes the
+> wrapper by absolute path instead. A stale `offline` emulator in `adb devices`
+> is also enough to break the stock command; the script filters those out.
+
+### Manual equivalent
+
+The same steps by hand, if you need to run one of them in isolation:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:ANDROID_SERIAL = "<serial from adb devices -l>"
+adb reverse tcp:8081 tcp:8081
+cd mobile\android
+.\gradlew.bat app:installDebug -x lint -PreactNativeDevServerPort=8081
+adb shell monkey -p com.adaptizerplayer.rn -c android.intent.category.LAUNCHER 1
+```
+
+Or build a debug APK without installing it:
 
 ```powershell
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
