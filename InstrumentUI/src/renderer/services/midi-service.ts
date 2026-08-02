@@ -25,7 +25,7 @@ class MidiService {
 
   sendMidiMessage(controlNumber: number, midiValue: number) {
     if (this.midiOutput) {
-      this.midiOutput.send([0xB0, controlNumber, midiValue]);
+      this.midiOutput.send([0xB1, controlNumber, midiValue]);
       return;
     }
   }
