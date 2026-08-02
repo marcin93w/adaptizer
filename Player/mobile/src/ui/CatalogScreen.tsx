@@ -28,7 +28,6 @@ import type {
   PlaybackState,
   PlayerErrorEvent,
   ProgressEvent,
-  TrackChangedEvent,
 } from '../native/types';
 
 const albumArt = require('../assets/album_art.png');
@@ -59,7 +58,6 @@ export function CatalogScreen({
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
   const [progress, setProgress] = useState<ProgressEvent>(INITIAL_PROGRESS);
   const [intensity, setIntensity] = useState(0);
-  const [track, setTrack] = useState<TrackChangedEvent | null>(null);
   const [error, setError] = useState<PlayerErrorEvent | null>(null);
   const requestId = useRef(0);
   const abortController = useRef<AbortController | null>(null);
@@ -149,7 +147,6 @@ export function CatalogScreen({
       player.addIntensityChangedListener(event => {
         setIntensity(Math.max(0, Math.min(9, event.intensity)));
       }),
-      player.addTrackChangedListener(setTrack),
       player.addPlayerErrorListener(setError),
     ];
 
@@ -159,7 +156,6 @@ export function CatalogScreen({
   const startSong = useCallback(
     (song: Song, shouldStartPlayback: boolean) => {
       setProgress(INITIAL_PROGRESS);
-      setTrack(null);
 
       try {
         player.prepare(
@@ -199,7 +195,6 @@ export function CatalogScreen({
     (song: Song) => {
       setError(null);
       setProgress(INITIAL_PROGRESS);
-      setTrack(null);
       setPlaybackState('buffering');
 
       const isCurrent = song.id === selectedSong?.id;
@@ -373,14 +368,6 @@ export function CatalogScreen({
 
         <View style={styles.telemetryRow}>
           <IntensityMeter value={intensity} />
-          {track ? (
-            <Text
-              accessibilityLabel="Selected audio track"
-              style={styles.trackText}
-            >
-              Track index {track.selectedIndex} / {track.availableCount}
-            </Text>
-          ) : null}
         </View>
 
         <View style={styles.transport}>
@@ -901,12 +888,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  trackText: {
-    marginTop: 6,
-    color: colors.muted,
-    fontSize: 10,
-    textAlign: 'right',
   },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.35 },

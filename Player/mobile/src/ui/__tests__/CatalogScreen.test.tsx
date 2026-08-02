@@ -196,7 +196,7 @@ describe('CatalogScreen', () => {
     expect(player.playCallCount).toBe(0);
   });
 
-  it('renders progress, intensity, track events, and retries recoverable errors', async () => {
+  it('renders progress and intensity, and retries recoverable errors', async () => {
     const repository = createRepository(SONGS);
     const { renderer, player } = await renderScreen(repository);
 
@@ -211,11 +211,6 @@ describe('CatalogScreen', () => {
         volume: 6,
         acceleration: 8,
       });
-      player.emitTrackChanged({
-        requestedIndex: 7,
-        selectedIndex: 6,
-        availableCount: 10,
-      });
       player.emitPlaybackState({ state: 'playing', sourceId: '1' });
     });
     expect(
@@ -226,13 +221,6 @@ describe('CatalogScreen', () => {
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Pause playback' }),
     ).toBeDefined();
-    expect(
-      renderer.root.findByProps({ accessibilityLabel: 'Selected audio track' }),
-    ).toBeDefined();
-    expect(
-      renderer.root.findByProps({ accessibilityLabel: 'Selected audio track' })
-        .props.children,
-    ).toEqual(['Track index ', 6, ' / ', 10]);
     expect(
       renderer.root.findByProps({ accessibilityLabel: 'Playback position' })
         .props.children,
