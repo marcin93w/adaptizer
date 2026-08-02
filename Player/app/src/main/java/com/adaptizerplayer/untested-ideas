@@ -1,0 +1,71 @@
+    @UnstableApi
+    fun setAudioTrack(track: Int) {
+        val trackSelector = exoPlayer.trackSelector as DefaultTrackSelector
+        val mappedTrackInfo =
+            Assertions.checkNotNull(trackSelector.currentMappedTrackInfo)
+        val parameters = trackSelector.parameters
+        val builder = parameters.buildUpon()
+        for (rendererIndex in 0 until mappedTrackInfo.rendererCount) {
+            val trackType = mappedTrackInfo.getRendererType(rendererIndex)
+            if (trackType == C.TRACK_TYPE_AUDIO) {
+                builder.clearOverridesOfType(trackType).setRendererDisabled(
+                    rendererIndex,
+                    false
+                )
+                val groupIndex = track - 1
+                val override = TrackSelectionOverride(mappedTrackInfo.getTrackGroups(rendererIndex)[groupIndex], 0)
+                builder.addOverride(override)
+            }
+        }
+        trackSelector.setParameters(builder)
+    }
+
+    //        val rawResourceId = R.raw.adaptator_sample
+    //        val rawUri = Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).path(
+    //            rawResourceId.toString()
+    //        ).build()
+    //        val mediaItem = MediaItem.fromUri(rawUri)
+    //
+    //        val dataSourceFactory = DefaultDataSource.Factory(this)
+            // val mediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory)
+
+    //        val startUs1 = 0L
+    //        val endUs1 = 10_000_000L
+    //        val startUs2 = 10_000_000L
+    //        val endUs2 = 20_000_000L
+    //
+    //        val part1 = ClippingMediaSource(ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem), startUs1, endUs1)
+    //        val part2 = ClippingMediaSource(ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem), startUs2, endUs2)
+    //
+    //        val multiPeriodSource = ConcatenatingMediaSource2.Builder().add(part1).add(part2)
+    //            .build()
+
+    //        val extractorsFactory = DefaultExtractorsFactory()
+    //            .setConstantBitrateSeekingEnabled(true) // Ensures seeking works properly
+    //
+    //        // Create a concatenating media source with separate media items
+    //        val concatenatedSourceBuilder = ConcatenatingMediaSource2.Builder()
+    //
+    //        // Define different start positions (in milliseconds, NOT microseconds)
+    //        val startTimesMs = longArrayOf(0, 10000) // Start at 0s and then at 10s
+    //        val durationsMs = longArrayOf(10000, 10000) // First part: 5s, Second part: 10s
+    //
+    //        for (i in startTimesMs.indices) {
+    //            val clippingConfiguration = MediaItem.ClippingConfiguration.Builder()
+    //                .setStartPositionMs(startTimesMs[i])
+    //                .setEndPositionMs(startTimesMs[i] + durationsMs[i])
+    //                .build()
+    //            val mediaItem = MediaItem.Builder()
+    //                .setUri(rawUri)
+    //                .setClippingConfiguration(clippingConfiguration)
+    //                .setImageDurationMs(durationsMs[i])
+    //                .setMediaMetadata()
+    //                .build()
+    //
+    //            // Create ProgressiveMediaSource
+    //            val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+    //                .createMediaSource(mediaItem)
+    //
+    //            // Add to concatenating source
+    //            concatenatedSourceBuilder.add(mediaSource)
+    //        }

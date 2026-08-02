@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Android build output and generated project files (never hand-authored)
+android/build/
+android/app/build/
+android/app/.cxx/
+android/.gradle/
+android/.kotlin/
+android/**/build/
+*.iml
+
+# iOS build output and generated project files
+ios/build/
+ios/Pods/
+ios/**/*.xcodeproj/**
+ios/**/*.xcworkspace/**
+ios/**/*.xcassets/**
+
+# Coverage and license report output
+coverage/
+license-report.json
+
+# Lockfiles are machine-generated; formatting them is not useful
+package-lock.json

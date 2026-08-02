@@ -1,0 +1,195 @@
+name: Player mobile
+
+# React Native quality gates for Player/mobile.
+#
+# This is a monorepo (the git root is above Player/). Sibling projects
+# (Instrument/, InstrumentUI/) and the legacy Player/app Android app are
+# untouched by this workflow. The path filters below are the ONLY thing that
+# keeps this workflow from running on unrelated changes - keep them in sync
+# with any future restructuring of Player/mobile, Player/adaptive-audio or
+# Player/test-media.
+
+on:
+  pull_request:
+    paths:
+      - 'Player/mobile/**'
+      - 'Player/adaptive-audio/**'
+      - 'Player/test-media/**'
+      - '.github/workflows/player-mobile.yml'
+  push:
+    paths:
+      - 'Player/mobile/**'
+      - 'Player/adaptive-audio/**'
+      - 'Player/test-media/**'
+      - '.github/workflows/player-mobile.yml'
+
+# Cancel superseded runs on the same PR/branch to save CI minutes.
+concurrency:
+  group: player-mobile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: formatting, linting, type checking and unit tests. Mirrors
+  # `npm run verify` in Player/mobile (see Player/docs/quality-gates.md).
+  checks:
+    name: Format, lint, typecheck, test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Player/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: Player/mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: Player/mobile/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Check formatting (Prettier)
+        run: npm run format:check
+
+      - name: Lint (ESLint, zero warnings)
+        run: npm run lint
+
+      - name: Type check (tsc)
+        run: npm run typecheck
+
+      - name: Unit tests (Jest, CI mode + coverage)
+        run: npm run test:ci
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: Player/mobile/coverage
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Job 2: React Native Android host debug build. Does NOT touch Player/app
+  # (the legacy Android app) or the repo-root Gradle files - it only builds
+  # Player/mobile/android.
+  android-debug-build:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: Player/mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: Player/mobile/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        working-directory: Player/mobile
+        run: npm ci
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Installs the Android SDK cmdline-tools, accepts licenses and exports
+      # ANDROID_HOME / ANDROID_SDK_ROOT for later steps. Player/mobile/android
+      # has no committed local.properties (it is gitignored, same as any
+      # developer machine) - the Android Gradle Plugin resolves the SDK
+      # location from the ANDROID_HOME / ANDROID_SDK_ROOT environment
+      # variable when local.properties is absent, so no sdk.dir file needs to
+      # be generated here.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.1"
+
+      # Keyed on the hash of the Gradle build/config files themselves so a
+      # dependency version bump invalidates the cache instead of silently
+      # reusing stale artifacts. restore-keys only provide a partial warm
+      # start on a miss; they never substitute for an exact-key hit.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('Player/mobile/android/**/*.gradle*', 'Player/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: chmod gradlew
+        run: chmod +x Player/mobile/android/gradlew
+
+      - name: Assemble debug APK
+        working-directory: Player/mobile/android
+        # ANDROID_HOME / ANDROID_SDK_ROOT / JAVA_HOME are already exported
+        # into the job environment by the setup-android and setup-java steps
+        # above; no local.properties file is created or needed.
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-mobile-debug-apk
+          path: Player/mobile/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  # Job 3: dependency audit and license evidence. Deliberately non-blocking -
+  # failures here are uploaded as artifacts but do not fail the run.
+  audit:
+    name: Dependency audit and license report
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Player/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: Player/mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: Player/mobile/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: npm audit (informational only)
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Save npm audit JSON
+        if: always()
+        continue-on-error: true
+        run: npm audit --audit-level=high --json > npm-audit-report.json
+
+      - name: License report (informational only)
+        id: license
+        continue-on-error: true
+        run: npm run license-report
+
+      - name: Upload audit and license evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-dependency-evidence
+          path: |
+            Player/mobile/npm-audit-report.json
+            Player/mobile/license-report.json
+          if-no-files-found: warn
+          retention-days: 30

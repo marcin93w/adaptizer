@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AdaptizerPlayer"
 include(":app")
+include(":adaptive-audio")
