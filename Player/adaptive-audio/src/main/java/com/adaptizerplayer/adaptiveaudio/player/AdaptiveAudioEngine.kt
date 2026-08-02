@@ -189,14 +189,15 @@ class AdaptiveAudioEngine(private val context: Context) {
         listeners.remove(listener)
     }
 
-    /** Releases the underlying player. Idempotent: safe to call multiple times. */
+    /**
+     * Releases the underlying player. Idempotent: safe to call multiple times.
+     */
     fun release() {
         checkMainThread()
         exoPlayer?.removeListener(playerListener)
         exoPlayer?.release()
         exoPlayer = null
         trackSelector = null
-        listeners.clear()
         released = true
     }
 

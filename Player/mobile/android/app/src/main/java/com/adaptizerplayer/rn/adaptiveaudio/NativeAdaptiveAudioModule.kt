@@ -200,7 +200,11 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   }
 
   override fun invalidate() {
-    onMain { releaseInternal(emitIdle = false) }
+    // Paired with the registration in init: without this the dead module (and
+    // its main-thread Handler) stays in the context's listener set and keeps
+    // receiving host callbacks for the life of the React context.
+    reactApplicationContext.removeLifecycleEventListener(this)
+    onMain { releaseInternal(emitIdle = false, permanent = true) }
     super.invalidate()
   }
 
@@ -274,7 +278,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     return true
   }
 
-  private fun releaseInternal(emitIdle: Boolean) {
+  private fun releaseInternal(emitIdle: Boolean, permanent: Boolean = false) {
     if (released) return
     val shouldEmitIdle = emitIdle && sourceId != null
     stopProgressUpdates()
@@ -288,7 +292,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     playRequested = false
     explicitlyPaused = false
     lastPlaybackState = null
-    released = true
+    released = permanent
     if (shouldEmitIdle) {
       emitOnPlaybackState(
           Arguments.createMap().apply {
