@@ -4,7 +4,7 @@ import type { Song, SongsRepository } from '../domain/song';
 /**
  * Stable error codes for the songs API. Deliberately aligned with the
  * overlapping subset of the native-module error taxonomy documented in
- * `Player/docs/migration/bridge-contract.md` ("network", "unknown") so
+ * `Player/docs/native-bridge-contract.md` ("network", "unknown") so
  * that a future unified error-presentation layer can treat both
  * vocabularies consistently. This module has no native-module errors
  * (`manifest`, `unsupported_track`, `decoder`, `lifecycle`,
@@ -15,9 +15,9 @@ export type SongsApiErrorCode = 'network' | 'unknown';
 /**
  * Typed error thrown by the songs API for every failure mode *except*
  * cancellation (see `SongsFetchCancelledError`). Carries a stable `code`
- * or `status` from `Player/docs/migration/bridge-contract.md`, and never
+ * or `status` from `Player/docs/native-bridge-contract.md`, and never
  * degrades a failure into an empty array — this is what fixes the legacy
- * defect recorded in `Player/docs/migration/M00-baseline.md` section 6.5,
+ * defect recorded in `Player/docs/adaptive-audio.md` section 7, issue 2,
  * where `SongsRepository.fetchSongs()` swallowed every exception and
  * returned `emptyList()`, making a network failure indistinguishable from
  * a genuinely empty catalog.
@@ -68,7 +68,7 @@ function isAbortError(error: unknown): boolean {
 
 /**
  * Validates that a raw JSON value has the shape of the wire-format Song
- * record documented in `Player/docs/migration/M00-baseline.md` section 5:
+ * record documented in `Player/docs/adaptive-audio.md` section 6:
  * `{ id: number, author: string, album: string, name: string, storage_location: string }`.
  * Returns the parsed domain `Song` (with `storageLocation` camelCased) or
  * `null` if the value does not match. Deliberately does not use a blind
@@ -103,7 +103,7 @@ function parseSong(value: unknown): Song | null {
 
 /**
  * Fetch-based implementation of `SongsRepository` against the songs
- * catalog API (`Player/docs/migration/M00-baseline.md` section 5,
+ * catalog API (`Player/docs/adaptive-audio.md` section 6,
  * `GET /` returning a JSON array).
  */
 export class HttpSongsRepository implements SongsRepository {

@@ -3,7 +3,7 @@
 #
 # Generates a deterministic, offline, ten-representation DASH audio fixture
 # under test-media/dash/, matching the production AdaptationSet shape
-# described in docs/migration/M00-baseline.md section 3 ("Manifest contract"):
+# described in docs/adaptive-audio.md section 4 ("Manifest contract"):
 # one audio AdaptationSet, ten WebM/Opus Representations, indices 0-9.
 #
 # Requires: ffmpeg (with --enable-libopus) and ffprobe on PATH.

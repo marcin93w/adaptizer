@@ -24,7 +24,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 
 /**
- * B05 native adaptation bridge for [AdaptiveAudioEngine].
+ * Native adaptation bridge for [AdaptiveAudioEngine].
  *
  * Commands may arrive on React Native's module queue, while Media3 must be
  * accessed from Android's main thread. Adaptizer and both device inputs are

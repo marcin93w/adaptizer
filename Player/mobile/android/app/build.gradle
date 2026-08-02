@@ -126,10 +126,10 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    // A04: the bridge consumes the same adaptive-audio library as the legacy app.
+    // The bridge consumes the same adaptive-audio library as the legacy app.
     implementation project(":adaptive-audio")
 
-    // D03 instrumentation tests exercise the RN host and module lifecycle on an
+    // Instrumentation tests exercise the RN host and module lifecycle on an
     // emulator. They intentionally do not add a production runtime dependency.
     androidTestImplementation "androidx.test:core:1.5.0"
     androidTestImplementation "androidx.test:runner:1.5.2"

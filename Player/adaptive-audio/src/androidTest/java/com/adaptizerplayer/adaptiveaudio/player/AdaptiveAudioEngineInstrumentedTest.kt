@@ -26,10 +26,10 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 
 /**
- * B04 characterization tests: lock down real Media3/ExoPlayer behavior of [AdaptiveAudioEngine]
- * against the deterministic D02 fixture (`test-media/`, docs at `test-media/README.md`) before it
- * is exposed to React Native. See docs/migration/M00-baseline.md sections 3 (manifest contract)
- * and 4 (queue invalidation) for the behavior these tests pin down.
+ * Characterization tests: lock down real Media3/ExoPlayer behavior of [AdaptiveAudioEngine]
+ * against the deterministic fixture (`test-media/`, docs at `test-media/README.md`). See
+ * docs/adaptive-audio.md sections 4 (manifest contract) and 5 (queue invalidation) for the
+ * behavior these tests pin down.
  *
  * Fixture access: these tests hit `test-media/serve.py` over real HTTP
  * (`http://10.0.2.2:8099`, `10.0.2.2` being the emulator's alias for the host loopback interface)
@@ -250,7 +250,8 @@ class AdaptiveAudioEngineInstrumentedTest {
     // ---------------------------------------------------------------------------------------
     // 5. Out-of-range handling
     //
-    // Before B04, these requests installed INDEX_UNSET into AdaptizerTrackSelection and could
+    // Before the index validation, these requests installed INDEX_UNSET into
+    // AdaptizerTrackSelection and could
     // later fail asynchronously inside Media3. The minimal hardening validates the fixed 0..9
     // contract before mutating selector state and returns a stable typed exception instead.
     // ---------------------------------------------------------------------------------------
@@ -296,12 +297,13 @@ class AdaptiveAudioEngineInstrumentedTest {
 
     /**
      * The important case: a structurally valid manifest whose audio AdaptationSet has only 3
-     * Representations, directly exercising the hard-coded ten-track assumption
-     * (docs/migration/M00-baseline.md section 3, Known defect 6.4 in that doc's numbering).
+     * Representations, directly exercising the ten-representation manifest contract
+     * (docs/adaptive-audio.md section 4).
      *
-     * B04 validates the count before constructing BaseTrackSelection, so Media3 reports a
-     * PlaybackException whose cause chain includes [AdaptiveAudioManifestException], rather than
-     * an incidental ArrayIndexOutOfBoundsException from TrackGroup.getFormat().
+     * [AdaptizerTrackSelector] validates the count before constructing BaseTrackSelection, so
+     * Media3 reports a PlaybackException whose cause chain includes
+     * [AdaptiveAudioManifestException], rather than an incidental
+     * ArrayIndexOutOfBoundsException from TrackGroup.getFormat().
      */
     @Test
     fun prepare_tooFewRepresentationsManifest_surfacesTypedPlayerError_notArrayIndexException() {

@@ -1,5 +1,5 @@
 /**
- * Adaptizer Player - C04 catalog and controls backed by the native facade.
+ * Adaptizer Player - catalog and controls backed by the native facade.
  *
  * @format
  */

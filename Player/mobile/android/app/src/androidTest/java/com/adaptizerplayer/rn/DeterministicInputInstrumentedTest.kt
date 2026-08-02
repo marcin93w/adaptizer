@@ -9,7 +9,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * D03 deterministic debug-input coverage.
+ * Deterministic debug-input coverage.
  *
  * Adaptizer exposes the existing AdaptizerInput interface, so this test uses
  * a test-only input implementation rather than physical sensors or hidden
@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
  * module observes before it forwards intensity and track events.
  */
 @RunWith(AndroidJUnit4::class)
-class D03DeterministicInputInstrumentedTest {
+class DeterministicInputInstrumentedTest {
   @Test
   fun inputChanges_emitDeterministicIntensityAndDebugOutput() {
     val volume = FakeInput(0)

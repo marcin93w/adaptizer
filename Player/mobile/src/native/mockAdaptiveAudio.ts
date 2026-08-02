@@ -2,16 +2,15 @@
  * Deterministic, dependency-free mock of `AdaptiveAudioFacade`
  * (`src/native/AdaptiveAudio.ts`).
  *
- * This is what C02 builds the catalog screen against (per the migration
- * plan: "Use the D01 mock module to drive loading, playing, paused,
- * buffering and error states") and what C04 substitutes in component
- * tests once the real facade exists. It implements the exact same
+ * This drives the catalog screen through loading, playing, paused,
+ * buffering and error states without a device, and is what component
+ * tests substitute for the real facade. It implements the exact same
  * `AdaptiveAudioFacade` interface as the TurboModule-backed facade, so
  * consuming code never needs to know which one it was given — injection
  * happens by passing/constructing this instead of `adaptiveAudio`, never
  * by patching a global or module registry.
  *
- * Design constraints (see migration plan D01 acceptance checks):
+ * Design constraints:
  *  - Requires no native module and no device: it never touches
  *    `TurboModuleRegistry` or any React Native native API.
  *  - Deterministic: it starts NO timers of its own. Every event
@@ -85,8 +84,8 @@ export interface MockAdaptiveAudio extends AdaptiveAudioFacade {
   // --- Test control --------------------------------------------------------
   /**
    * Toggles `isAvailable`. Defaults to `true`. Set to `false` to exercise
-   * the "module unavailable" path (C04's acceptance check) without a real
-   * iOS build or a pre-A03 Android tree.
+   * the "module unavailable" path without a real iOS build or an Android
+   * tree that has not registered the package.
    */
   setAvailable(available: boolean): void;
 

@@ -2,8 +2,8 @@ import { AdaptiveAudioUnavailableError, adaptiveAudio } from '../AdaptiveAudio';
 
 /**
  * The real, TurboModule-backed facade in a Jest environment where
- * `NativeAdaptiveAudio` is never registered (no device, no A03/A04 native
- * package yet). Importing `../AdaptiveAudio` must not throw - that is the
+ * `NativeAdaptiveAudio` is never registered (no device, no native package
+ * in the JS-only test environment). Importing `../AdaptiveAudio` must not throw - that is the
  * whole point of resolving the module via `TurboModuleRegistry.get`
  * rather than the Codegen spec's own `getEnforcing` default export - and
  * every caller gets a typed `isAvailable: false` plus a typed error

@@ -8,12 +8,12 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** D03 availability and native-module lifecycle checks without media or sensors. */
+/** Availability and native-module lifecycle checks without media or sensors. */
 @RunWith(AndroidJUnit4::class)
-class D03AdaptiveAudioAvailabilityInstrumentedTest {
+class AdaptiveAudioAvailabilityInstrumentedTest {
   @Test
   fun packageRegistersExpectedTurboModule() {
-    val (_, module) = D03TestSupport.newAdaptiveAudioModule()
+    val (_, module) = RnHostTestSupport.newAdaptiveAudioModule()
     val moduleInfo =
         AdaptiveAudioPackage()
             .getReactModuleInfoProvider()
@@ -23,15 +23,15 @@ class D03AdaptiveAudioAvailabilityInstrumentedTest {
     assertNotNull(moduleInfo)
     assertEquals(true, moduleInfo!!.isTurboModule)
 
-    D03TestSupport.onMain { module.invalidate() }
+    RnHostTestSupport.onMain { module.invalidate() }
   }
 
   @Test
   fun repeatedMountUnmountAndInvalidation_areIdempotent_withoutPhysicalSensors() {
     repeat(5) {
-      val (_, module) = D03TestSupport.newAdaptiveAudioModule()
+      val (_, module) = RnHostTestSupport.newAdaptiveAudioModule()
 
-      D03TestSupport.onMain {
+      RnHostTestSupport.onMain {
         module.onHostResume()
         module.onHostPause()
         module.onHostResume()

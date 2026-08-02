@@ -1,9 +1,9 @@
 /**
  * Public JavaScript entry point for the adaptive-audio native package.
  *
- * The implementation is intentionally injectable: screens can use the D01
- * mock while the native module is being scaffolded, and A04 can connect the
- * same facade to the Kotlin engine later without changing UI code.
+ * The implementation is intentionally injectable: screens can use the mock
+ * facade in tests and the TurboModule-backed one in the app, without any
+ * UI code knowing which it was given.
  */
 import { Platform } from 'react-native';
 import {
@@ -17,8 +17,7 @@ export type { AdaptiveAudioFacade };
 /**
  * Returns the user-facing fallback for a missing native module. Android can
  * be installed before the native package is registered; iOS is explicitly
- * unsupported for this Android-first migration until a separate AVFoundation
- * implementation is approved.
+ * unsupported until a separate AVFoundation implementation is approved.
  */
 export function adaptiveAudioUnavailableMessage(
   player: Pick<AdaptiveAudioFacade, 'isAvailable'> = adaptiveAudio,

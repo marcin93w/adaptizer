@@ -1,10 +1,9 @@
 # test-media
 
-Deterministic, offline DASH audio fixture for D02 of `REACT_NATIVE_MIGRATION_PLAN.md`.
-Lets later steps (starting with B04 characterization tests) exercise
-representation selection (`AdaptizerTrackSelection` /
-`AdaptizerTrackSelector`, see `docs/migration/M00-baseline.md` section 3)
-without depending on the production CDN.
+Deterministic, offline DASH audio fixture. It lets instrumentation tests
+exercise representation selection (`AdaptizerTrackSelection` /
+`AdaptizerTrackSelector`, see [`../docs/adaptive-audio.md`](../docs/adaptive-audio.md)
+section 4) without depending on the production CDN.
 
 ## Tooling used
 
@@ -186,9 +185,8 @@ None of these differences should affect whether Media3's DASH parser
 accepts the manifest or which code path it takes for track selection -
 they're either attribute-placement/casing differences the DASH XML schema
 tolerates, or (for `AudioChannelConfiguration`) an element Media3 also
-tolerates being absent on since it falls back to sensible defaults. This is
-called out explicitly per the task instructions so B04 can decide whether
-to assert on it.
+tolerates being absent on since it falls back to sensible defaults. They are
+listed so a test author can decide whether any of them is worth asserting on.
 
 ## Total size
 

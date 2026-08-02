@@ -17,7 +17,7 @@
  * `PlaybackState` in `src/native/types.ts` to `string` and re-running
  * `npx tsc --noEmit -p tsconfig.json` produced `TS2578` errors at every
  * `PlaybackState`-related assertion below; reverting made typecheck clean
- * again. See the D01 report for the exact observed output.
+ * again.
  */
 import type {
   AdaptiveAudioErrorCode,

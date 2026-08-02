@@ -19,15 +19,15 @@ import androidx.media3.exoplayer.dash.DashMediaSource
  * on an [AdaptiveAudioEngine] that has not yet been [AdaptiveAudioEngine.initialize]d, or that has
  * already been [AdaptiveAudioEngine.release]d. This is a typed replacement for the
  * NullPointerException that would otherwise result from touching a null/released ExoPlayer
- * instance; see docs/migration/bridge-contract.md's `lifecycle` / `not_initialized` error codes,
- * which a future bridge layer can map this onto.
+ * instance; see docs/native-bridge-contract.md's `lifecycle` / `not_initialized` error codes,
+ * which the bridge layer maps this onto.
  */
 class AdaptiveAudioEngineStateException(message: String) : IllegalStateException(message)
 
 /**
  * Observer for playback state and error events produced by the underlying player. This is new
  * capability relative to the legacy `MainActivity`, which never registered a `Player.Listener` at
- * all (see docs/migration/M00-baseline.md, Known defect 7). Registering zero listeners - i.e. a
+ * all (see docs/adaptive-audio.md section 7, known issue 4). Registering zero listeners - i.e. a
  * host that never calls [AdaptiveAudioEngine.addListener] - reproduces the legacy app's observable
  * behavior exactly.
  */
@@ -41,8 +41,8 @@ interface AdaptiveAudioListener {
 
 /**
  * Owns the Media3 [ExoPlayer] instance, the custom [AdaptizerTrackSelector] and DASH media-source
- * preparation described in docs/migration/M00-baseline.md sections 1, 3 and 4. This is the
- * `AdaptiveAudioEngine` referenced by docs/migration/bridge-contract.md; it has no React Native or
+ * preparation described in docs/adaptive-audio.md sections 4 and 5. This is the
+ * `AdaptiveAudioEngine` referenced by docs/native-bridge-contract.md; it has no React Native or
  * JS dependency of any kind, and exposes no `setIntensity()` / `selectTrack()` style API - track
  * selection is driven only by [changeTrack], called from Kotlin-side adaptation logic.
  *
@@ -102,7 +102,7 @@ class AdaptiveAudioEngine(private val context: Context) {
             return exoPlayer?.bufferedPosition ?: 0L
         }
 
-    /** Read-only B04 seam for asserting the selected representation after Media3 preparation. */
+    /** Read-only test seam for asserting the selected representation after Media3 preparation. */
     val selectedTrackIndex: Int?
         get() {
             checkMainThread()
@@ -127,7 +127,7 @@ class AdaptiveAudioEngine(private val context: Context) {
      * Builds the [ExoPlayer] with an [AdaptizerTrackSelector] seeded at [initialTrackIndex] -
      * mirroring the legacy `MainActivity`, which computed the intensity synchronously and built
      * `AdaptizerTrackSelector(adaptizer.getTrackIndex())` before constructing the player (see
-     * docs/migration/M00-baseline.md section 1, step 2). Idempotent: a second call while already
+     * the intensity formula in docs/adaptive-audio.md). Idempotent: a second call while already
      * initialized has no effect. Safe to call again after [release] to start a new session.
      */
     fun initialize(initialTrackIndex: Int) {
@@ -145,8 +145,7 @@ class AdaptiveAudioEngine(private val context: Context) {
     /**
      * Builds the DASH [MediaItem]/[DashMediaSource] for [sourceUri] using a
      * [DefaultHttpDataSource.Factory] and calls `setMediaSource` + `prepare`, exactly as the
-     * legacy `MainActivity.prepareSong` did (docs/migration/M00-baseline.md section 1, step 7).
-     * Does not start playback.
+     * legacy `MainActivity.prepareSong` did. Does not start playback.
      */
     fun prepare(sourceUri: String) {
         checkMainThread()

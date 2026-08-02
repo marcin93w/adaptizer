@@ -14,7 +14,7 @@ import com.adaptizerplayer.rn.adaptiveaudio.AdaptiveAudioPackage
 import com.adaptizerplayer.rn.adaptiveaudio.NativeAdaptiveAudioModule
 import com.facebook.react.turbomodule.core.interfaces.CallInvokerHolder
 
-internal object D03TestSupport {
+internal object RnHostTestSupport {
   fun application(): Application = ApplicationProvider.getApplicationContext()
 
   fun newAdaptiveAudioModule(): Pair<ReactApplicationContext, NativeAdaptiveAudioModule> {
@@ -46,7 +46,7 @@ internal object D03TestSupport {
     override fun getNativeModule(moduleName: String): NativeModule? = null
 
     override fun getCatalystInstance(): CatalystInstance =
-        error("D03 test context has no CatalystInstance")
+        error("Test context has no CatalystInstance")
 
     override fun hasActiveCatalystInstance(): Boolean = false
 

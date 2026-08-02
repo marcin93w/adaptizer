@@ -1,12 +1,10 @@
 /**
  * Codegen TurboModule specification for `NativeAdaptiveAudio`.
  *
- * This is the machine-readable half of the frozen bridge contract in
- * `Player/docs/migration/bridge-contract.md` (migration step D01, Lane D,
- * approved under M01). It defines the exact commands and events; it does
- * not implement them. A03 scaffolded the Android package/registration
- * and A04 connects the real `AdaptiveAudioEngine`; B05/C04 will add
- * adaptation and product integration. Looking this module up at runtime
+ * This is the machine-readable half of the bridge contract in
+ * `Player/docs/native-bridge-contract.md`. It defines the exact commands
+ * and events; the Kotlin implementation lives in the Android host's
+ * `NativeAdaptiveAudioModule`. Looking this module up at runtime
  * (`TurboModuleRegistry.getEnforcing`, which this file uses, as Codegen
  * specs conventionally do) throws — application code must never import
  * this file's default export directly. Use the availability-checked
@@ -36,7 +34,7 @@
  * Closed-set fields, modeled as `string` here on purpose:
  * The contract defines two closed string sets — `PlaybackState` (6
  * values) and the error-code taxonomy (7 values), see
- * `docs/migration/bridge-contract.md`. Both are represented as plain
+ * `docs/native-bridge-contract.md`. Both are represented as plain
  * `string` in this Codegen spec, NOT as a TypeScript union of string
  * literals, even though they are logically closed sets. This is a
  * deliberate simplification for the frozen wire contract: it keeps the
@@ -124,19 +122,20 @@ export interface Spec extends TurboModule {
 
   // Deliberately NOT defined here, and load-bearing: there is no
   // `setIntensity` command and no `selectTrack` command, and none is
-  // planned. Per `Player/docs/migration/bridge-contract.md` ("API
-  // constraint") and the migration plan's core guardrail, every
-  // adaptation decision (which DASH representation plays, and when) is
-  // made entirely inside Kotlin (`adaptive-audio/`), driven by
+  // planned. Per `Player/docs/native-bridge-contract.md` ("API
+  // constraint"), every adaptation decision (which DASH representation
+  // plays, and when) is made entirely inside Kotlin (`adaptive-audio/`),
+  // driven by
   // `VolumeInput`/`AccelerometerInput` and the
   // `Adaptizer`/`AdaptizerTrackSelector` pipeline. React Native only ever
   // *observes* adaptation outcomes through `onIntensityChanged` and
   // `onTrackChanged` below; it never *requests* a specific intensity or
   // track. Do not add either command to this spec — doing so would
-  // silently reopen an architecture decision that was already closed at
-  // M01. (Debug-only input overrides, if ever added, must stay out of
-  // this release Codegen spec entirely — see the contract's API
-  // constraint section.)
+  // silently reopen a closed architecture decision (see
+  // `Player/docs/adr/0001-react-native-shell-with-kotlin-adaptive-audio.md`).
+  // Debug-only input overrides, if ever added, must stay out of this
+  // release Codegen spec entirely — see the contract's API constraint
+  // section.
 
   // --- Events: Kotlin to JS -----------------------------------------------
   // Fired whenever the player's playback state changes.

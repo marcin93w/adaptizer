@@ -15,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * Focused JVM test for [AdaptizerTrackSelection.evaluateQueueSize]'s one-shot queue-invalidation
- * behavior (docs/migration/M00-baseline.md section 4, B04 requirement 4): after
+ * behavior (docs/adaptive-audio.md section 5): after
  * [AdaptizerTrackSelection.setSelectedTrack] (called from [AdaptizerTrackSelector.changeTrack]),
  * the very next [AdaptizerTrackSelection.evaluateQueueSize] call must return 0 exactly once, then
  * fall back to normal (`super`/[androidx.media3.exoplayer.trackselection.BaseTrackSelection])

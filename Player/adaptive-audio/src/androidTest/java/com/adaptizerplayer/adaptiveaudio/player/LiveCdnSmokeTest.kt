@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * B04 requirement 8: one opt-in smoke test against the *real* production manifest, kept out of
- * ordinary `connectedAndroidTest` runs.
+ * One opt-in smoke test against the *real* production manifest, kept out of ordinary
+ * `connectedAndroidTest` runs.
  *
  * Exclusion mechanism: [assumeOptedIn] reads the `runLiveCdnTests` instrumentation-runner
  * argument via [InstrumentationRegistry.getArguments] and calls `Assume.assumeTrue`. A plain

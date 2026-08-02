@@ -16,7 +16,7 @@ import org.robolectric.Shadows.shadowOf
 /**
  * Robolectric tests exercising VolumeInput against real (shadowed)
  * Context/AudioManager broadcast-receiver behavior on the JVM. These pin down
- * the B03 lifecycle fixes: receiver ownership, idempotent initialize()/
+ * the lifecycle contract: receiver ownership, idempotent initialize()/
  * release(), and registration-order independence with Adaptizer -- without
  * changing the volume normalization formula itself (see the dedicated
  * formula test below, which must keep passing unchanged).

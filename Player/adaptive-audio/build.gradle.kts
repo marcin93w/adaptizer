@@ -52,9 +52,10 @@ dependencies {
     // sensor availability) on the plain JVM, without an emulator/device.
     testImplementation(libs.robolectric)
 
-    // B04: instrumentation (device/emulator) tests characterizing real Media3/ExoPlayer behavior
-    // against the D02 DASH fixture - see src/androidTest and test-media/README.md. These need a
-    // real ExoPlayer + DashMediaSource + Looper, which Robolectric does not faithfully provide.
+    // Instrumentation (device/emulator) tests characterizing real Media3/ExoPlayer behavior
+    // against the deterministic DASH fixture - see src/androidTest and test-media/README.md.
+    // These need a real ExoPlayer + DashMediaSource + Looper, which Robolectric does not
+    // faithfully provide.
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.media3.exoplayer)

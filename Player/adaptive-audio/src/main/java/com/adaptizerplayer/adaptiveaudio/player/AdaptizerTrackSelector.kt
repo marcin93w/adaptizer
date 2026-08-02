@@ -84,7 +84,7 @@ class AdaptizerTrackSelector(private var trackIndex: Int) : MappingTrackSelector
         }
     }
 
-    /** Read-only B04 seam for asserting the selected representation after Media3 preparation. */
+    /** Read-only test seam for asserting the selected representation after Media3 preparation. */
     fun currentSelectedIndex(): Int? = trackSelection?.getSelectedIndex()
 
     private fun validateTrackIndex(index: Int) {

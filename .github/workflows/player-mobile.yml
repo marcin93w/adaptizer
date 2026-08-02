@@ -1,8 +1,8 @@
 name: Player mobile
 
-# React Native quality gates for Player/mobile (migration step A02).
+# React Native quality gates for Player/mobile.
 #
-# This is a monorepo (git root is C:\projects\mp5). Sibling projects
+# This is a monorepo (the git root is above Player/). Sibling projects
 # (Instrument/, InstrumentUI/) and the legacy Player/app Android app are
 # untouched by this workflow. The path filters below are the ONLY thing that
 # keeps this workflow from running on unrelated changes - keep them in sync
@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   # Job 1: formatting, linting, type checking and unit tests. Mirrors
-  # `npm run verify` in Player/mobile (see Player/docs/migration/local-checks.md).
+  # `npm run verify` in Player/mobile (see Player/docs/quality-gates.md).
   checks:
     name: Format, lint, typecheck, test
     runs-on: ubuntu-latest
@@ -146,9 +146,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Job 3: dependency audit and license evidence. Non-blocking (per the
-  # migration plan, A02 introduces these as evidence first, not a merge
-  # gate) - failures here are uploaded as artifacts but do not fail the run.
+  # Job 3: dependency audit and license evidence. Deliberately non-blocking -
+  # failures here are uploaded as artifacts but do not fail the run.
   audit:
     name: Dependency audit and license report
     runs-on: ubuntu-latest

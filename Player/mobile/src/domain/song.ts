@@ -2,7 +2,7 @@
  * Domain model for a catalog song.
  *
  * Mirrors the legacy wire model documented in
- * `Player/docs/migration/M00-baseline.md` section 5 (originally
+ * `Player/docs/adaptive-audio.md` section 6 (originally
  * `app/src/main/java/com/adaptizerplayer/SongsRepository.kt`), with the
  * wire field `storage_location` mapped to camelCase `storageLocation`.
  *
@@ -22,7 +22,7 @@ export interface Song {
  * Abstraction over "fetch the song catalog" so that consumers (UI, other
  * repositories) can depend on this interface rather than a concrete
  * networking implementation. This makes it possible to inject a fake
- * implementation in tests (see C02) without touching real network code.
+ * implementation in tests without touching real network code.
  */
 export interface SongsRepository {
   /**

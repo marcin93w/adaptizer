@@ -1,6 +1,6 @@
 /**
  * Hand-written, narrowed TypeScript types for the `NativeAdaptiveAudio`
- * bridge described in `Player/docs/migration/bridge-contract.md`.
+ * bridge described in `Player/docs/native-bridge-contract.md`.
  *
  * The Codegen spec (`src/specs/NativeAdaptiveAudio.ts`) necessarily
  * represents the two closed string sets below (`PlaybackState` and
@@ -9,12 +9,12 @@
  * exhaustive closed-union types the contract actually promises, and
  * `src/native/AdaptiveAudio.ts` is the single place that narrows every
  * incoming wire string into one of these types before it reaches typed
- * application code (C02/C04 and friends never see a bare `string`).
+ * application code — screens never see a bare `string`.
  */
 
 /**
  * Closed set of playback states.
- * `docs/migration/bridge-contract.md` "Playback states".
+ * `docs/native-bridge-contract.md` "Playback states".
  *
  * Transitions are reported via `onPlaybackState`; no state is skipped
  * silently (e.g. `idle` -> `playing` passes through `buffering` and/or
@@ -39,7 +39,7 @@ export const PLAYBACK_STATES: readonly PlaybackState[] = [
 ];
 
 /**
- * Stable error taxonomy. `docs/migration/bridge-contract.md`
+ * Stable error taxonomy. `docs/native-bridge-contract.md`
  * "Error taxonomy". `message` on `PlayerErrorEvent` is explicitly not
  * part of the stable contract; only `code` is stable and safe to branch
  * on.

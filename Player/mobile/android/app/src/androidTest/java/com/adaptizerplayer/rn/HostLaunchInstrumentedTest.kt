@@ -10,15 +10,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * D03 host smoke coverage.
+ * Android host smoke coverage.
  *
  * This deliberately verifies Android host lifecycle, not catalog/network
  * content. The React Native screen remains dependent on the JS bundle and
- * catalog endpoint; the B04 fixture preflight is the authoritative network
- * check and fails loudly when emulator-to-host networking is unavailable.
+ * catalog endpoint; the adaptive-audio fixture preflight (see
+ * `adaptive-audio/src/androidTest`) is the authoritative network check and
+ * fails loudly when emulator-to-host networking is unavailable.
  */
 @RunWith(AndroidJUnit4::class)
-class D03HostLaunchInstrumentedTest {
+class HostLaunchInstrumentedTest {
   @Test
   fun launcherIntent_resolvesToMainActivity_andActivityCanLaunch() {
     val target = InstrumentationRegistry.getInstrumentation().targetContext

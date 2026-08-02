@@ -19,7 +19,7 @@ import org.robolectric.util.ReflectionHelpers
 
 /**
  * Robolectric tests exercising AccelerometerInput against a real (shadowed)
- * SensorManager on the JVM. These pin down the B03 lifecycle fixes: an
+ * SensorManager on the JVM. These pin down the lifecycle contract: an
  * owned/cancellable coroutine scope, idempotent initialize()/release(), and
  * safe handling of devices with no accelerometer -- without changing the
  * acceleration normalization formula (see the dedicated formula test below,

@@ -5,15 +5,15 @@
  * playback. It exists for two reasons:
  *
  * 1. Availability. `NativeAdaptiveAudio` is Android-only and is not
- *    registered unless the Android host includes the A03 package (A04
- *    connects the real engine). `TurboModuleRegistry.getEnforcing` — which the raw
+ *    registered unless the Android host includes the `AdaptiveAudioPackage`.
+ *    `TurboModuleRegistry.getEnforcing` — which the raw
  *    Codegen spec's default export uses — throws synchronously at import
  *    time if the module isn't registered. This facade never imports that
  *    default export; it resolves the module lazily via the non-throwing
  *    `TurboModuleRegistry.get`, so importing this file is always safe (on
  *    iOS and in tests), and callers get a typed
  *    `isAvailable` flag instead of a crash.
- * 2. Injectability. C02 and C04 must be able to substitute
+ * 2. Injectability. Screens and tests must be able to substitute
  *    `src/native/mockAdaptiveAudio.ts` for this facade without patching
  *    any global or module registry. Both export the same
  *    `AdaptiveAudioFacade` interface; consumers should depend on that
@@ -46,9 +46,9 @@ const NATIVE_MODULE_NAME = 'NativeAdaptiveAudio';
 /**
  * Thrown when a command is issued on a facade whose native module is not
  * available (`isAvailable === false`) — wrong platform (iOS), or an Android
- * host that has not registered the package. Callers should check `isAvailable` and
- * present a typed "unavailable" state (per the migration plan's C04 step)
- * rather than let this propagate as an unhandled error.
+ * host that has not registered the package. Callers should check `isAvailable`
+ * and present a typed "unavailable" state rather than let this propagate as an
+ * unhandled error.
  */
 export class AdaptiveAudioUnavailableError extends Error {
   constructor() {
@@ -220,11 +220,10 @@ class NativeAdaptiveAudioFacade implements AdaptiveAudioFacade {
 }
 
 /**
- * The real, TurboModule-backed facade. Application code (C04) should
- * inject this by default and substitute
- * `src/native/mockAdaptiveAudio.ts`'s `createMockAdaptiveAudio()` in
- * tests/Storybook (C02) — never import `NativeAdaptiveAudio` from
- * `src/specs` directly.
+ * The real, TurboModule-backed facade. Application code should inject this
+ * by default and substitute `src/native/mockAdaptiveAudio.ts`'s
+ * `createMockAdaptiveAudio()` in tests/Storybook — never import
+ * `NativeAdaptiveAudio` from `src/specs` directly.
  */
 export const adaptiveAudio: AdaptiveAudioFacade =
   new NativeAdaptiveAudioFacade();
