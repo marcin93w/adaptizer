@@ -1,10 +1,13 @@
 import { app } from "electron";
 import { spawn } from "child_process";
-import { existsSync, rmSync, statSync } from "fs";
+import { closeSync, existsSync, openSync, rmSync, statSync } from "fs";
 import { join } from "path";
 
 const fileSizeCheckInterval = 2000;
 const renderingStartTimeout = 5 * 60 * 1000;
+// Ableton pauses writing while it loads plugins or buffers, so a short plateau is not the end of the render
+const renderedFileSettleTime = 6000;
+const renderingStallTimeout = 5 * 60 * 1000;
 
 export const runScript = (scriptName: string, args: string[]): Promise<string> => {
     const scriptPath = app.isPackaged
@@ -43,6 +46,7 @@ export class AbletonExporter {
     private async waitForRenderedFile(outputFile: string): Promise<void> {
         const renderingStartDeadline = Date.now() + renderingStartTimeout;
         let previousSize = -1;
+        let lastSizeChange = Date.now();
 
         while (true) {
             await new Promise(resolve => setTimeout(resolve, fileSizeCheckInterval));
@@ -56,11 +60,31 @@ export class AbletonExporter {
                 continue;
             }
 
-            // The file keeps growing while Ableton renders, so it is done once the size settles
-            if (size === previousSize) {
+            if (size !== previousSize) {
+                previousSize = size;
+                lastSizeChange = Date.now();
+                continue;
+            }
+
+            // The file stops growing when the render is done, so it is finished once the size held
+            // still for a while and Ableton closed the file
+            const settledFor = Date.now() - lastSizeChange;
+            if (settledFor >= renderedFileSettleTime && !this.isOpenForWriting(outputFile)) {
                 return;
             }
-            previousSize = size;
+            if (settledFor > renderingStallTimeout) {
+                throw new Error(`Ableton Live stopped writing ${outputFile} before finishing the render. Please check the export settings in Ableton Live.`);
+            }
+        }
+    }
+
+    // Ableton keeps the rendered file open until it is done with it, which blocks opening it for writing here
+    private isOpenForWriting(outputFile: string): boolean {
+        try {
+            closeSync(openSync(outputFile, "r+"));
+            return false;
+        } catch {
+            return true;
         }
     }
 }
