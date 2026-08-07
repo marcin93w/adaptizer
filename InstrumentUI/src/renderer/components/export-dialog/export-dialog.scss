@@ -18,6 +18,10 @@
     border-radius: 4px;
     padding: 20px;
     width: 500px;
+    // The buttons have to stay reachable when a script fails with a long error message
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
 }
 
 .export-title {
@@ -25,9 +29,11 @@
     margin-bottom: 20px;
     font-weight: bold;
     color: $accent-text-color;
+    flex-shrink: 0;
 }
 
 .export-setting {
+    flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -60,6 +66,11 @@
     margin: 20px 0;
     text-align: center;
     color: $accent-text-color;
+    // Script errors are multi-line and can be long, so they scroll instead of growing the dialog
+    min-height: 0;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 
     &.success {
         color: $brand-color;
@@ -76,6 +87,7 @@
     justify-content: flex-end;
     gap: 0.5rem;
     margin-top: 20px;
+    flex-shrink: 0;
 
     button {
         padding: 0.5rem 1rem;
