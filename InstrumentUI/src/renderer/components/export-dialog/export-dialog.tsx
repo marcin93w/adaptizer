@@ -21,7 +21,7 @@ const readStoredSettings = () => {
 export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }) => {
     const storedSettings = readStoredSettings();
     const [outputPath, setOutputPath] = React.useState<string>(storedSettings.outputPath ?? "");
-    const [bpm, setBpm] = React.useState<number>(storedSettings.bpm ?? 120);
+    const [bpm, setBpm] = React.useState<string>(String(storedSettings.bpm ?? 120));
     const [packagerPath, setPackagerPath] = React.useState<string>(storedSettings.packagerPath ?? "");
     const [exporter, setExporter] = React.useState<Exporter | null>(null);
     const [isExporting, setIsExporting] = React.useState(false);
@@ -31,6 +31,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     const [error, setError] = React.useState<string | null>(null);
 
     const isCompleted = progress?.stage === ExportStage.COMPLETED;
+
+    // The field is empty while the tempo is being retyped, so it is kept as text and parsed on export
+    const parsedBpm = parseInt(bpm, 10);
+    const isBpmValid = parsedBpm >= 1;
 
     const selectOutputPath = async () => {
         const selectedPath = await window.electronAPI.selectExportFolder();
@@ -47,7 +51,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     };
 
     const startExport = async () => {
-        const settings = { outputPath, bpm, packagerPath };
+        const settings = { outputPath, bpm: parsedBpm, packagerPath };
         localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 
         const newExporter = new Exporter(adaptizer);
@@ -116,7 +120,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
             <div className="export-setting">
                 <label>BPM: </label>
                 <input type="number" min={1} value={bpm} disabled={isExporting}
-                    onChange={(e) => setBpm(parseInt(e.target.value, 10))} />
+                    onChange={(e) => setBpm(e.target.value)} />
             </div>
             <div className="export-setting">
                 <label>Shaka packager: </label>
@@ -129,7 +133,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
                     ? <button onClick={cancelExport} disabled={isCancelling}>Cancel</button>
                     : <>
                         <button onClick={close}>Close</button>
-                        <button className="primary" onClick={startExport} disabled={!outputPath || !bpm || bpm < 1}>
+                        <button className="primary" onClick={startExport} disabled={!outputPath || !isBpmValid}>
                             {isCompleted || error ? "Export again" : "Export"}
                         </button>
                     </>}
