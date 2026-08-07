@@ -1,6 +1,6 @@
 import { app } from "electron";
 import { spawn } from "child_process";
-import { closeSync, existsSync, openSync, rmSync, statSync } from "fs";
+import { closeSync, openSync, rmSync, statSync } from "fs";
 import { join } from "path";
 
 const fileSizeCheckInterval = 2000;
@@ -70,7 +70,7 @@ export class AbletonExporter {
             await new Promise(resolve => setTimeout(resolve, fileSizeCheckInterval));
 
             // Ableton creates the file before it writes anything, so an empty file is not a started render
-            const size = existsSync(outputFile) ? statSync(outputFile).size : 0;
+            const size = statSync(outputFile, { throwIfNoEntry: false })?.size ?? 0;
             if (size === 0) {
                 if (Date.now() > renderingStartDeadline) {
                     throw new Error(`Ableton Live did not render ${outputFile}. Please check the export settings in Ableton Live.`);
