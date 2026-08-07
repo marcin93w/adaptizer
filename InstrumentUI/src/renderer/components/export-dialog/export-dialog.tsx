@@ -1,6 +1,7 @@
 import React from "react";
 import Adaptizer from "../../domain/adaptizer";
 import Exporter, { ExportProgress, ExportStage } from "../../domain/exporter";
+import { ExportSettingsDto } from "../../../shared/dtos";
 import "./export-dialog.scss";
 
 interface ExportDialogProps {
@@ -10,16 +11,19 @@ interface ExportDialogProps {
 
 const settingsStorageKey = "adaptizer.exportSettings";
 
-const readStoredSettings = () => {
+const readStoredSettings = (): Partial<ExportSettingsDto> => {
     try {
-        return JSON.parse(localStorage.getItem(settingsStorageKey) ?? "{}");
+        const stored = JSON.parse(localStorage.getItem(settingsStorageKey) ?? "{}");
+        // Anything else parses fine but has no fields to read, and null would throw on the first access
+        return stored !== null && typeof stored === "object" ? stored : {};
     } catch {
         return {};
     }
 };
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }) => {
-    const storedSettings = readStoredSettings();
+    // The stored settings only seed the fields, so they are read once instead of on every render
+    const [storedSettings] = React.useState(readStoredSettings);
     const [outputPath, setOutputPath] = React.useState<string>(storedSettings.outputPath ?? "");
     const [bpm, setBpm] = React.useState<string>(String(storedSettings.bpm ?? 120));
     const [packagerPath, setPackagerPath] = React.useState<string>(storedSettings.packagerPath ?? "");
