@@ -24,17 +24,31 @@ const readScriptError = (errorOutput: string, scriptName: string, exitCode: numb
         || `${scriptName} failed with exit code ${exitCode}.`;
 };
 
-export const runScript = (scriptName: string, args: string[]): Promise<string> => {
+export interface ScriptRun {
+    completed: Promise<string>;
+    stop: () => void;
+}
+
+export const runScript = (scriptName: string, args: string[]): ScriptRun => {
     const scriptPath = app.isPackaged
         ? join(process.resourcesPath, "scripts", scriptName)
         : join(__dirname, "scripts", scriptName);
 
-    return new Promise((resolve, reject) => {
+    let stop = () => { };
+
+    const completed = new Promise<string>((resolve, reject) => {
         // A console window would take the foreground, and the export script sends keys to whatever window is active.
         // Nothing can answer a prompt from there either, so stdin is closed and prompts fail instead of hanging the export.
         const powershell = spawn("powershell.exe",
             ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
             { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+
+        // The script starts ffmpeg and the packager, which outlive it when only it is killed
+        stop = () => {
+            if (powershell.exitCode === null && powershell.pid !== undefined) {
+                spawn("taskkill", ["/pid", powershell.pid.toString(), "/t", "/f"], { windowsHide: true });
+            }
+        };
 
         let output = "";
         let errorOutput = "";
@@ -50,6 +64,8 @@ export const runScript = (scriptName: string, args: string[]): Promise<string> =
             }
         });
     });
+
+    return { completed, stop: () => stop() };
 };
 
 export class AbletonExporter {
@@ -57,7 +73,7 @@ export class AbletonExporter {
         // A leftover file from a previous export would look like a finished render
         rmSync(outputFile, { force: true });
 
-        await runScript("ableton-export.ps1", ["-OutputFile", outputFile]);
+        await runScript("ableton-export.ps1", ["-OutputFile", outputFile]).completed;
         await this.waitForRenderedFile(outputFile);
     }
 

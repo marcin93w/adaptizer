@@ -27,6 +27,8 @@ class Exporter {
 
     cancel() {
         this._cancelled = true;
+        // Rendering stops between tracks, but the conversion only stops when its process does
+        window.electronAPI.cancelConversion();
     }
 
     async export(settings: ExportSettingsDto, onProgress: (progress: ExportProgress) => void): Promise<void> {

@@ -39,7 +39,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     React.useEffect(() => () => exporter.current?.cancel(), []);
 
     const isCompleted = progress?.stage === ExportStage.COMPLETED;
-    // The conversion is a single external step that runs to the end once it started
     const isConverting = progress?.stage === ExportStage.CONVERTING;
 
     // The field is empty while the tempo is being retyped, so it is kept as text and parsed on export
@@ -96,7 +95,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     const renderProgress = () => {
         // The track that was still rendering can fail on its way out, which is not what the user needs to hear
         if (isCancelling) {
-            return <div className="export-message">Cancelling after the track that is being rendered...</div>;
+            return <div className="export-message">
+                {isConverting ? "Cancelling the conversion..." : "Cancelling after the track that is being rendered..."}
+            </div>;
         }
         if (isCancelled) {
             return <div className="export-message">Export cancelled.</div>;
@@ -141,7 +142,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
             {renderProgress()}
             <div className="export-buttons">
                 {isExporting
-                    ? <button onClick={cancelExport} disabled={isCancelling || isConverting}>Cancel</button>
+                    ? <button onClick={cancelExport} disabled={isCancelling}>Cancel</button>
                     : <>
                         <button onClick={close}>Close</button>
                         <button className="primary" onClick={startExport} disabled={!outputPath || !isBpmValid}>

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
+  cancelConversionRequest,
   checkExportToolsRequest,
   convertToDashRequest,
   exportRequestedEvent,
@@ -22,6 +23,7 @@ declare global {
           exportTrack: (outputPath: string, trackIndex: number) => Promise<ExportResultDto>;
           checkExportTools: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
           convertToDash: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
+          cancelConversion: () => Promise<void>;
       }
   }
 }
@@ -44,5 +46,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportTrack: (outputPath: string, trackIndex: number) =>
     ipcRenderer.invoke(exportTrackRequest, { outputPath, trackIndex }),
   checkExportTools: (settings: ExportSettingsDto) => ipcRenderer.invoke(checkExportToolsRequest, settings),
-  convertToDash: (settings: ExportSettingsDto) => ipcRenderer.invoke(convertToDashRequest, settings)
+  convertToDash: (settings: ExportSettingsDto) => ipcRenderer.invoke(convertToDashRequest, settings),
+  cancelConversion: () => ipcRenderer.invoke(cancelConversionRequest)
 });
