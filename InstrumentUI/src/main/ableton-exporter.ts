@@ -30,10 +30,11 @@ export const runScript = (scriptName: string, args: string[]): Promise<string> =
         : join(__dirname, "scripts", scriptName);
 
     return new Promise((resolve, reject) => {
-        // A console window would take the foreground, and the export script sends keys to whatever window is active
+        // A console window would take the foreground, and the export script sends keys to whatever window is active.
+        // Nothing can answer a prompt from there either, so stdin is closed and prompts fail instead of hanging the export.
         const powershell = spawn("powershell.exe",
-            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
-            { windowsHide: true });
+            ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
+            { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
 
         let output = "";
         let errorOutput = "";
