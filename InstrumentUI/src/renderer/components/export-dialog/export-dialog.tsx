@@ -35,8 +35,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     const isConverting = progress?.stage === ExportStage.CONVERTING;
 
     // The field is empty while the tempo is being retyped, so it is kept as text and parsed on export
-    const parsedBpm = parseInt(bpm, 10);
-    const isBpmValid = parsedBpm >= 1;
+    const parsedBpm = parseFloat(bpm);
+    const isBpmValid = Number.isFinite(parsedBpm) && parsedBpm > 0;
 
     const selectOutputPath = async () => {
         const selectedPath = await window.electronAPI.selectExportFolder();
@@ -121,7 +121,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
             </div>
             <div className="export-setting">
                 <label>BPM: </label>
-                <input type="number" min={1} value={bpm} disabled={isExporting}
+                <input type="number" min={0} step="any" value={bpm} disabled={isExporting}
                     onChange={(e) => setBpm(e.target.value)} />
             </div>
             <div className="export-setting">

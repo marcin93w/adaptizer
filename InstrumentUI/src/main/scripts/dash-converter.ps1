@@ -2,7 +2,7 @@
 # instrument does with dash-converter.ps1.
 param (
   [Parameter(Mandatory = $true)][string]$ExportPath,
-  [Parameter(Mandatory = $true)][int]$Bpm,
+  [Parameter(Mandatory = $true)][double]$Bpm,
   [Parameter(Mandatory = $true)][int]$TrackCount,
   [string]$PackagerPath = "packager-win-x64.exe"
 )
