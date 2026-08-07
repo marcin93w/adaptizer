@@ -117,7 +117,14 @@ public static class NativeWindows {
 "@
 
 function Get-AbletonProcessId {
-  $process = Get-Process | Where-Object { $_.MainWindowTitle -match "Ableton Live" } | Select-Object -First 1
+  $process = Get-Process -Name "Ableton Live*" -ErrorAction SilentlyContinue |
+    Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } |
+    Select-Object -First 1
+
+  if (-not $process) {
+    $process = Get-Process | Where-Object { $_.MainWindowTitle -match "Ableton Live" } | Select-Object -First 1
+  }
+
   if (-not $process) {
     throw "Could not connect to Ableton Live. Please make sure that Ableton Live is running, a project is open and the Ableton window is not minimized."
   }
