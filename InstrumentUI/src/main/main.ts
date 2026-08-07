@@ -2,9 +2,11 @@ import { app, BrowserWindow } from "electron";
 import { createMenu } from "./menu";
 import { join } from "path";
 import { ProjecManager } from "./project-manager";
+import { ExportManager } from "./export-manager";
 
 let mainWindow: BrowserWindow | null = null;
 let projectManager: ProjecManager | null = null;
+let exportManager: ExportManager | null = null;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -17,6 +19,7 @@ const createWindow = () => {
   });
 
   projectManager = new ProjecManager(mainWindow);
+  exportManager = new ExportManager(mainWindow);
 
   mainWindow.loadFile("../renderer/index.html");
 
@@ -24,7 +27,7 @@ const createWindow = () => {
     mainWindow = null;
   });
 
-  createMenu(projectManager);
+  createMenu(projectManager, exportManager);
   mainWindow.webContents.openDevTools();
 }
 

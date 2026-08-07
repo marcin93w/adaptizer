@@ -1,2 +1,7 @@
 export const projectOpenedEvent: "projectOpened" = "projectOpened";
 export const projectUpdatedEvent: "projectUpdated" = "projectUpdated";
+export const exportRequestedEvent: "exportRequested" = "exportRequested";
+export const selectExportFolderRequest: "selectExportFolder" = "selectExportFolder";
+export const selectPackagerRequest: "selectPackager" = "selectPackager";
+export const exportTrackRequest: "exportTrack" = "exportTrack";
+export const convertToDashRequest: "convertToDash" = "convertToDash";
