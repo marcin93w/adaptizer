@@ -2,27 +2,31 @@
 
 Real-time listener context as MIDI input for music production.
 
-## For music producers
+Adaptizer maps *real-world listener context* — how the song is being listened to,
+reduced to an intensity metric — to MIDI CC messages in your DAW. You are free to
+use that input however you like to adapt your song to the listener's activity. It
+opens an entirely new dimension, one that connects the artist with the listener in
+a unique way.
 
-Adaptizer relies on MIDI protocol and works with any DAW.
+Once the song is ready, Adaptizer helps you export it in multiple variants, in a
+format ready to stream from the Adaptizer mobile app. The player app measures the
+listener's context on the device and smoothly switches to the matching variant
+while the song plays, so the music adapts to the situation it is heard in.
 
-### Windows
+Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a song
+currently supports Ableton Live only.
 
-Prerequisites:
-- Python 3
-- [LoopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html)
-- [FFmpeg](https://www.ffmpeg.org/download.html)
-- [Shaka packager](https://github.com/shaka-project/shaka-packager)
+## Components
 
+| Component | What it is |
+| --- | --- |
+| [InstrumentUI](InstrumentUI/README.md) | Desktop (Electron) editor for producers: configure the context → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
+| [Instrument](Instrument/README.md) | The original Python console instrument. Same job as InstrumentUI, driven by typed commands. |
+| [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and switches tracks in real time. |
+| [API](API/README.md) | Cloudflare Worker serving the songs catalog to the Player. Audio is served from an R2 bucket. |
 
-Setup:
-1. Add new loopback port in loopMIDI, use `Adaptizer` as a name.
-1. Update path of shaka packager executable in [dash-converter.ps1](Instrument/dash-converter.ps1) script.
+## Publishing a song
 
-Usage:
-1. Setup `Adaptizer` MIDI port as a MIDI remote in your DAW.
-1. Run 'python [main.py](Instrument/main.py)' to start Adaptizer.
-1. Add MIDI map for controls in your DAW (You can use `assign <controlTypeNumber>` to send test signal from Adaptizer).
-1. Configure controls in Adaptizer to map them to user context input (or use `load conf.adp` to import example configuration).
-1. Run `set INTENSITY <0-9>` to test your controls while playing song in DAW.
-1. When your song is ready, run `e <outputPath> <bpm>` to export in DASH format (only Ableton is supported for now).
+1. Map your controls and export the song with [InstrumentUI](InstrumentUI/README.md).
+2. Upload the export and add a catalog row — see [API](API/README.md).
+3. Play it in the [Player](Player/README.md).
