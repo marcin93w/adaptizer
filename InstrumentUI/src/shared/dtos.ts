@@ -22,3 +22,21 @@ export enum TransformType {
   LINEAR = "linear",
   REVERSED_LINEAR = "reversed-linear"
 }
+
+// One track is rendered per input value (0..9)
+export const exportTrackCount = 10;
+
+export interface ExportSettingsDto {
+  outputPath: string;
+  bpm: number;
+  packagerPath: string;
+}
+
+export interface ExportTrackDto {
+  outputPath: string;
+  trackIndex: number;
+}
+
+export interface ExportResultDto {
+  error: string | null;
+}

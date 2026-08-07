@@ -1,0 +1,126 @@
+@use "../../variables" as *;
+
+.export-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    // The knob value paints at z-index 100 in the same stacking context, so the overlay has to outrank it
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.export-dialog {
+    background-color: $element-background-color;
+    border: 3px solid $brand-color;
+    border-radius: 4px;
+    padding: 20px;
+    width: 500px;
+    // The buttons have to stay reachable when a script fails with a long error message
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+}
+
+.export-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: $accent-text-color;
+    flex-shrink: 0;
+}
+
+.export-setting {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 7px 0;
+
+    label {
+        flex-shrink: 0;
+    }
+
+    input {
+        background-color: $background-color;
+        color: $accent-text-color;
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        padding: 4px;
+        width: 80px;
+    }
+}
+
+.export-path {
+    flex-grow: 1;
+    color: $accent-text-color;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.export-message {
+    margin: 20px 0;
+    text-align: center;
+    color: $accent-text-color;
+    // Script errors are multi-line and can be long, so they scroll instead of growing the dialog
+    min-height: 0;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+
+    &.success {
+        color: $brand-color;
+    }
+
+    &.error {
+        color: #e74c3c;
+    }
+}
+
+.export-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 20px;
+    flex-shrink: 0;
+
+    button {
+        padding: 0.5rem 1rem;
+        background-color: $background-color;
+        color: $accent-text-color;
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &.primary {
+            background-color: $brand-color;
+            border-color: $brand-color;
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.5;
+        }
+    }
+}
+
+.export-setting button {
+    padding: 0.25rem 0.75rem;
+    background-color: $background-color;
+    color: $accent-text-color;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+}

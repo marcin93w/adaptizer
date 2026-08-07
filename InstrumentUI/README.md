@@ -15,6 +15,7 @@ InstrumentUI is the graphical counterpart of the Python CLI instrument in [Instr
 - **Audition live** — the big knob simulates the input value (0..9). Turning it recalculates every control and sends CC messages out of the `Adaptizer` MIDI port in real time, so you hear your DAW respond while the song is playing.
 - **Save / open projects** — configurations are stored as `.adz` files (`File → New / Open / Save Project`). See [sample.adz](sample.adz) for an example.
 - **MIDI port check** — if no output port named `Adaptizer` is found, a warning bar appears with a refresh button.
+- **Export the song** — `File → Export Ableton Project` renders one track per input value from Ableton Live and converts them into a DASH stream. See [Exporting a song](#exporting-a-song).
 
 Adaptizer relies on the MIDI protocol, so it works with any DAW.
 
@@ -48,7 +49,7 @@ Other scripts:
 | `npm run debug` | Same as `start`, with the renderer debugger on port 9222 |
 | `npm run build` | Build only (no Electron launch) |
 | `npm run dev-renderer` | Parcel dev server for the renderer, with hot reload |
-| `npm run package` | Package the app with electron-builder |
+| `npm run package` | Build and package the app with electron-builder |
 
 [launch.json](launch.json) contains VS Code configurations for debugging the main and renderer processes.
 
@@ -66,9 +67,10 @@ Other scripts:
 ```
 src/
   main/       Electron main process — window, application menu, .adz project load/save
+    scripts/     PowerShell scripts driving the Ableton export and the DASH conversion
   renderer/   React UI
-    components/  knob, per-control editor, MIDI connection warning
-    domain/      Project, Control, Adaptizer (input → CC value calculation)
+    components/  knob, per-control editor, MIDI connection warning, export dialog
+    domain/      Project, Control, Adaptizer (input → CC value calculation), Exporter
     services/    Web MIDI access and CC message sending
   shared/     DTOs and IPC event names shared by both processes
 ```
@@ -77,25 +79,23 @@ Built with Electron, React, TypeScript, Parcel and Sass. MIDI output goes throug
 
 ## Exporting a song
 
-Exporting a finished song to DASH format is **not yet available in InstrumentUI** — use the Python CLI instrument in [Instrument/](../Instrument) for that.
+When your song is ready, InstrumentUI can render it into a DASH stream — one track per input value (0..9), so the player can switch between them as the listener context changes. Only Ableton Live is supported for now.
 
-Additional prerequisites for the CLI:
+Additional prerequisites:
 
-- Python 3
-- [FFmpeg](https://www.ffmpeg.org/download.html)
+- [FFmpeg](https://www.ffmpeg.org/download.html) (available in the PATH)
 - [Shaka packager](https://github.com/shaka-project/shaka-packager)
-
-Setup:
-
-1. Update the path of the shaka packager executable in the [dash-converter.ps1](../Instrument/dash-converter.ps1) script.
-1. Install the Python dependencies: `pip install -r ../Instrument/requirements.txt`
 
 Usage:
 
-1. Run `python` [main.py](../Instrument/main.py) to start the CLI Adaptizer.
-1. Add a MIDI map for controls in your DAW (you can use `assign <controlTypeNumber>` to send a test signal from Adaptizer).
-1. Configure controls in Adaptizer to map them to user context input (or use `load conf.adp` to import an example configuration).
-1. Run `set INTENSITY <0-9>` to test your controls while playing the song in your DAW.
-1. When your song is ready, run `e <outputPath> <bpm>` to export in DASH format (only Ableton is supported for now).
+1. Open your song in Ableton Live and make sure the `Adaptizer` MIDI port is mapped to your controls.
+1. Configure the export settings in Ableton once (`Ctrl+Shift+R`) — InstrumentUI reuses whatever is set there.
+1. In InstrumentUI select `File → Export Ableton Project` and choose:
+   - *Output folder* — where the rendered tracks and the DASH stream are written.
+   - *BPM* — the tempo of the song, used to align DASH segments with the beat.
+   - *Shaka packager* — the packager executable, unless `packager-win-x64.exe` is already in the PATH.
+1. Press *Export* and leave Ableton Live alone until it finishes — the export drives its Export Audio/Video dialog for every track.
 
-The export renders one `.wav` per input value from the DAW, then converts them to DASH — host the resulting `manifest.mpd` alongside the `.webm` files.
+Each input value is sent to Ableton as MIDI before its track is rendered, so every track sounds the way the knob sounds at that value. The rendered `0.wav`..`9.wav` files are then encoded and packaged — host the resulting `manifest.mpd` in the same directory as the `.webm` files.
+
+The Python CLI instrument in [Instrument/](../Instrument) exports the same way with `e <outputPath> <bpm>`, but it has a setup of its own: install its dependencies with `pip install -r ../Instrument/requirements.txt` and put the path of the Shaka packager executable into [its dash-converter.ps1](../Instrument/dash-converter.ps1).
