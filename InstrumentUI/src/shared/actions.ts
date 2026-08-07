@@ -4,4 +4,5 @@ export const exportRequestedEvent: "exportRequested" = "exportRequested";
 export const selectExportFolderRequest: "selectExportFolder" = "selectExportFolder";
 export const selectPackagerRequest: "selectPackager" = "selectPackager";
 export const exportTrackRequest: "exportTrack" = "exportTrack";
+export const checkExportToolsRequest: "checkExportTools" = "checkExportTools";
 export const convertToDashRequest: "convertToDash" = "convertToDash";

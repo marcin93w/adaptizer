@@ -4,7 +4,10 @@ param (
   [Parameter(Mandatory = $true)][string]$ExportPath,
   [Parameter(Mandatory = $true)][double]$Bpm,
   [Parameter(Mandatory = $true)][int]$TrackCount,
-  [string]$PackagerPath = "packager-win-x64.exe"
+  [string]$PackagerPath = "packager-win-x64.exe",
+  # Verifies the settings and the external tools without touching any file, so
+  # the export can fail before it spends half an hour rendering the tracks
+  [switch]$CheckToolsOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,6 +29,11 @@ if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
 
 if (-not (Get-Command $PackagerPath -ErrorAction SilentlyContinue)) {
   throw "Shaka packager was not found at '$PackagerPath'. Please select the packager executable in the export settings."
+}
+
+if ($CheckToolsOnly) {
+  Write-Output "Conversion tools are available"
+  exit 0
 }
 
 $segmentDuration = 2 * (60 / $Bpm)

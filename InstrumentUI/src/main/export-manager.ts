@@ -2,6 +2,7 @@ import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from "electron";
 import { join } from "path";
 import { AbletonExporter, runScript } from "./ableton-exporter";
 import {
+    checkExportToolsRequest,
     convertToDashRequest,
     exportRequestedEvent,
     exportTrackRequest,
@@ -21,6 +22,7 @@ export class ExportManager {
         this.registerHandler(selectExportFolderRequest, () => this.selectExportFolder());
         this.registerHandler(selectPackagerRequest, () => this.selectPackager());
         this.registerHandler(exportTrackRequest, (_, track: ExportTrackDto) => this.exportTrack(track));
+        this.registerHandler(checkExportToolsRequest, (_, settings: ExportSettingsDto) => this.checkExportTools(settings));
         this.registerHandler(convertToDashRequest, (_, settings: ExportSettingsDto) => this.convertToDash(settings));
     }
 
@@ -55,13 +57,22 @@ export class ExportManager {
         return this.run(() => this.abletonExporter.export(join(track.outputPath, `${track.trackIndex}.wav`)));
     }
 
+    // Rendering the tracks takes far longer than the conversion, so the settings are checked up front
+    private async checkExportTools(settings: ExportSettingsDto): Promise<ExportResultDto> {
+        return this.run(() => runScript("dash-converter.ps1", [...this.dashConverterArgs(settings), "-CheckToolsOnly"]));
+    }
+
     private async convertToDash(settings: ExportSettingsDto): Promise<ExportResultDto> {
-        return this.run(() => runScript("dash-converter.ps1", [
+        return this.run(() => runScript("dash-converter.ps1", this.dashConverterArgs(settings)));
+    }
+
+    private dashConverterArgs(settings: ExportSettingsDto): string[] {
+        return [
             "-ExportPath", settings.outputPath,
             "-Bpm", settings.bpm.toString(),
             "-TrackCount", exportTrackCount.toString(),
             ...(settings.packagerPath ? ["-PackagerPath", settings.packagerPath] : [])
-        ]));
+        ];
     }
 
     private async run(action: () => Promise<unknown>): Promise<ExportResultDto> {

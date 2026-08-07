@@ -30,6 +30,12 @@ class Exporter {
     }
 
     async export(settings: ExportSettingsDto, onProgress: (progress: ExportProgress) => void): Promise<void> {
+        // Rendering every track takes long enough that a missing converter has to be reported before it starts
+        const toolsResult = await window.electronAPI.checkExportTools(settings);
+        if (toolsResult.error) {
+            throw new Error(toolsResult.error);
+        }
+
         for (let trackIndex = 0; trackIndex < exportTrackCount; trackIndex++) {
             if (this._cancelled) {
                 return;
