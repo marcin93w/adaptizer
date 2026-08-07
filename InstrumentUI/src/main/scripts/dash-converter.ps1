@@ -9,6 +9,13 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+# The UI shows only the tagged message, so neither the PowerShell error trace
+# nor the ffmpeg log that also lands on stderr ends up in it
+trap {
+  [Console]::Error.WriteLine("ADAPTIZER_ERROR: " + $_.Exception.Message)
+  exit 1
+}
+
 if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
   throw "ffmpeg was not found. Please install ffmpeg and make sure it is available in the PATH."
 }

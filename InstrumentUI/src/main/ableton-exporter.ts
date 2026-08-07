@@ -9,6 +9,21 @@ const renderingStartTimeout = 5 * 60 * 1000;
 const renderedFileSettleTime = 6000;
 const renderingStallTimeout = 5 * 60 * 1000;
 
+// The scripts tag the messages that are meant for the user, so the PowerShell
+// error trace and the tool logs that share stderr can be left out
+const scriptErrorPrefix = "ADAPTIZER_ERROR: ";
+
+const readScriptError = (errorOutput: string, scriptName: string, exitCode: number | null): string => {
+    const reportedErrors = errorOutput
+        .split(/\r?\n/)
+        .filter(line => line.startsWith(scriptErrorPrefix))
+        .map(line => line.slice(scriptErrorPrefix.length).trim());
+
+    return reportedErrors.join("\n")
+        || errorOutput.trim()
+        || `${scriptName} failed with exit code ${exitCode}.`;
+};
+
 export const runScript = (scriptName: string, args: string[]): Promise<string> => {
     const scriptPath = app.isPackaged
         ? join(process.resourcesPath, "scripts", scriptName)
@@ -30,7 +45,7 @@ export const runScript = (scriptName: string, args: string[]): Promise<string> =
             if (code === 0) {
                 resolve(output);
             } else {
-                reject(new Error(errorOutput.trim() || `${scriptName} failed with exit code ${code}.`));
+                reject(new Error(readScriptError(errorOutput, scriptName, code)));
             }
         });
     });
