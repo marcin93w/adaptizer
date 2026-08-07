@@ -184,7 +184,9 @@ was rejected; see the ADR's alternatives section.
 | Media | `https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/{storageLocation}/manifest.mpd` |
 | Now-playing label | `"{author} - {name}"` |
 
-The React Native client centralizes both base URLs in `mobile/src/config/`.
+The React Native client centralizes both base URLs in `mobile/src/config/`. The
+songs API is a Cloudflare Worker backed by a D1 catalog; its source lives in
+[`../../API/`](../../API/README.md).
 
 ## 7. Known issues in the legacy `app/` module
 
