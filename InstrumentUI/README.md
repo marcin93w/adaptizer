@@ -98,4 +98,4 @@ Usage:
 
 Each input value is sent to Ableton as MIDI before its track is rendered, so every track sounds the way the knob sounds at that value. The rendered `0.wav`..`9.wav` files are then encoded and packaged — host the resulting `manifest.mpd` in the same directory as the `.webm` files.
 
-The same export is available in the Python CLI instrument in [Instrument/](../Instrument) as `e <outputPath> <bpm>`.
+The Python CLI instrument in [Instrument/](../Instrument) exports the same way with `e <outputPath> <bpm>`, but it has a setup of its own: install its dependencies with `pip install -r ../Instrument/requirements.txt` and put the path of the Shaka packager executable into [its dash-converter.ps1](../Instrument/dash-converter.ps1).
