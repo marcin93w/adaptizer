@@ -21,7 +21,8 @@ const createWindow = () => {
   projectManager = new ProjecManager(mainWindow);
   exportManager = new ExportManager(mainWindow);
 
-  mainWindow.loadFile("../renderer/index.html");
+  // Relative paths resolve against the app root, which is not the main script directory once packaged
+  mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
 
   mainWindow.on("closed", () => {
     mainWindow = null;
