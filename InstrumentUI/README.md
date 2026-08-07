@@ -49,7 +49,7 @@ Other scripts:
 | `npm run debug` | Same as `start`, with the renderer debugger on port 9222 |
 | `npm run build` | Build only (no Electron launch) |
 | `npm run dev-renderer` | Parcel dev server for the renderer, with hot reload |
-| `npm run package` | Package the app with electron-builder |
+| `npm run package` | Build and package the app with electron-builder |
 
 [launch.json](launch.json) contains VS Code configurations for debugging the main and renderer processes.
 
