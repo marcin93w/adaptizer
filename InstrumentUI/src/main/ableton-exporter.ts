@@ -15,8 +15,10 @@ export const runScript = (scriptName: string, args: string[]): Promise<string> =
         : join(__dirname, "scripts", scriptName);
 
     return new Promise((resolve, reject) => {
+        // A console window would take the foreground, and the export script sends keys to whatever window is active
         const powershell = spawn("powershell.exe",
-            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args]);
+            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
+            { windowsHide: true });
 
         let output = "";
         let errorOutput = "";
