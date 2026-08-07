@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { closeSync, openSync, rmSync, statSync } from "fs";
 import { join } from "path";
 
@@ -29,34 +29,46 @@ export interface ScriptRun {
     stop: () => void;
 }
 
+const runningScripts = new Set<() => void>();
+
+// The scripts drive Ableton and run ffmpeg, so they must not be left behind when the app goes away
+export const stopRunningScripts = () => {
+    runningScripts.forEach(stop => stop());
+    runningScripts.clear();
+};
+
 export const runScript = (scriptName: string, args: string[]): ScriptRun => {
     const scriptPath = app.isPackaged
         ? join(process.resourcesPath, "scripts", scriptName)
         : join(__dirname, "scripts", scriptName);
 
-    let stop = () => { };
+    // A console window would take the foreground, and the export script sends keys to whatever window is active.
+    // Nothing can answer a prompt from there either, so stdin is closed and prompts fail instead of hanging the export.
+    const powershell = spawn("powershell.exe",
+        ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
+        { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+
+    // The script starts ffmpeg and the packager, which outlive it when only it is killed.
+    // Waiting for taskkill keeps the kill from being cut short when the app is quitting.
+    const stop = () => {
+        if (powershell.exitCode === null && powershell.pid !== undefined) {
+            spawnSync("taskkill", ["/pid", powershell.pid.toString(), "/t", "/f"], { windowsHide: true });
+        }
+    };
+    runningScripts.add(stop);
 
     const completed = new Promise<string>((resolve, reject) => {
-        // A console window would take the foreground, and the export script sends keys to whatever window is active.
-        // Nothing can answer a prompt from there either, so stdin is closed and prompts fail instead of hanging the export.
-        const powershell = spawn("powershell.exe",
-            ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
-            { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
-
-        // The script starts ffmpeg and the packager, which outlive it when only it is killed
-        stop = () => {
-            if (powershell.exitCode === null && powershell.pid !== undefined) {
-                spawn("taskkill", ["/pid", powershell.pid.toString(), "/t", "/f"], { windowsHide: true });
-            }
-        };
-
         let output = "";
         let errorOutput = "";
         powershell.stdout.on("data", (data) => output += data.toString());
         powershell.stderr.on("data", (data) => errorOutput += data.toString());
 
-        powershell.on("error", (error) => reject(error));
+        powershell.on("error", (error) => {
+            runningScripts.delete(stop);
+            reject(error);
+        });
         powershell.on("close", (code) => {
+            runningScripts.delete(stop);
             if (code === 0) {
                 resolve(output);
             } else {
@@ -65,7 +77,7 @@ export const runScript = (scriptName: string, args: string[]): ScriptRun => {
         });
     });
 
-    return { completed, stop: () => stop() };
+    return { completed, stop };
 };
 
 export class AbletonExporter {
