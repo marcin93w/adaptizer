@@ -16,6 +16,10 @@ trap {
   exit 1
 }
 
+if ($Bpm -le 0) {
+  throw "The tempo has to be greater than zero, but '$Bpm' was given."
+}
+
 if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
   throw "ffmpeg was not found. Please install ffmpeg and make sure it is available in the PATH."
 }
