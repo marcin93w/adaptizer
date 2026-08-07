@@ -9,6 +9,10 @@ Worker at `https://adaptizer.marcin93w.workers.dev`.
 [{ "id": 1, "author": "Wednesday Habits", "album": "Demo", "name": "Adaptizer Sample", "storage_location": "Sample" }]
 ```
 
+`GET /` and `HEAD /` are the only accepted requests. Any other path is a `404`
+and any other method a `405` with an `Allow: GET, HEAD` header; both respond
+with a JSON `{ "error": ... }` body.
+
 The client contract is documented in
 [`../Player/docs/adaptive-audio.md`](../Player/docs/adaptive-audio.md)
 section 6 and consumed by `Player/mobile/src/data/songsApi.ts`. The base URL is
