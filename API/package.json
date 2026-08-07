@@ -1,0 +1,20 @@
+{
+  "name": "adaptizer-api",
+  "version": "1.0.0",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:schema": "wrangler d1 execute adaptizer --remote --file=./schema.sql",
+    "db:schema:local": "wrangler d1 execute adaptizer --local --file=./schema.sql",
+    "db:songs": "wrangler d1 execute adaptizer --remote --command=\"SELECT * FROM songs\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.19.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260801.1": true
+  }
+}

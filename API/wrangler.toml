@@ -1,0 +1,16 @@
+name = "adaptizer"
+main = "worker.js"
+compatibility_date = "2025-02-14"
+
+# The catalog database. This binding was originally added through the
+# Cloudflare dashboard and was therefore absent from the deployed
+# wrangler.toml - it MUST stay declared here, because a `wrangler deploy`
+# replaces the Worker's bindings with exactly what this file lists. Without
+# it, `env.db` becomes undefined and every request fails.
+[[d1_databases]]
+binding = "db"
+database_name = "adaptizer"
+database_id = "833c14d9-eefb-4e9f-b005-b037f601bc32"
+
+[observability]
+enabled = true
