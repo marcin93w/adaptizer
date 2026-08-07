@@ -47,7 +47,9 @@ export class AbletonExporter {
         while (true) {
             await new Promise(resolve => setTimeout(resolve, fileSizeCheckInterval));
 
-            if (!existsSync(outputFile)) {
+            // Ableton creates the file before it writes anything, so an empty file is not a started render
+            const size = existsSync(outputFile) ? statSync(outputFile).size : 0;
+            if (size === 0) {
                 if (Date.now() > renderingStartDeadline) {
                     throw new Error(`Ableton Live did not render ${outputFile}. Please check the export settings in Ableton Live.`);
                 }
@@ -55,8 +57,7 @@ export class AbletonExporter {
             }
 
             // The file keeps growing while Ableton renders, so it is done once the size settles
-            const size = statSync(outputFile).size;
-            if (size > 0 && size === previousSize) {
+            if (size === previousSize) {
                 return;
             }
             previousSize = size;
