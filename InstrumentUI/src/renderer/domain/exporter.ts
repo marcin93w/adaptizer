@@ -1,4 +1,5 @@
 import Adaptizer from "./adaptizer";
+import MidiService from "../services/midi-service";
 import { exportTrackCount, ExportSettingsDto } from "../../shared/dtos";
 
 export enum ExportStage {
@@ -32,6 +33,12 @@ class Exporter {
     }
 
     async export(settings: ExportSettingsDto, onProgress: (progress: ExportProgress) => void): Promise<void> {
+        // The control values are what makes the tracks differ, and they only reach the DAW through the port
+        if (!await this.isMidiPortAvailable()) {
+            throw new Error("There is no MIDI port named Adaptizer, so every track would render the same. "
+                + "Please set the port up as described in the README and try again.");
+        }
+
         // Rendering every track takes long enough that a missing converter has to be reported before it starts
         const toolsResult = await window.electronAPI.checkExportTools(settings);
         if (toolsResult.error) {
@@ -66,6 +73,16 @@ class Exporter {
         }
 
         onProgress({ stage: ExportStage.COMPLETED, trackIndex: exportTrackCount, totalTracks: exportTrackCount });
+    }
+
+    // The port is only looked up when a project is loaded, so it is looked up again here
+    private async isMidiPortAvailable(): Promise<boolean> {
+        try {
+            await MidiService.requestMIDIAccess();
+            return !MidiService.isOutputMissing();
+        } catch {
+            return false;
+        }
     }
 }
 
