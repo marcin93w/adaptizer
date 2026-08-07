@@ -4,6 +4,9 @@
   "description": "",
   "build": {
     "appId": "com.adaptizer.instrumentui",
+    "directories": {
+      "output": "release"
+    },
     "extraMetadata": {
       "main": "dist/main/main.js"
     },
