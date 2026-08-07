@@ -17,9 +17,7 @@ export default function Configurator({ project }: { project: Project }) {
     const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(new Adaptizer(project, inputValue));
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
 
-    React.useEffect(() => {
-        window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true));
-    }, []);
+    React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
 
     React.useEffect(() => {
         setAdaptizer(new Adaptizer(project, inputValue));

@@ -16,7 +16,7 @@ declare global {
       electronAPI: {
           onProjectOpened: (callback: (project: ProjectDto) => void) => void;
           sendProjectUpdated: (project: ProjectDto) => void;
-          onExportRequested: (callback: () => void) => void;
+          onExportRequested: (callback: () => void) => () => void;
           selectExportFolder: () => Promise<string | null>;
           selectPackager: () => Promise<string | null>;
           exportTrack: (outputPath: string, trackIndex: number) => Promise<ExportResultDto>;
@@ -33,8 +33,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   sendProjectUpdated: (project: ProjectDto) => {
     ipcRenderer.send(projectUpdatedEvent, project);
   },
+  // Returns the unsubscribe, so a renderer that remounts does not end up with two listeners
   onExportRequested: (callback: () => void) => {
-    ipcRenderer.on(exportRequestedEvent, () => callback());
+    const listener = () => callback();
+    ipcRenderer.on(exportRequestedEvent, listener);
+    return () => ipcRenderer.removeListener(exportRequestedEvent, listener);
   },
   selectExportFolder: () => ipcRenderer.invoke(selectExportFolderRequest),
   selectPackager: () => ipcRenderer.invoke(selectPackagerRequest),
