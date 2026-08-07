@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain } from "electron";
+import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from "electron";
 import { join } from "path";
 import { AbletonExporter, runScript } from "./ableton-exporter";
 import {
@@ -18,10 +18,16 @@ export class ExportManager {
         this.mainWindow = mainWindow;
         this.abletonExporter = new AbletonExporter();
 
-        ipcMain.handle(selectExportFolderRequest, () => this.selectExportFolder());
-        ipcMain.handle(selectPackagerRequest, () => this.selectPackager());
-        ipcMain.handle(exportTrackRequest, (_, track: ExportTrackDto) => this.exportTrack(track));
-        ipcMain.handle(convertToDashRequest, (_, settings: ExportSettingsDto) => this.convertToDash(settings));
+        this.registerHandler(selectExportFolderRequest, () => this.selectExportFolder());
+        this.registerHandler(selectPackagerRequest, () => this.selectPackager());
+        this.registerHandler(exportTrackRequest, (_, track: ExportTrackDto) => this.exportTrack(track));
+        this.registerHandler(convertToDashRequest, (_, settings: ExportSettingsDto) => this.convertToDash(settings));
+    }
+
+    // The window is recreated when it is reopened, and ipcMain.handle throws on an already handled channel
+    private registerHandler(channel: string, handler: (event: IpcMainInvokeEvent, ...args: any[]) => any) {
+        ipcMain.removeHandler(channel);
+        ipcMain.handle(channel, handler);
     }
 
     requestExport() {
