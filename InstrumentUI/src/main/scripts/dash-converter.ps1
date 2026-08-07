@@ -20,7 +20,7 @@ if (-not (Get-Command $PackagerPath -ErrorAction SilentlyContinue)) {
 $segmentDuration = 2 * (60 / $Bpm)
 Write-Output "Segment duration: $segmentDuration"
 
-Set-Location $ExportPath
+Set-Location -LiteralPath $ExportPath
 
 $packagerInputs = @()
 for ($trackIndex = 0; $trackIndex -lt $TrackCount; $trackIndex++) {
