@@ -86,6 +86,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     };
 
     const renderProgress = () => {
+        // The track that was still rendering can fail on its way out, which is not what the user needs to hear
+        if (isCancelling) {
+            return <div className="export-message">Cancelling after the track that is being rendered...</div>;
+        }
+        if (isCancelled) {
+            return <div className="export-message">Export cancelled.</div>;
+        }
         if (error) {
             return <div className="export-message error">{error}</div>;
         }
@@ -93,12 +100,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
             return <div className="export-message success">
                 Export complete. Host <b>manifest.mpd</b> in the same directory with all .webm files.
             </div>;
-        }
-        if (isCancelling) {
-            return <div className="export-message">Cancelling after the track that is being rendered...</div>;
-        }
-        if (isCancelled) {
-            return <div className="export-message">Export cancelled.</div>;
         }
         if (isConverting) {
             return <div className="export-message">Converting WAV files to DASH format...</div>;
