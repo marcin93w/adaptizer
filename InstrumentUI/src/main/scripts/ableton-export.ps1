@@ -6,6 +6,12 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+# The UI shows only the tagged message, so the PowerShell error trace stays out of it
+trap {
+  [Console]::Error.WriteLine("ADAPTIZER_ERROR: " + $_.Exception.Message)
+  exit 1
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 
 Add-Type @"

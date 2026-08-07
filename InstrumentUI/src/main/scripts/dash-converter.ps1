@@ -2,12 +2,31 @@
 # instrument does with dash-converter.ps1.
 param (
   [Parameter(Mandatory = $true)][string]$ExportPath,
-  [Parameter(Mandatory = $true)][int]$Bpm,
+  [Parameter(Mandatory = $true)][double]$Bpm,
   [Parameter(Mandatory = $true)][int]$TrackCount,
-  [string]$PackagerPath = "packager-win-x64.exe"
+  [string]$PackagerPath = "packager-win-x64.exe",
+  # Verifies the settings and the external tools without touching any file, so
+  # the export can fail before it spends half an hour rendering the tracks
+  [switch]$CheckToolsOnly
 )
 
 $ErrorActionPreference = "Stop"
+
+# The UI shows only the tagged message, so neither the PowerShell error trace
+# nor the ffmpeg log that also lands on stderr ends up in it
+trap {
+  [Console]::Error.WriteLine("ADAPTIZER_ERROR: " + $_.Exception.Message)
+  exit 1
+}
+
+if ($Bpm -le 0) {
+  throw "The tempo has to be greater than zero, but '$Bpm' was given."
+}
+
+# Ableton reports a missing folder in a dialog of its own, so nothing would come back here
+if (-not (Test-Path -LiteralPath $ExportPath -PathType Container)) {
+  throw "The export folder '$ExportPath' does not exist. Please select the folder to export to again."
+}
 
 if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
   throw "ffmpeg was not found. Please install ffmpeg and make sure it is available in the PATH."
@@ -15,6 +34,11 @@ if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
 
 if (-not (Get-Command $PackagerPath -ErrorAction SilentlyContinue)) {
   throw "Shaka packager was not found at '$PackagerPath'. Please select the packager executable in the export settings."
+}
+
+if ($CheckToolsOnly) {
+  Write-Output "Conversion tools are available"
+  exit 0
 }
 
 $segmentDuration = 2 * (60 / $Bpm)

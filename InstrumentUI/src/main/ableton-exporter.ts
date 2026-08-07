@@ -1,6 +1,6 @@
 import { app } from "electron";
-import { spawn } from "child_process";
-import { closeSync, existsSync, openSync, rmSync, statSync } from "fs";
+import { spawn, spawnSync } from "child_process";
+import { closeSync, openSync, rmSync, statSync } from "fs";
 import { join } from "path";
 
 const fileSizeCheckInterval = 2000;
@@ -9,31 +9,75 @@ const renderingStartTimeout = 5 * 60 * 1000;
 const renderedFileSettleTime = 6000;
 const renderingStallTimeout = 5 * 60 * 1000;
 
-export const runScript = (scriptName: string, args: string[]): Promise<string> => {
+// The scripts tag the messages that are meant for the user, so the PowerShell
+// error trace and the tool logs that share stderr can be left out
+const scriptErrorPrefix = "ADAPTIZER_ERROR: ";
+
+const readScriptError = (errorOutput: string, scriptName: string, exitCode: number | null): string => {
+    const reportedErrors = errorOutput
+        .split(/\r?\n/)
+        .filter(line => line.startsWith(scriptErrorPrefix))
+        .map(line => line.slice(scriptErrorPrefix.length).trim());
+
+    return reportedErrors.join("\n")
+        || errorOutput.trim()
+        || `${scriptName} failed with exit code ${exitCode}.`;
+};
+
+export interface ScriptRun {
+    completed: Promise<string>;
+    stop: () => void;
+}
+
+const runningScripts = new Set<() => void>();
+
+// The scripts drive Ableton and run ffmpeg, so they must not be left behind when the app goes away
+export const stopRunningScripts = () => {
+    runningScripts.forEach(stop => stop());
+    runningScripts.clear();
+};
+
+export const runScript = (scriptName: string, args: string[]): ScriptRun => {
     const scriptPath = app.isPackaged
         ? join(process.resourcesPath, "scripts", scriptName)
         : join(__dirname, "scripts", scriptName);
 
-    return new Promise((resolve, reject) => {
-        // A console window would take the foreground, and the export script sends keys to whatever window is active
-        const powershell = spawn("powershell.exe",
-            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
-            { windowsHide: true });
+    // A console window would take the foreground, and the export script sends keys to whatever window is active.
+    // Nothing can answer a prompt from there either, so stdin is closed and prompts fail instead of hanging the export.
+    const powershell = spawn("powershell.exe",
+        ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...args],
+        { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
 
+    // The script starts ffmpeg and the packager, which outlive it when only it is killed.
+    // Waiting for taskkill keeps the kill from being cut short when the app is quitting.
+    const stop = () => {
+        if (powershell.exitCode === null && powershell.pid !== undefined) {
+            spawnSync("taskkill", ["/pid", powershell.pid.toString(), "/t", "/f"], { windowsHide: true });
+        }
+    };
+    runningScripts.add(stop);
+
+    const completed = new Promise<string>((resolve, reject) => {
         let output = "";
         let errorOutput = "";
         powershell.stdout.on("data", (data) => output += data.toString());
         powershell.stderr.on("data", (data) => errorOutput += data.toString());
 
-        powershell.on("error", (error) => reject(error));
+        powershell.on("error", (error) => {
+            runningScripts.delete(stop);
+            reject(error);
+        });
         powershell.on("close", (code) => {
+            runningScripts.delete(stop);
             if (code === 0) {
                 resolve(output);
             } else {
-                reject(new Error(errorOutput.trim() || `${scriptName} failed with exit code ${code}.`));
+                reject(new Error(readScriptError(errorOutput, scriptName, code)));
             }
         });
     });
+
+    return { completed, stop };
 };
 
 export class AbletonExporter {
@@ -41,7 +85,7 @@ export class AbletonExporter {
         // A leftover file from a previous export would look like a finished render
         rmSync(outputFile, { force: true });
 
-        await runScript("ableton-export.ps1", ["-OutputFile", outputFile]);
+        await runScript("ableton-export.ps1", ["-OutputFile", outputFile]).completed;
         await this.waitForRenderedFile(outputFile);
     }
 
@@ -54,7 +98,7 @@ export class AbletonExporter {
             await new Promise(resolve => setTimeout(resolve, fileSizeCheckInterval));
 
             // Ableton creates the file before it writes anything, so an empty file is not a started render
-            const size = existsSync(outputFile) ? statSync(outputFile).size : 0;
+            const size = statSync(outputFile, { throwIfNoEntry: false })?.size ?? 0;
             if (size === 0) {
                 if (Date.now() > renderingStartDeadline) {
                     throw new Error(`Ableton Live did not render ${outputFile}. Please check the export settings in Ableton Live.`);

@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
+  cancelConversionRequest,
+  checkExportToolsRequest,
   convertToDashRequest,
   exportRequestedEvent,
   exportTrackRequest,
@@ -15,11 +17,13 @@ declare global {
       electronAPI: {
           onProjectOpened: (callback: (project: ProjectDto) => void) => void;
           sendProjectUpdated: (project: ProjectDto) => void;
-          onExportRequested: (callback: () => void) => void;
+          onExportRequested: (callback: () => void) => () => void;
           selectExportFolder: () => Promise<string | null>;
           selectPackager: () => Promise<string | null>;
           exportTrack: (outputPath: string, trackIndex: number) => Promise<ExportResultDto>;
+          checkExportTools: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
           convertToDash: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
+          cancelConversion: () => Promise<void>;
       }
   }
 }
@@ -31,12 +35,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
   sendProjectUpdated: (project: ProjectDto) => {
     ipcRenderer.send(projectUpdatedEvent, project);
   },
+  // Returns the unsubscribe, so a renderer that remounts does not end up with two listeners
   onExportRequested: (callback: () => void) => {
-    ipcRenderer.on(exportRequestedEvent, () => callback());
+    const listener = () => callback();
+    ipcRenderer.on(exportRequestedEvent, listener);
+    return () => ipcRenderer.removeListener(exportRequestedEvent, listener);
   },
   selectExportFolder: () => ipcRenderer.invoke(selectExportFolderRequest),
   selectPackager: () => ipcRenderer.invoke(selectPackagerRequest),
   exportTrack: (outputPath: string, trackIndex: number) =>
     ipcRenderer.invoke(exportTrackRequest, { outputPath, trackIndex }),
-  convertToDash: (settings: ExportSettingsDto) => ipcRenderer.invoke(convertToDashRequest, settings)
+  checkExportTools: (settings: ExportSettingsDto) => ipcRenderer.invoke(checkExportToolsRequest, settings),
+  convertToDash: (settings: ExportSettingsDto) => ipcRenderer.invoke(convertToDashRequest, settings),
+  cancelConversion: () => ipcRenderer.invoke(cancelConversionRequest)
 });
