@@ -29,7 +29,10 @@ const createWindow = () => {
   });
 
   createMenu(projectManager, exportManager);
-  mainWindow.webContents.openDevTools();
+
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 }
 
 app.whenReady().then(createWindow);
