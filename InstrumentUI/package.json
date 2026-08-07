@@ -2,6 +2,21 @@
   "name": "adaptizer-instrumentui",
   "version": "1.0.0",
   "description": "",
+  "build": {
+    "appId": "com.adaptizer.instrumentui",
+    "extraMetadata": {
+      "main": "dist/main/main.js"
+    },
+    "files": [
+      "dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "src/main/scripts",
+        "to": "scripts"
+      }
+    ]
+  },
   "scripts": {
     "copy-scripts": "node -e \"require('fs').cpSync('src/main/scripts', 'dist/main/scripts', { recursive: true })\"",
     "start": "tsc && npm run copy-scripts && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./ && electron dist/main/main.js",
