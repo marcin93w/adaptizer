@@ -23,6 +23,11 @@ if ($Bpm -le 0) {
   throw "The tempo has to be greater than zero, but '$Bpm' was given."
 }
 
+# Ableton reports a missing folder in a dialog of its own, so nothing would come back here
+if (-not (Test-Path -LiteralPath $ExportPath -PathType Container)) {
+  throw "The export folder '$ExportPath' does not exist. Please select the folder to export to again."
+}
+
 if (-not (Get-Command "ffmpeg" -ErrorAction SilentlyContinue)) {
   throw "ffmpeg was not found. Please install ffmpeg and make sure it is available in the PATH."
 }
