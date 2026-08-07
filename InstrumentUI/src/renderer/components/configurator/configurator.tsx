@@ -31,6 +31,8 @@ export default function Configurator({ project }: { project: Project }) {
     React.useEffect(() => {
         setControls(project.getControls());
         setSelectedInput(project.getInputType());
+        // The export renders the project it was started for, so opening another one ends it
+        setIsExportDialogOpen(false);
     }, [project]);
 
     const handleInputChange = (input: InputType) => {

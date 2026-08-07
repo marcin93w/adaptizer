@@ -27,12 +27,16 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     const [outputPath, setOutputPath] = React.useState<string>(storedSettings.outputPath ?? "");
     const [bpm, setBpm] = React.useState<string>(String(storedSettings.bpm ?? 120));
     const [packagerPath, setPackagerPath] = React.useState<string>(storedSettings.packagerPath ?? "");
-    const [exporter, setExporter] = React.useState<Exporter | null>(null);
+    const exporter = React.useRef<Exporter | null>(null);
     const [isExporting, setIsExporting] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
     const [isCancelled, setIsCancelled] = React.useState(false);
     const [progress, setProgress] = React.useState<ExportProgress | null>(null);
     const [error, setError] = React.useState<string | null>(null);
+
+    // Every track is rendered from the project the export was started for, so the export
+    // stops rather than finishing against the Adaptizer of a project opened in the meantime
+    React.useEffect(() => () => exporter.current?.cancel(), []);
 
     const isCompleted = progress?.stage === ExportStage.COMPLETED;
     // The conversion is a single external step that runs to the end once it started
@@ -61,7 +65,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
         localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 
         const newExporter = new Exporter(adaptizer);
-        setExporter(newExporter);
+        exporter.current = newExporter;
         setIsExporting(true);
         setError(null);
         setProgress(null);
@@ -72,7 +76,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
         } catch (exportError: any) {
             setError(exportError?.message ?? "Unknown error");
         } finally {
-            setExporter(null);
+            exporter.current = null;
             setIsExporting(false);
             setIsCancelling(false);
             setIsCancelled(newExporter.isCancelled);
@@ -80,12 +84,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     };
 
     const cancelExport = () => {
-        exporter?.cancel();
+        exporter.current?.cancel();
         setIsCancelling(true);
     };
 
     const close = () => {
-        exporter?.cancel();
+        exporter.current?.cancel();
         onClose();
     };
 
