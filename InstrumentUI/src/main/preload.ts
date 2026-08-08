@@ -10,21 +10,12 @@ import {
   selectExportFolderRequest,
   selectPackagerRequest
 } from "../shared/actions";
-import { ExportResultDto, ExportSettingsDto, ProjectDto } from "../shared/dtos";
+import { ExportSettingsDto, ProjectDto } from "../shared/dtos";
+import { ElectronApi } from "../shared/electron-api";
 
 declare global {
   interface Window {
-      electronAPI: {
-          onProjectOpened: (callback: (project: ProjectDto) => void) => void;
-          sendProjectUpdated: (project: ProjectDto) => void;
-          onExportRequested: (callback: () => void) => () => void;
-          selectExportFolder: () => Promise<string | null>;
-          selectPackager: () => Promise<string | null>;
-          exportTrack: (outputPath: string, trackIndex: number) => Promise<ExportResultDto>;
-          checkExportTools: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
-          convertToDash: (settings: ExportSettingsDto) => Promise<ExportResultDto>;
-          cancelConversion: () => Promise<void>;
-      }
+      electronAPI: ElectronApi;
   }
 }
 

@@ -7,6 +7,7 @@ import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
 import { LinearControl } from "../linear-control/linear-control";
 import Adaptizer from "../../domain/adaptizer";
+import MidiService from "../../services/midi-service";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
 export default function Configurator({ project }: { project: Project }) {
@@ -14,13 +15,13 @@ export default function Configurator({ project }: { project: Project }) {
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
     const [inputValue, setInputValue] = React.useState(0);
-    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue));
+    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue, MidiService));
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
 
     React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
 
     React.useEffect(() => {
-        setAdaptizer(new Adaptizer(project, inputValue));
+        setAdaptizer(new Adaptizer(project, inputValue, MidiService));
         adaptizer.initialize();
     }, [project]);
 

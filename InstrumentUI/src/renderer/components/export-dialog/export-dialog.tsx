@@ -63,7 +63,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
         const settings = { outputPath, bpm: parsedBpm, packagerPath };
         localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 
-        const newExporter = new Exporter(adaptizer);
+        const newExporter = new Exporter(adaptizer, window.electronAPI);
         exporter.current = newExporter;
         setIsExporting(true);
         setError(null);
