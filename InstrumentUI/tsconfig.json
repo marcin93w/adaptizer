@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
       "target": "ESNext",
-      "module": "CommonJS",
+      "module": "Node16",
       "strict": true,
       "outDir": "dist",
       "rootDir": "src",
-      "moduleResolution": "Node",
+      "moduleResolution": "Node16",
       "allowJs": true,
       "noImplicitAny": false,
       "sourceMap": true,
