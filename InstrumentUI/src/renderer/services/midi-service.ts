@@ -1,4 +1,6 @@
-class MidiService {
+import { MidiPort } from "./midi-port";
+
+class MidiService implements MidiPort {
   private static instance: MidiService | null = null;
   private midiOutput: MIDIOutput | undefined;
   private outputMissing: boolean = false;

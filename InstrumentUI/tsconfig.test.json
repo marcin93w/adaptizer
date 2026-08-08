@@ -1,0 +1,20 @@
+{
+  // Type-checks everything, including the tests and fakes that tsconfig.json excludes
+  // from the build emit. This is what `npm run typecheck` uses.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // The build config uses Node16, under which a CommonJS-typed file importing an
+    // ESM-only package ("vitest/config", "@testing-library/jest-dom/vitest") is an
+    // error. Bundler resolution is what Vitest actually performs, and it needs an
+    // ESM `module`. The build config keeps Node16 for tsc's dist emit.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vitest/globals", "node"]
+  },
+  // `extends` inherits `exclude` from the base config, which excludes exactly the
+  // files this config exists to check. Reset it.
+  "exclude": [],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts", "vitest.setup.ts"]
+}

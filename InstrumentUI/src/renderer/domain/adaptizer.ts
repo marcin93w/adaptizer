@@ -1,11 +1,11 @@
 import Project from "./project";
 import { Control } from "./control";
-import MidiService from "../services/midi-service";
+import { MidiPort } from "../services/midi-port";
 
 class Adaptizer {
     private _input: number;
 
-    constructor(private _project: Project, private initialInput: number) {
+    constructor(private _project: Project, private initialInput: number, private readonly _midiPort: MidiPort) {
         this._input = initialInput;
         this._project.getControls().forEach((control: Control) => {
             this.sendNowAndOnEveryControlChange(control);
@@ -16,7 +16,18 @@ class Adaptizer {
     }
 
     async initialize() {
-        await MidiService.requestMIDIAccess();
+        await this._midiPort.requestMIDIAccess();
+    }
+
+    // The port is only looked up when a project is loaded, so an export that depends on
+    // it having stayed there has to ask again rather than trusting the earlier answer
+    async isPortAvailable(): Promise<boolean> {
+        try {
+            await this._midiPort.requestMIDIAccess();
+            return !this._midiPort.isOutputMissing();
+        } catch {
+            return false;
+        }
     }
 
     private sendNowAndOnEveryControlChange(control: Control) {
@@ -43,7 +54,7 @@ class Adaptizer {
 
     private _calculateAndSendMidiMessage(control: Control) {
         const midiValue = control.calculateControlValue(this._input);
-        MidiService.sendMidiMessage(control.controlNumber, midiValue);
+        this._midiPort.sendMidiMessage(control.controlNumber, midiValue);
     }
 }
 

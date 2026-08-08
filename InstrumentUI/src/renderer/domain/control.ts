@@ -75,8 +75,13 @@ export class Control {
 
   calculateControlValue(inputValue: number): number {
       const limitedInput = Math.max(this.inputMin, Math.min(this.inputMax, inputValue));
-      let normalizedInput = (limitedInput - this.inputMin) / (this.inputMax - this.inputMin);
-      
+      // Both range thumbs can sit on the same value, which would divide by zero and send
+      // NaN to a port that rejects it. The input has reached the top of its range, so a
+      // collapsed range reads as full scale - and the reversal below mirrors it to midiMin.
+      let normalizedInput = this.inputMax === this.inputMin
+          ? 1
+          : (limitedInput - this.inputMin) / (this.inputMax - this.inputMin);
+
       if (this.transformType === TransformType.REVERSED_LINEAR) {
           normalizedInput = 1 - normalizedInput;
       }

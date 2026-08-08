@@ -28,28 +28,37 @@
     "build": "tsc && npm run copy-scripts && parcel build src/renderer/index.html --dist-dir dist/renderer --public-url ./",
     "dev-renderer": "tsc && parcel src/renderer/index.html",
     "package": "npm run build && electron-builder",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "framer-motion": "^12.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-range": "^1.10.0"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "^2.13.3",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.9",
     "@types/react-dom": "^19.0.3",
+    "@vitest/coverage-v8": "^3.2.7",
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
+    "jsdom": "^26.1.0",
     "parcel": "^2.13.3",
     "process": "^0.11.10",
     "sass": "^1.85.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.7"
   }
 }

@@ -12,6 +12,10 @@
       "jsx": "react",
       "esModuleInterop": true
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx"]
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    // Keeps tests and fakes out of dist/, and therefore out of the packaged app
+    // (electron-builder ships "dist/**/*"). tsconfig.test.json resets this so
+    // `npm run typecheck` still covers them.
+    "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/testing/**"]
   }
   
