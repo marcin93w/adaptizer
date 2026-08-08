@@ -1,15 +1,19 @@
 export interface ProjectDto {
+  formatVersion: typeof projectFormatVersion;
   inputType: InputType;
   controls: ControlDto[];
 }
 
+export const projectFormatVersion = 1 as const;
+
+export interface ControlPointDto {
+  input: number;
+  midi: number;
+}
+
 export interface ControlDto {
   controlNumber: number;
-  transformType: TransformType;
-  inputMin: number;
-  inputMax: number;
-  midiMin: number;
-  midiMax: number;
+  points: ControlPointDto[];
 }
 
 export enum InputType {
@@ -18,13 +22,12 @@ export enum InputType {
   EXPRESSION = "expression"
 }
 
-export enum TransformType {
-  LINEAR = "linear",
-  REVERSED_LINEAR = "reversed-linear"
-}
-
 // One track is rendered per input value (0..9)
 export const exportTrackCount = 10;
+export const inputValueMin = 0;
+export const inputValueMax = exportTrackCount - 1;
+export const midiValueMin = 0;
+export const midiValueMax = 127;
 
 export interface ExportSettingsDto {
   outputPath: string;

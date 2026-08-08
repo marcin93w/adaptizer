@@ -1,11 +1,10 @@
 import React from "react";
 import Project from "../../domain/project";
-import { TransformType } from "../../../shared/dtos";
 import { InputType } from "../../../shared/dtos";
 import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
-import { LinearControl } from "../linear-control/linear-control";
+import { ControlSummary } from "../control-summary/control-summary";
 import { ControlDetail } from "../control-detail/control-detail";
 import Adaptizer from "../../domain/adaptizer";
 import MidiService from "../../services/midi-service";
@@ -48,11 +47,16 @@ export default function Configurator({ project }: { project: Project }) {
     };
 
     const addNewControl = () => {
-        const newControl = new Control(project.getControls().length + 1, TransformType.LINEAR, 0, 9, 0, 127);
+        const newControl = new Control(project.getControls().length + 1, [
+            { input: 0, midi: 0 },
+            { input: 9, midi: 127 }
+        ]);
         project.addControl(newControl);
         setControls(project.getControls());
         setSelectedControl(newControl);
     }
+
+    const inputLabel = selectedInput.charAt(0).toUpperCase() + selectedInput.slice(1);
 
     return <div id="configurator">
         <div id="workspace">
@@ -71,13 +75,11 @@ export default function Configurator({ project }: { project: Project }) {
                 <div className="control-table">
                     <div className="control-row control-row-header">
                         <span>Control</span>
-                        <span>Type</span>
-                        <span>Input range</span>
-                        <span>MIDI range</span>
+                        <span>Mapping</span>
                         <span className="cell-value">Out</span>
                     </div>
                     {controls.map(control => (
-                        <LinearControl key={control.controlNumber}
+                        <ControlSummary key={control.controlNumber}
                             control={control}
                             isSelected={selectedControl === control}
                             onSelect={setSelectedControl}
@@ -90,7 +92,7 @@ export default function Configurator({ project }: { project: Project }) {
         <section id="detail-section">
             <div className="panel-heading">Selected control</div>
             {selectedControl
-                ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} />
+                ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} inputLabel={inputLabel} />
                 : <div className="detail-placeholder">Select a control above to edit it</div>}
         </section>
         {isExportDialogOpen && <ExportDialog adaptizer={adaptizer} onClose={() => {

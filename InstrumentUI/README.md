@@ -11,14 +11,15 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW.
 ## What it does
 
 - **Pick an input type** — `Volume`, `Intensity` or `Expression`.
-- **Add MIDI controls (CC)** — each maps a slice of the input range (0..9) to a
-  MIDI CC value range (0..127) on a given CC number, `Linear` or
-  `Reversed linear`. Input values outside the slice are clamped.
+- **Draw MIDI controls (CC)** — each control has a breakpoint curve mapping the
+  input levels 0..9 onto MIDI CC values 0..127. Straight segments interpolate
+  between points, so curves can rise, fall, flatten or change direction.
 - **Audition live** — the big knob simulates the input value. Turning it
   recalculates every control and sends CC messages out of the `Adaptizer` MIDI
   port in real time, so you hear your DAW respond while the song is playing.
 - **Save / open projects** — `.adz` files via `File → New / Open / Save Project`.
-  See [conf.adz](conf.adz) for an example.
+  See the [Ableton sample project](../Samples/Ableton/Adaptizer-sample/Adaptizer-sample.adz)
+  for an example.
 - **Export the song** — `File → Export Ableton Project`. See
   [Exporting a song](#exporting-a-song).
 
@@ -50,12 +51,35 @@ and renderer processes.
 ## Usage with a DAW
 
 1. Set up the `Adaptizer` MIDI port as a MIDI remote in your DAW.
-1. Add a control in the app and select it — moving its *MIDI range* sliders sends
-   CC messages, which your DAW can pick up when learning a MIDI map.
-1. Configure the input type, transform type and ranges for each control.
+1. Add a control in the app and select it. Press *Invoke* to send its current CC
+   value so your DAW can pick it up when learning a MIDI map.
+1. Click the curve to add a breakpoint and drag points to shape the response.
+   Point positions snap to input levels 0..9 and MIDI values 0..127. The endpoints
+   at inputs 0 and 9 can move vertically but cannot be removed.
+1. For exact edits, select a point and use its Input and MIDI fields. Arrow keys
+   nudge a focused point; Delete or Backspace removes an internal point.
 1. Play the song in your DAW and turn the knob (0..9) to test how your controls
    react to changing listener context.
 1. Save the configuration as an `.adz` project.
+
+`.adz` files use project format version 1:
+
+```json
+{
+  "formatVersion": 1,
+  "inputType": "intensity",
+  "controls": [
+    {
+      "controlNumber": 1,
+      "points": [
+        { "input": 0, "midi": 0 },
+        { "input": 4, "midi": 100 },
+        { "input": 9, "midi": 127 }
+      ]
+    }
+  ]
+}
+```
 
 ## Exporting a song
 

@@ -1,63 +1,100 @@
-import { ControlDto } from "../../shared/dtos";
-import { TransformType } from "../../shared/dtos";
+import {
+  ControlDto,
+  ControlPointDto,
+  inputValueMax,
+  inputValueMin,
+  midiValueMax,
+  midiValueMin
+} from "../../shared/dtos";
+
+const assertIntegerInRange = (name: string, value: number, min: number, max: number) => {
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new Error(`${name} must be an integer from ${min} to ${max}.`);
+  }
+};
+
+const validatePoints = (points: readonly ControlPointDto[]): ControlPointDto[] => {
+  if (!Array.isArray(points)) {
+    throw new Error("Control points must be an array.");
+  }
+
+  const sorted = points.map(point => {
+    if (point === null || typeof point !== "object") {
+      throw new Error("Every control point must contain input and MIDI values.");
+    }
+    assertIntegerInRange("Point input", point.input, inputValueMin, inputValueMax);
+    assertIntegerInRange("Point MIDI value", point.midi, midiValueMin, midiValueMax);
+    return { input: point.input, midi: point.midi };
+  }).sort((left, right) => left.input - right.input);
+
+  if (sorted.length < 2 || sorted.length > inputValueMax - inputValueMin + 1) {
+    throw new Error("A control curve must contain between 2 and 10 points.");
+  }
+  if (sorted[0].input !== inputValueMin || sorted[sorted.length - 1].input !== inputValueMax) {
+    throw new Error(`A control curve must contain endpoints at inputs ${inputValueMin} and ${inputValueMax}.`);
+  }
+  if (sorted.some((point, index) => index > 0 && point.input === sorted[index - 1].input)) {
+    throw new Error("A control curve cannot contain two points at the same input.");
+  }
+
+  return sorted;
+};
 
 export class Control {
+  private _points: ControlPointDto[];
+  private _controlChangedListeners: (() => void)[] = [];
+
   constructor(
     private readonly _controlNumber: number,
-    private _transformType: TransformType,
-    private _inputMin: number,
-    private _inputMax: number,
-    private _midiMin: number,
-    private _midiMax: number
-  ) { }
-  private _controlChangedListeners: (() => void)[] = [];
+    points: readonly ControlPointDto[]
+  ) {
+    assertIntegerInRange("Control number", _controlNumber, 0, 127);
+    this._points = validatePoints(points);
+  }
 
   get controlNumber(): number {
     return this._controlNumber;
   }
 
-  get transformType(): TransformType {
-    return this._transformType;
+  get points(): readonly ControlPointDto[] {
+    return this._points.map(point => ({ ...point }));
   }
 
-  get inputMin(): number {
-    return this._inputMin;
-  }
-
-  get inputMax(): number {
-    return this._inputMax;
-  }
-
-  get midiMin(): number {
-    return this._midiMin;
-  }
-
-  get midiMax(): number {
-    return this._midiMax;
-  }
-
-  set inputMin(min: number) {
-    this._inputMin = min;
+  addPoint(input: number, midi: number) {
+    if (this._points.some(point => point.input === input)) {
+      throw new Error(`A point already exists at input ${input}.`);
+    }
+    this._points = validatePoints([...this._points, { input, midi }]);
     this.notifyControlChanged();
   }
 
-  set inputMax(max: number) {
-    this._inputMax = max;
+  movePoint(currentInput: number, input: number, midi: number) {
+    const pointIndex = this._points.findIndex(point => point.input === currentInput);
+    if (pointIndex < 0) {
+      throw new Error(`There is no point at input ${currentInput}.`);
+    }
+    if ((currentInput === inputValueMin || currentInput === inputValueMax) && input !== currentInput) {
+      throw new Error("Curve endpoints cannot be moved horizontally.");
+    }
+    if (input !== currentInput && this._points.some(point => point.input === input)) {
+      throw new Error(`A point already exists at input ${input}.`);
+    }
+
+    const updated = this._points.map((point, index) =>
+      index === pointIndex ? { input, midi } : point
+    );
+    this._points = validatePoints(updated);
     this.notifyControlChanged();
   }
 
-  set midiMin(min: number) {
-    this._midiMin = min;
-    this.notifyControlChanged();
-  }
-
-  set midiMax(max: number) {
-    this._midiMax = max;
-    this.notifyControlChanged();
-  }
-
-  set transformType(type: TransformType) {
-    this._transformType = type;
+  removePoint(input: number) {
+    if (input === inputValueMin || input === inputValueMax) {
+      throw new Error("Curve endpoints cannot be removed.");
+    }
+    if (!this._points.some(point => point.input === input)) {
+      throw new Error(`There is no point at input ${input}.`);
+    }
+    this._points = validatePoints(this._points.filter(point => point.input !== input));
     this.notifyControlChanged();
   }
 
@@ -74,33 +111,30 @@ export class Control {
   }
 
   calculateControlValue(inputValue: number): number {
-      const limitedInput = Math.max(this.inputMin, Math.min(this.inputMax, inputValue));
-      // Both range thumbs can sit on the same value, which would divide by zero and send
-      // NaN to a port that rejects it. The input has reached the top of its range, so a
-      // collapsed range reads as full scale - and the reversal below mirrors it to midiMin.
-      let normalizedInput = this.inputMax === this.inputMin
-          ? 1
-          : (limitedInput - this.inputMin) / (this.inputMax - this.inputMin);
+    const limitedInput = Math.max(inputValueMin, Math.min(inputValueMax, inputValue));
+    const exactPoint = this._points.find(point => point.input === limitedInput);
+    if (exactPoint) {
+      return exactPoint.midi;
+    }
 
-      if (this.transformType === TransformType.REVERSED_LINEAR) {
-          normalizedInput = 1 - normalizedInput;
-      }
-      
-      return Math.round(this.midiMin + normalizedInput * (this.midiMax - this.midiMin));
+    const upperIndex = this._points.findIndex(point => point.input > limitedInput);
+    const lower = this._points[upperIndex - 1];
+    const upper = this._points[upperIndex];
+    const progress = (limitedInput - lower.input) / (upper.input - lower.input);
+    return Math.round(lower.midi + progress * (upper.midi - lower.midi));
   }
 
   toDto(): ControlDto {
     return {
       controlNumber: this.controlNumber,
-      transformType: this.transformType,
-      inputMin: this.inputMin,
-      inputMax: this.inputMax,
-      midiMin: this.midiMin,
-      midiMax: this.midiMax
+      points: this.points.map(point => ({ ...point }))
     };
   }
 
   static fromDto(dto: ControlDto): Control {
-    return new Control(dto.controlNumber, dto.transformType, dto.inputMin, dto.inputMax, dto.midiMin, dto.midiMax);
+    if (dto === null || typeof dto !== "object") {
+      throw new Error("Every control must contain a control number and curve points.");
+    }
+    return new Control(dto.controlNumber, dto.points);
   }
 }

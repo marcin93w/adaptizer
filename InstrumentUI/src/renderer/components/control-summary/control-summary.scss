@@ -4,7 +4,7 @@
 // the columns line up without a real <table>.
 .control-row {
     display: grid;
-    grid-template-columns: 90px minmax(0, 1fr) 110px 110px 60px;
+    grid-template-columns: 90px minmax(180px, 1fr) 60px;
     align-items: center;
     gap: 1rem;
     padding: 0.6rem 0.9rem;
@@ -12,6 +12,11 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.control-row .cell-curve {
+    min-width: 0;
+    padding: 0 0.5rem;
 }
 
 .control-row:hover {
