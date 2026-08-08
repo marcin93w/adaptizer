@@ -16,7 +16,7 @@ vi.mock("electron", () => ({
 }));
 
 const projectDto = {
-    formatVersion: 2 as const,
+    formatVersion: 1 as const,
     inputType: InputType.INTENSITY,
     controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 9, midi: 127 }] }]
 };
@@ -40,11 +40,12 @@ describe("opening project files", () => {
 
     const managerFor = () => new ProjecManager({ webContents: { send }, setTitle } as any);
 
-    it("rejects a legacy file without replacing the current project", async () => {
-        const path = join(temporaryDirectory, "legacy.adz");
+    it("rejects an invalid file without replacing the current project", async () => {
+        const path = join(temporaryDirectory, "invalid.adz");
         writeFileSync(path, JSON.stringify({
+            formatVersion: 1,
             inputType: "intensity",
-            controls: [{ controlNumber: 1, transformType: "linear", inputMin: 0, inputMax: 9, midiMin: 0, midiMax: 127 }]
+            controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 8, midi: 127 }] }]
         }));
         vi.mocked(dialog.showOpenDialog).mockResolvedValue({ canceled: false, filePaths: [path] });
         const manager = managerFor();
@@ -58,11 +59,11 @@ describe("opening project files", () => {
         expect(send).not.toHaveBeenCalled();
         expect(dialog.showMessageBox).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             title: "Could not open project",
-            detail: expect.stringContaining("format version 2")
+            detail: expect.stringContaining("endpoints")
         }));
     });
 
-    it("normalizes and opens a valid format-2 file", async () => {
+    it("normalizes and opens a valid format-1 file", async () => {
         const path = join(temporaryDirectory, "curve.adz");
         writeFileSync(path, JSON.stringify({
             ...projectDto,

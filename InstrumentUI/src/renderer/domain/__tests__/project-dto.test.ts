@@ -10,7 +10,7 @@ const savedAndReopened = (project: Project): Project =>
 const valuesForEveryInput = (control: Control): number[] =>
     Array.from({ length: 10 }, (_, input) => control.calculateControlValue(input));
 
-describe("saving and reopening a format-2 project", () => {
+describe("saving and reopening a format-1 project", () => {
     it("preserves every control curve and the input type", () => {
         const original = aProject({
             inputType: InputType.EXPRESSION,
@@ -38,7 +38,7 @@ describe("saving and reopening a format-2 project", () => {
         expect(reopened.getControls().map(control => control.controlNumber)).toEqual([7]);
     });
 
-    it("writes the version-2 shape with sorted point arrays", () => {
+    it("writes the version-1 shape with sorted point arrays", () => {
         const project = aProject({ controls: [aControl({ cc: 3, points: [
             { input: 9, midi: 10 },
             { input: 4, midi: 80 },
@@ -46,7 +46,7 @@ describe("saving and reopening a format-2 project", () => {
         ] })] });
 
         expect(project.toDto()).toEqual({
-            formatVersion: 2,
+            formatVersion: 1,
             inputType: "intensity",
             controls: [{
                 controlNumber: 3,
@@ -61,25 +61,19 @@ describe("saving and reopening a format-2 project", () => {
 });
 
 describe("rejecting unsupported or invalid projects", () => {
-    it("rejects the legacy range-based format", () => {
-        const legacy = {
-            inputType: "intensity",
-            controls: [{
-                controlNumber: 1,
-                transformType: "linear",
-                inputMin: 0,
-                inputMax: 9,
-                midiMin: 0,
-                midiMax: 127
-            }]
+    it("rejects an unsupported project format", () => {
+        const unsupported = {
+            formatVersion: 99,
+            inputType: InputType.INTENSITY,
+            controls: []
         } as unknown as ProjectDto;
 
-        expect(() => Project.fromDto(legacy)).toThrow("format version 2");
+        expect(() => Project.fromDto(unsupported)).toThrow("format version 1");
     });
 
     it("rejects invalid point data", () => {
         const invalid = {
-            formatVersion: 2,
+            formatVersion: 1,
             inputType: InputType.INTENSITY,
             controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 8, midi: 127 }] }]
         } as ProjectDto;
@@ -89,7 +83,7 @@ describe("rejecting unsupported or invalid projects", () => {
 
     it("continues to ignore harmless unknown fields", () => {
         const withExtras = {
-            formatVersion: 2,
+            formatVersion: 1,
             inputType: InputType.VOLUME,
             projectNotes: "future metadata",
             controls: [{

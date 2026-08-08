@@ -4,7 +4,7 @@ export interface ProjectDto {
   controls: ControlDto[];
 }
 
-export const projectFormatVersion = 2 as const;
+export const projectFormatVersion = 1 as const;
 
 export interface ControlPointDto {
   input: number;

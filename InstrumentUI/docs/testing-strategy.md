@@ -33,7 +33,7 @@ Two design notes:
 | | File | Covers |
 | --- | --- | --- |
 | **T1** | `domain/__tests__/control-transform.test.ts` | Piecewise-linear curve evaluation: exact points, increasing/decreasing/flat/non-monotonic segments, rounding, clamping, the ten default export values, point invariants, protected endpoints and notifications. |
-| **T2** | `domain/__tests__/project-dto.test.ts` | Format-2 `.adz` round-trip asserted through evaluated outputs, deterministic point sorting, legacy-format rejection, invalid-curve rejection and tolerance for harmless unknown metadata. |
+| **T2** | `domain/__tests__/project-dto.test.ts` | Format-1 `.adz` round-trip asserted through evaluated outputs, deterministic point sorting, unsupported-format and invalid-curve rejection, and tolerance for harmless unknown metadata. |
 | **T3** | `domain/__tests__/adaptizer.test.ts` | Debounce and send rules, asserted against the fake port's message log: the DAW is in sync on load; a new control is auditionable at once; **dragging a curve point does not flood the port**; controls debounce independently; **turning the knob is instant**; selecting a control re-announces it so the DAW can learn the CC. |
 | **T4** | `domain/__tests__/exporter.test.ts` | The 10-track state machine: refuses to start with no MIDI port and with no export tools (**zero tracks rendered** in both cases); **every track is rendered with its own control values**; tracks 0-9 in order exactly once; progress ordering; cancellation between tracks and mid-conversion, throwing nothing; a failing track aborts the rest and surfaces the DAW's message verbatim. |
 
@@ -44,8 +44,8 @@ Deliberately few. Each wires a **real `Project`, a real `Adaptizer` over a fake 
 - **`automation-curve.test.tsx`** — click-to-add with snapping, pointer dragging
   against explicit SVG geometry, exact numeric editing, keyboard nudge/removal,
   endpoint protection, current-input visualization and preview synchronization.
-- **`project-manager.test.ts`** — a legacy file reports an error without replacing
-  the open project; valid format-2 files are normalized before entering the renderer.
+- **`project-manager.test.ts`** — an invalid file reports an error without replacing
+  the open project; valid format-1 files are normalized before entering the renderer.
 
 - **T5 `export-dialog.test.tsx`** - the export happy path end to end (folder, BPM, Export, then ten tracks with their own values, conversion, and "host `manifest.mpd` alongside the `.webm` files"); Export blocked until the settings can produce a valid stream (`dash-converter.ps1` computes `segmentDuration = 2 * (60 / Bpm)` and throws on a non-positive tempo); settings remembered from the last run. *Two deliberate exceptions to happy-path-only, because the feature silently produces garbage otherwise:* the export refuses to start when loopMIDI isn't running and says so; and cancelling mid-render ends with "Export cancelled." - **not** the failure the aborting track throws on its way out, which is deliberate UX a naive refactor undoes silently.
 - **T6 `configurator.test.tsx`** - the live audition journey; editing a curve point changes what the DAW hears after the debounce; adding a control never replaces one the user already configured; opening a different project replaces the controls, closes the export dialog, and leaves exactly one live connection to the DAW.

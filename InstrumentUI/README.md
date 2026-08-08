@@ -62,13 +62,11 @@ and renderer processes.
    react to changing listener context.
 1. Save the configuration as an `.adz` project.
 
-`.adz` files use project format version 2. Older range/transform-based files are
-intentionally not imported; opening one reports an unsupported-format error and
-leaves the current project open.
+`.adz` files use project format version 1:
 
 ```json
 {
-  "formatVersion": 2,
+  "formatVersion": 1,
   "inputType": "intensity",
   "controls": [
     {
