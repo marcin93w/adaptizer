@@ -1,29 +1,19 @@
 import { Control } from "../renderer/domain/control";
 import Project from "../renderer/domain/project";
-import { InputType, TransformType } from "../shared/dtos";
+import { ControlPointDto, InputType } from "../shared/dtos";
 
-// `new Control(3, TransformType.REVERSED_LINEAR, 2, 7, 10, 90)` is six positional
-// numbers. Across thirty rows that is unreadable, and unreadable tests get deleted
-// rather than fixed.
+// Named specs keep curve-heavy tests readable and make their defaults explicit.
 
 export interface ControlSpec {
     cc?: number;
-    transform?: TransformType;
-    inputRange?: [number, number];
-    midiRange?: [number, number];
+    points?: ControlPointDto[];
 }
 
 /** A control with the app's defaults for anything not specified. */
 export const aControl = (spec: ControlSpec = {}): Control => {
-    const [inputMin, inputMax] = spec.inputRange ?? [0, 9];
-    const [midiMin, midiMax] = spec.midiRange ?? [0, 127];
     return new Control(
         spec.cc ?? 1,
-        spec.transform ?? TransformType.LINEAR,
-        inputMin,
-        inputMax,
-        midiMin,
-        midiMax
+        spec.points ?? [{ input: 0, midi: 0 }, { input: 9, midi: 127 }]
     );
 };
 

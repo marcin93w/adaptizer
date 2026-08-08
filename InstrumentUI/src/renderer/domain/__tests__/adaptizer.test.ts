@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Adaptizer from "../adaptizer";
-import { TransformType } from "../../../shared/dtos";
 import { createFakeMidiPort, FakeMidiPort } from "../../../testing/fake-midi-port";
 import { aControl, aProject } from "../../../testing/project-builders";
 
@@ -24,7 +23,7 @@ describe("connecting a project to the DAW", () => {
         const project = aProject({
             controls: [
                 aControl({ cc: 1 }),
-                aControl({ cc: 2, transform: TransformType.REVERSED_LINEAR })
+                aControl({ cc: 2, points: [{ input: 0, midi: 127 }, { input: 9, midi: 0 }] })
             ]
         });
 
@@ -39,7 +38,7 @@ describe("connecting a project to the DAW", () => {
     it("announces a newly added control to the DAW", () => {
         // Adding a control is the only thing that puts its CC on the wire - the "+" button
         // sets the selection directly rather than going through sendControl - so without
-        // this the DAW has nothing to latch its MIDI learn onto until a slider is dragged.
+        // this the DAW has nothing to latch its MIDI learn onto until the curve is edited.
         // Whether it goes out immediately or after the debounce is not asserted; these are
         // control parameters, not notes, so the timing is not something anyone perceives.
         const project = aProject({ controls: [aControl({ cc: 1 })] });
@@ -54,8 +53,8 @@ describe("connecting a project to the DAW", () => {
 });
 
 describe("editing a control", () => {
-    it("does not flood the port while a slider is being dragged", () => {
-        // react-range fires on every pixel of a drag. Without the debounce each one would
+    it("does not flood the port while a curve point is being dragged", () => {
+        // The SVG editor fires on every changed pointer position. Without the debounce each one would
         // become a CC message and the DAW would be swamped mid-gesture.
         const project = aProject({ controls: [aControl({ cc: 1 })] });
         new Adaptizer(project, 9, midi);
@@ -63,7 +62,7 @@ describe("editing a control", () => {
         const control = project.getControls()[0];
 
         for (const midiMax of [100, 90, 80, 70, 60]) {
-            control.midiMax = midiMax;
+            control.movePoint(9, 9, midiMax);
             vi.advanceTimersByTime(50);
         }
 
@@ -77,7 +76,7 @@ describe("editing a control", () => {
         const control = project.getControls()[0];
 
         for (const midiMax of [100, 90, 80, 70, 60]) {
-            control.midiMax = midiMax;
+            control.movePoint(9, 9, midiMax);
             vi.advanceTimersByTime(50);
         }
         vi.advanceTimersByTime(250);
@@ -94,8 +93,8 @@ describe("editing a control", () => {
         midi.take();
         const [first, second] = project.getControls();
 
-        first.midiMax = 100;
-        second.midiMax = 50;
+        first.movePoint(9, 9, 100);
+        second.movePoint(9, 9, 50);
         vi.advanceTimersByTime(300);
 
         expect(midi.take()).toEqual([
@@ -111,7 +110,7 @@ describe("turning the knob", () => {
         const project = aProject({
             controls: [
                 aControl({ cc: 1 }),
-                aControl({ cc: 2, transform: TransformType.REVERSED_LINEAR })
+                aControl({ cc: 2, points: [{ input: 0, midi: 127 }, { input: 9, midi: 0 }] })
             ]
         });
         const adaptizer = new Adaptizer(project, 0, midi);

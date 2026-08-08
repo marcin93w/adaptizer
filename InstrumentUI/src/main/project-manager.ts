@@ -29,21 +29,34 @@ export class ProjecManager {
         return dialog.showOpenDialog({
             properties: ['openFile'],
             filters: [{ name: 'Adaptizer Project', extensions: ['adz'] }]
-        }).then((result: any) => {
-            if (result.filePaths.length > 0) {
-                const filePath = result.filePaths[0];
-                const projectName = filePath.split('\\').pop()?.split('.').shift();
+        }).then(async (result: any) => {
+            if (result.filePaths.length === 0) {
+                return;
+            }
 
+            const filePath = result.filePaths[0];
+            const projectName = filePath.split('\\').pop()?.split('.').shift();
+            try {
                 const fs = require('fs');
                 const fileContent = fs.readFileSync(filePath, 'utf-8');
-                const projectData = JSON.parse(fileContent);
+                const parsedProject = JSON.parse(fileContent) as ProjectDto;
+                // Rebuild before replacing the current project. This validates the format and
+                // all curve invariants while also normalizing point order for deterministic saves.
+                const projectData = Project.fromDto(parsedProject).toDto();
 
                 this.project = projectData;
                 this.projectName = projectName;
                 this.mainWindow.webContents.send(projectOpenedEvent, projectData);
                 this.mainWindow.setTitle(this.projectName + " - Adaptizer");
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "The project file is invalid.";
+                await dialog.showMessageBox(this.mainWindow, {
+                    type: "error",
+                    title: "Could not open project",
+                    message: "Could not open this Adaptizer project.",
+                    detail: message
+                });
             }
-            return Promise.resolve();
         });
     }
     

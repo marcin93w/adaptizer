@@ -1,6 +1,5 @@
 import { Control } from "./control";
-import { ControlDto, InputType, TransformType } from "../../shared/dtos";
-import { ProjectDto } from "../../shared/dtos";
+import { ControlDto, InputType, projectFormatVersion, ProjectDto } from "../../shared/dtos";
 
 export class InputConfig {
   constructor(
@@ -11,7 +10,7 @@ export class InputConfig {
 
 class Project {
   // Controls always go through addControl, so every one of them notifies about its changes
-  constructor(controls: Control[] = [new Control(1, TransformType.LINEAR, 0, 9, 0, 127)]) {
+  constructor(controls: Control[] = [new Control(1, [{ input: 0, midi: 0 }, { input: 9, midi: 127 }])]) {
     controls.forEach(control => this.addControl(control));
   }
 
@@ -59,12 +58,25 @@ class Project {
 
   toDto(): ProjectDto {
     return {
+      formatVersion: projectFormatVersion,
       inputType: this._config.type,
       controls: this.getControls().map((control: Control) => control.toDto())
     }
   }
 
   static fromDto(dto: ProjectDto): Project {
+    if (dto === null || typeof dto !== "object") {
+      throw new Error("The project file does not contain a project.");
+    }
+    if (dto.formatVersion !== projectFormatVersion) {
+      throw new Error(`Unsupported project format. InstrumentUI requires format version ${projectFormatVersion}.`);
+    }
+    if (!Object.values(InputType).includes(dto.inputType)) {
+      throw new Error("The project contains an unsupported input type.");
+    }
+    if (!Array.isArray(dto.controls)) {
+      throw new Error("The project controls must be an array.");
+    }
     const project = new Project(dto.controls.map((controlDto: ControlDto) => Control.fromDto(controlDto)));
     project.setInputType(dto.inputType);
     return project;
