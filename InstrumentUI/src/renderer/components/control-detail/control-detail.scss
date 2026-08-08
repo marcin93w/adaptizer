@@ -1,0 +1,157 @@
+@use "../../variables" as *;
+
+// Docked full-width under the control list, so it lays out across rather than down.
+.control-detail {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid $brand-color;
+    border-radius: 10px;
+    background-color: rgba(255, 87, 34, 0.04);
+
+    .control-detail-identity {
+        flex-shrink: 0;
+        padding-right: 1.5rem;
+        border-right: 1px solid $panel-border-color;
+    }
+
+    .control-label {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: $accent-text-color;
+        white-space: nowrap;
+    }
+
+    .control-detail-settings {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        // minmax(0, 1fr) rather than 1fr: the default auto minimum would keep the
+        // slider rows at their content width and push the whole page into overflow.
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.35rem 2rem;
+        align-items: center;
+    }
+
+    .setting-transform {
+        grid-column: 1 / -1;
+    }
+
+    .control-setting {
+        padding: 4px 0;
+        min-width: 0;
+    }
+
+    select {
+        padding: 5px 8px;
+        background-color: $panel-background-color;
+        color: $accent-text-color;
+        border: 1px solid $panel-border-color;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+
+        &:hover {
+            border-color: $brand-color;
+        }
+    }
+
+    .range-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+    }
+
+    .range-container label {
+        flex-shrink: 0;
+    }
+
+    .range-value {
+        color: $accent-text-color;
+        // Wide enough for three digits so 127 is not clipped.
+        min-width: 30px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .range-track {
+        height: 6px;
+        margin: 0 10px;
+        width: calc(100% - 20px);
+        background-color: rgba(255, 255, 255, 0.12);
+        border-radius: 4px;
+        position: relative;
+    }
+
+    .range-track-highlight {
+        position: absolute;
+        height: 100%;
+        background-color: $brand-color;
+        border-radius: 4px;
+    }
+
+    .range-thumb {
+        height: 16px;
+        width: 16px;
+        background-color: $brand-color;
+        border-radius: 50%;
+        border: 2px solid $accent-text-color;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-detail-output {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding-left: 1.5rem;
+        border-left: 1px solid $panel-border-color;
+    }
+
+    .output-readout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .control-output-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: $muted-text-color;
+        white-space: nowrap;
+    }
+
+    .control-value {
+        font-size: 1.9rem;
+        font-weight: bold;
+        line-height: 1;
+        color: $brand-color;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .invoke-button {
+        padding: 0.7rem 1.6rem;
+        border: none;
+        border-radius: 6px;
+        background-color: $brand-color;
+        color: $accent-text-color;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: filter 0.15s ease;
+
+        &:hover {
+            filter: brightness(1.1);
+        }
+
+        &:active {
+            filter: brightness(0.95);
+        }
+    }
+}

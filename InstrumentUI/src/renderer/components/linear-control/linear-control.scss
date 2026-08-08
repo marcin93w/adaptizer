@@ -1,84 +1,57 @@
 @use "../../variables" as *;
 
-.linear-control {
-    background-color: $element-background-color;
-    width: 200px;
-    border: 3px solid $border-color;
+// One control per row. The header row in the configurator uses the same class so
+// the columns line up without a real <table>.
+.control-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 110px 110px 60px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 0.9rem;
+    border-left: 3px solid transparent;
     border-radius: 4px;
-    padding: 15px;
-}
-
-.control.selected {
-    border-color: $brand-color;
-    width: 400px;
-}
-
-.control:not(.selected) {
     cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.control-row:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.control-row.selected {
+    background-color: rgba(255, 87, 34, 0.1);
+    border-left-color: $brand-color;
+}
+
+.control-row .cell-name {
+    font-weight: 700;
+    color: $accent-text-color;
+}
+
+.control-row .cell-value {
+    text-align: right;
+    font-weight: 700;
+    color: $brand-color;
+    font-variant-numeric: tabular-nums;
+}
+
+.control-row-header {
+    cursor: default;
+    padding-top: 0;
+    padding-bottom: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $muted-text-color;
+    border-bottom: 1px solid $panel-border-color;
+    border-radius: 0;
 
     &:hover {
-        border-color: $brand-color;
+        background-color: transparent;
+    }
+
+    .cell-value {
+        color: $muted-text-color;
     }
 }
-
-.control-label {
-    text-align: center;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: $accent-text-color;
-}
-
-.control-setting {
-    padding: 7px 0;
-}
-
-.range-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.range-container label {
-    flex-shrink: 0;
-}
-
-.range-value {
-    color: $accent-text-color;
-    min-width: 18px;
-}
-
-.range-track {
-    height: 6px;
-    margin: 0 10px;
-    width: calc(100% - 20px);
-    background-color: $border-color;
-    border-radius: 4px;
-    position: relative;
-}
-
-.range-track-highlight {
-    position: absolute;
-    height: 100%;
-    background-color: $brand-color;
-    border-radius: 4px;
-}
-
-.range-thumb {
-    height: 16px;
-    width: 16px;
-    background-color: $brand-color;
-    border-radius: 50%;
-    border: 2px solid $accent-text-color;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.control-value {
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin: 20px 0 10px 0;
-    color: $brand-color;
-}
-
-

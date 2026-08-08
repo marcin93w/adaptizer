@@ -6,6 +6,7 @@ import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
 import { LinearControl } from "../linear-control/linear-control";
+import { ControlDetail } from "../control-detail/control-detail";
 import Adaptizer from "../../domain/adaptizer";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
@@ -41,11 +42,8 @@ export default function Configurator({ project }: { project: Project }) {
         project.setInputType(input);
     };
 
-    const handleSelectedControlChange = (control: Control | null) => {
-        setSelectedControl(control);
-        if (control) {
-            adaptizer.sendControl(control);
-        }
+    const handleInvokeControl = (control: Control) => {
+        adaptizer.sendControl(control);
     };
 
     const addNewControl = () => {
@@ -56,22 +54,44 @@ export default function Configurator({ project }: { project: Project }) {
     }
 
     return <div id="configurator">
-        <div id="inputs">
-            <div className={`input-item ${selectedInput === InputType.VOLUME ?  "selected" : ""}`} onClick={() => handleInputChange(InputType.VOLUME)} >Volume</div>
-            <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>
-            <div className={`input-item ${selectedInput === InputType.EXPRESSION ? "selected" : ""}`} onClick={() => handleInputChange(InputType.EXPRESSION)}>Expression</div>
+        <div id="workspace">
+            <section className="source-panel">
+                <div className="panel-heading">Input</div>
+                <div id="inputs">
+                    <div className={`input-item ${selectedInput === InputType.VOLUME ?  "selected" : ""}`} onClick={() => handleInputChange(InputType.VOLUME)} >Volume</div>
+                    <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>
+                    <div className={`input-item ${selectedInput === InputType.EXPRESSION ? "selected" : ""}`} onClick={() => handleInputChange(InputType.EXPRESSION)}>Expression</div>
+                </div>
+                <AdaptizerKnob min={0} max={9} step={1} onChange={setInputValue} />
+            </section>
+            <div className="signal-link" aria-hidden="true" />
+            <section className="controls-panel">
+                <div className="panel-heading">Controls</div>
+                <div className="control-table">
+                    <div className="control-row control-row-header">
+                        <span>Control</span>
+                        <span>Type</span>
+                        <span>Input range</span>
+                        <span>MIDI range</span>
+                        <span className="cell-value">Out</span>
+                    </div>
+                    {controls.map(control => (
+                        <LinearControl key={control.controlNumber}
+                            control={control}
+                            isSelected={selectedControl === control}
+                            onSelect={setSelectedControl}
+                            inputValue={inputValue} />
+                    ))}
+                    <div className="add-control-row" onClick={() => addNewControl()}>+ Add control</div>
+                </div>
+            </section>
         </div>
-        <AdaptizerKnob min={0} max={9} step={1} onChange={setInputValue} />
-        <div id="controls">
-            {controls.map(control => (
-                <LinearControl key={control.controlNumber} 
-                    control={control} 
-                    isSelected={selectedControl === control} 
-                    setSelectedControl={handleSelectedControlChange}
-                    inputValue={inputValue} />
-            ))}
-            <div className="add-control-button" onClick={() => addNewControl()}>+</div>
-        </div>
+        <section id="detail-section">
+            <div className="panel-heading">Selected control</div>
+            {selectedControl
+                ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} />
+                : <div className="detail-placeholder">Select a control above to edit it</div>}
+        </section>
         {isExportDialogOpen && <ExportDialog adaptizer={adaptizer} onClose={() => {
             setIsExportDialogOpen(false);
             adaptizer.setInput(inputValue);

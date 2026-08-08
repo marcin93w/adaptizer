@@ -1,5 +1,13 @@
 @use "./variables" as *;
 
+// Without this, padding and borders are added on top of every declared width,
+// so widths like the card's 200px and the detail panel's max-width do not hold.
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     background-color: $background-color;
     color: $text-color;

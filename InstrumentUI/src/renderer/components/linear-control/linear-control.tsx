@@ -1,6 +1,4 @@
-import React, { useEffect } from "react";
-import { Range } from 'react-range';
-import { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import './linear-control.scss';
 import { TransformType } from "../../../shared/dtos";
 import { Control } from "../../domain/control";
@@ -8,16 +6,16 @@ import { Control } from "../../domain/control";
 interface LinearControlProps {
     control: Control;
     isSelected: boolean;
-    setSelectedControl: (control: Control | null) => void;
+    onSelect: (control: Control) => void;
     inputValue: number;
 }
 
-const transformTypeOptions = [
+export const transformTypeOptions = [
     { value: TransformType.LINEAR, label: 'Linear' },
     { value: TransformType.REVERSED_LINEAR, label: 'Reversed linear' },
 ];
 
-export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, setSelectedControl, inputValue }) => {
+export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, onSelect, inputValue }) => {
     // The control is the single source of truth - copying its values into state would make them
     // go stale whenever React reuses this component for a different control (e.g. after an import).
     const [, forceRender] = useState(0);
@@ -33,101 +31,11 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
     const transformType = control.transformType;
     const midiValue = control.calculateControlValue(inputValue);
 
-    if (isSelected) {
-        return <div className="linear-control control selected">
-            <div className="control-label" onClick={() => setSelectedControl(null)}>CC {control.controlNumber}</div>
-            <div className="control-setting">
-                <label>Transform type: </label>
-                <select value={transformType} onChange={(e) => {
-                    control.transformType = e.target.value as TransformType;
-                }}>
-                    {transformTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                </select>
-            </div>
-            <div className="range-container control-setting">
-                <label>Input range: </label>
-                <span className="range-value">{inputRangeValues[0]}</span>
-                <Range
-                    values={inputRangeValues}
-                    step={1}
-                    min={0}
-                    max={9}
-                    onChange={(newValues) => {
-                        control.inputMin = newValues[0];
-                        control.inputMax = newValues[1];
-                    }}
-                    renderTrack={({ props, children }) => (
-                        <div
-                            {...props}
-                            className="range-track"
-                        >
-                            <div
-                                className="range-track-highlight"
-                                style={{
-                                    width: `${(inputRangeValues[1] - inputRangeValues[0]) * 100 / 9}%`,
-                                    left: `${inputRangeValues[0] * 100 / 9}%`,
-                                }}
-                            />
-                            {children}
-                        </div>
-                    )}
-                    renderThumb={({ props }) => (
-                        <div
-                            {...props}
-                            className="range-thumb"
-                        />
-                    )}
-                />
-                <span className="range-value">{inputRangeValues[1]}</span>
-            </div>
-            <div className="range-container control-setting">
-                <label>MIDI range: </label>
-                <span className="range-value">{midiRangeValues[0]}</span>
-                <Range
-                    values={midiRangeValues}
-                    step={1}
-                    min={0}
-                    max={127}
-                    onChange={(newValues) => {
-                        control.midiMin = newValues[0];
-                        control.midiMax = newValues[1];
-                    }}
-                    renderTrack={({ props, children }) => (
-                        <div
-                            {...props}
-                            className="range-track"
-                        >
-                            <div
-                                className="range-track-highlight"
-                                style={{
-                                    width: `${(midiRangeValues[1] - midiRangeValues[0]) * 100 / 127}%`,
-                                    left: `${midiRangeValues[0] * 100 / 127}%`,
-                                }}
-                            />
-                            {children}
-                        </div>
-                    )}
-                    renderThumb={({ props }) => (
-                        <div
-                            {...props}
-                            className="range-thumb"
-                        />
-                    )}
-                />
-                <span className="range-value">{midiRangeValues[1]}</span>
-            </div>
-            <div className="control-value" onClick={() => setSelectedControl(null)}>{midiValue}</div>
-        </div>; 
-    } else {
-        return <div onClick={() => setSelectedControl(control)} className="linear-control control">
-            <div className="control-label">CC {control.controlNumber}</div>
-            <div className="control-setting">Type: {transformTypeOptions.find(option => option.value === transformType)?.label}</div>
-            <div className="control-setting">Input range: {inputRangeValues[0]} .. {inputRangeValues[1]}</div>
-            <div className="control-setting">MIDI range: {midiRangeValues[0]} .. {midiRangeValues[1]}</div>
-            <div className="control-value">{midiValue}</div>
-        </div>;
-    }
+    return <div onClick={() => onSelect(control)} className={`control-row ${isSelected ? "selected" : ""}`}>
+        <span className="cell-name">CC {control.controlNumber}</span>
+        <span>{transformTypeOptions.find(option => option.value === transformType)?.label}</span>
+        <span>{inputRangeValues[0]} .. {inputRangeValues[1]}</span>
+        <span>{midiRangeValues[0]} .. {midiRangeValues[1]}</span>
+        <span className="cell-value">{midiValue}</span>
+    </div>;
 };
-
