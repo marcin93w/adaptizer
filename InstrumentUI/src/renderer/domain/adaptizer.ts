@@ -37,6 +37,10 @@ class Adaptizer {
         });
     }
 
+    sendControl(control: Control) {
+        this._calculateAndSendMidiMessage(control);
+    }
+
     private _calculateAndSendMidiMessage(control: Control) {
         const midiValue = control.calculateControlValue(this._input);
         MidiService.sendMidiMessage(control.controlNumber, midiValue);

@@ -14,7 +14,7 @@ export default function Configurator({ project }: { project: Project }) {
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
     const [inputValue, setInputValue] = React.useState(0);
-    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(new Adaptizer(project, inputValue));
+    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue));
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
 
     React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
@@ -26,10 +26,11 @@ export default function Configurator({ project }: { project: Project }) {
 
     React.useEffect(() => {
         adaptizer.setInput(inputValue);
-    }, [inputValue]);
+    }, [inputValue, adaptizer]);
 
     React.useEffect(() => {
         setControls(project.getControls());
+        setSelectedControl(project.getControls()[0] ?? null);
         setSelectedInput(project.getInputType());
         // The export renders the project it was started for, so opening another one ends it
         setIsExportDialogOpen(false);
@@ -38,6 +39,13 @@ export default function Configurator({ project }: { project: Project }) {
     const handleInputChange = (input: InputType) => {
         setSelectedInput(input);
         project.setInputType(input);
+    };
+
+    const handleSelectedControlChange = (control: Control | null) => {
+        setSelectedControl(control);
+        if (control) {
+            adaptizer.sendControl(control);
+        }
     };
 
     const addNewControl = () => {
@@ -59,7 +67,7 @@ export default function Configurator({ project }: { project: Project }) {
                 <LinearControl key={control.controlNumber} 
                     control={control} 
                     isSelected={selectedControl === control} 
-                    setSelectedControl={setSelectedControl} 
+                    setSelectedControl={handleSelectedControlChange}
                     inputValue={inputValue} />
             ))}
             <div className="add-control-button" onClick={() => addNewControl()}>+</div>

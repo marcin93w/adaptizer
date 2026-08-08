@@ -25,6 +25,7 @@ class MidiService {
 
   sendMidiMessage(controlNumber: number, midiValue: number) {
     if (this.midiOutput) {
+      console.log(`Sending MIDI signal: controlNumber=${controlNumber}, value=${midiValue}`);
       this.midiOutput.send([0xB1, controlNumber, midiValue]);
       return;
     }
