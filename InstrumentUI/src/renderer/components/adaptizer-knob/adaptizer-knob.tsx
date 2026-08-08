@@ -45,7 +45,10 @@ const AdaptizerKnob = ({ min = 0, max = 10, step = 1, onChange }: AdaptizerKnobP
   };
 
   return (
-    <div className="knob-container">
+    // The ring tracks the same value/max fraction as valueToAngle, so the filled
+    // arc always ends exactly where the indicator points.
+    <div className="knob-container" style={{ "--knob-progress": value / max } as React.CSSProperties}>
+      <div className="knob-ring" />
       <div
         className="knob"
         onMouseDown={handleMouseDown}

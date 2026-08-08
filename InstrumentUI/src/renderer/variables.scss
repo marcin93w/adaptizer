@@ -5,3 +5,12 @@ $brand-color: #FF5722;
 
 $element-background-color: #1d1d1d;
 $border-color: #888;
+
+// The input source sits on a raised panel so it reads as a different kind of thing
+// than the controls, which use the recessed $element-background-color.
+$panel-background-color: #2b3038;
+$panel-border-color: #3d444e;
+$muted-text-color: #6c757d;
+
+// Shared by the knob and the input switcher stacked above it so they line up exactly.
+$knob-size: 220px;

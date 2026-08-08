@@ -1,52 +1,72 @@
 @use "../../variables" as *;
 
+// The ring occupies the outer edge of $knob-size; the knob face sits inside it.
+// Sizing from the outside in keeps the whole widget exactly $knob-size wide, so
+// it lines up with the input switcher stacked above it.
+$ring-thickness: 5px;
+$ring-gap: 13px;
+
 .knob-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 20px;
-    margin-bottom: 120px;
-  }
-  
-  .knob {
-    width: 250px;
-    height: 250px;
-    background: #444;
-    border-radius: 50%;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: $knob-size;
+    height: $knob-size;
+}
+
+.knob {
+    position: absolute;
+    inset: $ring-gap;
+    border-radius: 50%;
     cursor: grab;
-    box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  .knob-indicator {
-    width: 10px;
-    height: 80px;
+    background: radial-gradient(circle at 50% 32%, #4d525b, #33373e 72%);
+    box-shadow:
+        inset 0 2px 6px rgba(255, 255, 255, 0.08),
+        inset 0 -3px 8px rgba(0, 0, 0, 0.4),
+        0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.knob:active {
+    cursor: grabbing;
+}
+
+.knob-indicator {
+    width: 8px;
+    height: 58px;
     background: $brand-color;
     position: absolute;
-    top: 10px;
+    top: 13px;
     left: 50%;
     transform: translateX(-50%);
-    border-radius: 2px;
-  }
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 87, 34, 0.55);
+}
 
-  .knob-min-indicator {
-    width: 10px;
-    height: 100px;
-    background: $brand-color;
-    transform: rotate(135deg) translateX(-50%);
-    top: 10px;
-  }
-  
-  .knob-value {
-    margin-top: -138px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color:  $brand-color;
+// Track plus filled arc. Rotated -135deg so the conic sweep starts at the knob's
+// minimum position, which lets the fill be a plain 0..270deg span with no wrap.
+.knob-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    transform: rotate(-135deg);
+    background:
+        conic-gradient(
+            $brand-color calc(var(--knob-progress) * 270deg),
+            rgba(255, 255, 255, 0.07) calc(var(--knob-progress) * 270deg) 270deg,
+            transparent 270deg
+        );
+    -webkit-mask: radial-gradient(closest-side, transparent calc(100% - #{$ring-thickness}), #000 calc(100% - #{$ring-thickness}));
+    mask: radial-gradient(closest-side, transparent calc(100% - #{$ring-thickness}), #000 calc(100% - #{$ring-thickness}));
+    pointer-events: none;
+}
+
+.knob-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: $brand-color;
     user-select: none;
-    z-index: 100;
-  }
-  
+    pointer-events: none;
+}
