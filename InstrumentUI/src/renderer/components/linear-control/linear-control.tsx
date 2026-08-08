@@ -18,18 +18,20 @@ const transformTypeOptions = [
 ];
 
 export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelected, setSelectedControl, inputValue }) => {
-    const [midiRangeValues, setMidiRangeValues] = useState([control.midiMin, control.midiMax]);
-    const [inputRangeValues, setInputRangeValues] = useState([control.inputMin, control.inputMax]);
-    const [transformType, setTransformType] = useState(control.transformType);
-    const [midiValue, setMidiValue] = useState(control.calculateControlValue(inputValue));
-
-    control.registerControlChangedListener(() => {
-        setMidiValue(control.calculateControlValue(inputValue));
-    });
+    // The control is the single source of truth - copying its values into state would make them
+    // go stale whenever React reuses this component for a different control (e.g. after an import).
+    const [, forceRender] = useState(0);
 
     useEffect(() => {
-        setMidiValue(control.calculateControlValue(inputValue));
-    }, [inputValue, control]);
+        const listener = () => forceRender(version => version + 1);
+        control.registerControlChangedListener(listener);
+        return () => control.unregisterControlChangedListener(listener);
+    }, [control]);
+
+    const inputRangeValues = [control.inputMin, control.inputMax];
+    const midiRangeValues = [control.midiMin, control.midiMax];
+    const transformType = control.transformType;
+    const midiValue = control.calculateControlValue(inputValue);
 
     if (isSelected) {
         return <div className="linear-control control selected">
@@ -37,7 +39,6 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
             <div className="control-setting">
                 <label>Transform type: </label>
                 <select value={transformType} onChange={(e) => {
-                    setTransformType(e.target.value as TransformType);
                     control.transformType = e.target.value as TransformType;
                 }}>
                     {transformTypeOptions.map((option) => (
@@ -54,7 +55,6 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
                     min={0}
                     max={9}
                     onChange={(newValues) => {
-                        setInputRangeValues(newValues);
                         control.inputMin = newValues[0];
                         control.inputMax = newValues[1];
                     }}
@@ -91,7 +91,6 @@ export const LinearControl: React.FC<LinearControlProps> = ({ control, isSelecte
                     min={0}
                     max={127}
                     onChange={(newValues) => {
-                        setMidiRangeValues(newValues);
                         control.midiMin = newValues[0];
                         control.midiMax = newValues[1];
                     }}

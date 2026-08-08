@@ -65,6 +65,10 @@ export class Control {
     this._controlChangedListeners.push(listener);
   }
 
+  unregisterControlChangedListener(listener: () => void) {
+    this._controlChangedListeners = this._controlChangedListeners.filter(l => l !== listener);
+  }
+
   notifyControlChanged() {
     this._controlChangedListeners.forEach(listener => listener());
   }
