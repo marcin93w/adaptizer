@@ -10,9 +10,12 @@ export class InputConfig {
 }
 
 class Project {
-  constructor() {}
+  // Controls always go through addControl, so every one of them notifies about its changes
+  constructor(controls: Control[] = [new Control(1, TransformType.LINEAR, 0, 9, 0, 127)]) {
+    controls.forEach(control => this.addControl(control));
+  }
 
-  private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map([[1, new Control(1, TransformType.LINEAR, 0, 9, 0, 127)]]));
+  private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map());
   private _projectUpdatedListeners: (() => void)[] = [];
   private _controlAddedListeners: ((control: Control) => void)[] = [];
 
@@ -62,11 +65,8 @@ class Project {
   }
 
   static fromDto(dto: ProjectDto): Project {
-    const project = new Project();
+    const project = new Project(dto.controls.map((controlDto: ControlDto) => Control.fromDto(controlDto)));
     project.setInputType(dto.inputType);
-    dto.controls.forEach((controlDto: ControlDto) => {
-      project.addControl(Control.fromDto(controlDto));
-    });
     return project;
   }
 }
