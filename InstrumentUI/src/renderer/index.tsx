@@ -6,7 +6,7 @@ import { MidiConnectionWarning } from "./components/midi-connection-warning/midi
 import Configurator from "./components/configurator/configurator";
 
 const App = () => {
-    const [project, setProject] = React.useState<Project>(new Project());
+    const [project, setProject] = React.useState<Project>(() => Project.newDefault());
 
     useEffect(() => {
         project.registerProjectUpdatedListener(() => {

@@ -60,6 +60,25 @@ describe("saving and reopening a format-1 project", () => {
     });
 });
 
+describe("starting a new project", () => {
+    it("starts with one control covering the whole MIDI range", () => {
+        const project = Project.newDefault();
+
+        expect(project.getControls().map(control => control.controlNumber)).toEqual([1]);
+        expect(valuesForEveryInput(project.getControls()[0])).toEqual([0, 14, 28, 42, 56, 71, 85, 99, 113, 127]);
+    });
+
+    it("does not add that control to a project opened from a file", () => {
+        const empty = {
+            formatVersion: 1,
+            inputType: InputType.INTENSITY,
+            controls: []
+        } as ProjectDto;
+
+        expect(Project.fromDto(empty).getControls()).toEqual([]);
+    });
+});
+
 describe("rejecting unsupported or invalid projects", () => {
     it("rejects an unsupported project format", () => {
         const unsupported = {

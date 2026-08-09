@@ -19,7 +19,7 @@ export class ProjecManager {
     }
 
     newProject() {
-        this.project = new Project().toDto();
+        this.project = Project.newDefault().toDto();
         this.projectName = "New Project";
         this.mainWindow.webContents.send(projectOpenedEvent, this.project);
         this.mainWindow.setTitle(this.projectName + " - Adaptizer");

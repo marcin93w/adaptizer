@@ -10,8 +10,15 @@ export class InputConfig {
 
 class Project {
   // Controls always go through addControl, so every one of them notifies about its changes
-  constructor(controls: Control[] = [new Control(1, [{ input: 0, midi: 0 }, { input: 9, midi: 127 }])]) {
+  constructor(controls: Control[] = []) {
     controls.forEach(control => this.addControl(control));
+  }
+
+  // A brand-new project starts with one control so there is something to audition. That
+  // belongs to "the user picked New", not to the constructor - an opened .adz holds exactly
+  // the controls it was saved with, and a default here would add a CC nobody configured.
+  static newDefault(): Project {
+    return new Project([Control.withDefaultCurve(1)]);
   }
 
   private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map());

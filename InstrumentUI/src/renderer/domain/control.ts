@@ -137,4 +137,12 @@ export class Control {
     }
     return new Control(dto.controlNumber, dto.points);
   }
+
+  /** A control the user has not shaped yet: the whole MIDI range across the whole input range. */
+  static withDefaultCurve(controlNumber: number): Control {
+    return new Control(controlNumber, [
+      { input: inputValueMin, midi: midiValueMin },
+      { input: inputValueMax, midi: midiValueMax }
+    ]);
+  }
 }
