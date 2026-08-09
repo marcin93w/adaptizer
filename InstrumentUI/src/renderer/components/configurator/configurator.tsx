@@ -47,7 +47,7 @@ export default function Configurator({ project }: { project: Project }) {
     };
 
     const addNewControl = () => {
-        const newControl = Control.withDefaultCurve(project.getControls().length + 1);
+        const newControl = Control.withDefaultCurve(project.nextControlNumber());
         project.addControl(newControl);
         setControls(project.getControls());
         setSelectedControl(newControl);

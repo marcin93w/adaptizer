@@ -3,6 +3,8 @@ import {
   ControlPointDto,
   inputValueMax,
   inputValueMin,
+  midiControlNumberMax,
+  midiControlNumberMin,
   midiValueMax,
   midiValueMin
 } from "../../shared/dtos";
@@ -48,7 +50,7 @@ export class Control {
     private readonly _controlNumber: number,
     points: readonly ControlPointDto[]
   ) {
-    assertIntegerInRange("Control number", _controlNumber, 0, 127);
+    assertIntegerInRange("Control number", _controlNumber, midiControlNumberMin, midiControlNumberMax);
     this._points = validatePoints(points);
   }
 

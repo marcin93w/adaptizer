@@ -1,5 +1,5 @@
 import { Control } from "./control";
-import { ControlDto, InputType, projectFormatVersion, ProjectDto } from "../../shared/dtos";
+import { ControlDto, InputType, midiControlNumberMax, projectFormatVersion, ProjectDto } from "../../shared/dtos";
 
 export class InputConfig {
   constructor(
@@ -45,6 +45,18 @@ class Project {
 
   getControls(): Control[] {
     return Array.from(this._config.controls.values());
+  }
+
+  // Controls are keyed by CC number, so the next one has to clear the highest number in use.
+  // Counting them instead silently replaces a configured control as soon as the numbers have
+  // gaps: a project holding CC 1 and CC 3 would hand out 3 again and rebuild it from scratch.
+  nextControlNumber(): number {
+    const highest = this.getControls()
+      .reduce((highest, control) => Math.max(highest, control.controlNumber), 0);
+    if (highest >= midiControlNumberMax) {
+      throw new Error(`A project cannot hold a control above number ${midiControlNumberMax}.`);
+    }
+    return highest + 1;
   }
 
   registerProjectUpdatedListener(listener: () => void) {
