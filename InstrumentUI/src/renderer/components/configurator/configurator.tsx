@@ -21,15 +21,24 @@ export default function Configurator({ project }: { project: Project }) {
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
     const [inputValue, setInputValue] = React.useState(startingInputValue);
-    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue, MidiService));
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+
+    // The adaptizer starts sending as soon as it is built, so it has to be built with the input
+    // the knob is actually on - otherwise opening a project mid-audition announces every control
+    // at the wrong value first.
+    const inputValueRef = React.useRef(inputValue);
+    inputValueRef.current = inputValue;
+
+    // One adaptizer per project. Creating it in an effect that then initialized the one from the
+    // closure left two of them live on the same controls, and asked the stale one for MIDI access.
+    const adaptizer = React.useMemo(
+        () => new Adaptizer(project, inputValueRef.current, MidiService), [project]);
 
     React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
 
     React.useEffect(() => {
-        setAdaptizer(new Adaptizer(project, inputValue, MidiService));
         adaptizer.initialize();
-    }, [project]);
+    }, [adaptizer]);
 
     React.useEffect(() => {
         adaptizer.setInput(inputValue);
