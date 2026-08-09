@@ -5,11 +5,15 @@ interface AdaptizerKnobProps {
     min?: number;
     max?: number;
     step?: number;
+    /** Where the knob starts. Required, because the owner of the input value has to be the one
+     *  that decides it - a knob that picks its own start reports a value the rest of the app
+     *  does not have, and the DAW hears the disagreement as a burst of two different values. */
+    initialValue: number;
     onChange: (value: number) => void;
 }
 
-const AdaptizerKnob = ({ min = 0, max = 10, step = 1, onChange }: AdaptizerKnobProps) => {
-  const [value, setValue] = useState((max - min) / 2); // Default to midpoint
+const AdaptizerKnob = ({ min = 0, max = 10, step = 1, initialValue, onChange }: AdaptizerKnobProps) => {
+  const [value, setValue] = useState(initialValue);
   const angleRange = 270; // Knob rotation range (-135° to 135°)
   const startAngle = -135;
   const isDragging = useRef(false);
@@ -20,8 +24,12 @@ const AdaptizerKnob = ({ min = 0, max = 10, step = 1, onChange }: AdaptizerKnobP
     onChange?.(roundedValue());
   }, [value]);
 
+  // The fraction of the way through the range, not of the way to max - the two are only the
+  // same while min is 0, and the knob would point at the wrong place for any other range.
+  const valueFraction = (value: number) => (value - min) / (max - min);
+
   // Convert value to rotation angle
-  const valueToAngle = (value) => startAngle + (value / max) * angleRange;
+  const valueToAngle = (value: number) => startAngle + valueFraction(value) * angleRange;
 
   // Convert mouse movement to value change
   const handleMouseMove = (e) => {
@@ -47,7 +55,7 @@ const AdaptizerKnob = ({ min = 0, max = 10, step = 1, onChange }: AdaptizerKnobP
   return (
     // The ring tracks the same value/max fraction as valueToAngle, so the filled
     // arc always ends exactly where the indicator points.
-    <div className="knob-container" style={{ "--knob-progress": value / max } as React.CSSProperties}>
+    <div className="knob-container" style={{ "--knob-progress": valueFraction(value) } as React.CSSProperties}>
       <div className="knob-ring" />
       <div
         className="knob"

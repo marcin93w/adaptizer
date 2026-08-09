@@ -1,6 +1,6 @@
 import React from "react";
 import Project from "../../domain/project";
-import { InputType } from "../../../shared/dtos";
+import { InputType, inputValueMax, inputValueMin } from "../../../shared/dtos";
 import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
@@ -10,11 +10,17 @@ import Adaptizer from "../../domain/adaptizer";
 import MidiService from "../../services/midi-service";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
+// The input the app starts on, held in one place because the knob, the control list and the
+// adaptizer all have to agree about it on the very first render. It is the bottom of the
+// range on purpose: it is what the export's first track renders, so what the DAW hears
+// before the user touches anything is a value the finished song actually contains.
+const startingInputValue = inputValueMin;
+
 export default function Configurator({ project }: { project: Project }) {
     const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
-    const [inputValue, setInputValue] = React.useState(0);
+    const [inputValue, setInputValue] = React.useState(startingInputValue);
     const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue, MidiService));
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
 
@@ -64,7 +70,8 @@ export default function Configurator({ project }: { project: Project }) {
                     <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>
                     <div className={`input-item ${selectedInput === InputType.EXPRESSION ? "selected" : ""}`} onClick={() => handleInputChange(InputType.EXPRESSION)}>Expression</div>
                 </div>
-                <AdaptizerKnob min={0} max={9} step={1} onChange={setInputValue} />
+                <AdaptizerKnob min={inputValueMin} max={inputValueMax} step={1}
+                    initialValue={startingInputValue} onChange={setInputValue} />
             </section>
             <div className="signal-link" aria-hidden="true" />
             <section className="controls-panel">
