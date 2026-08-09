@@ -2,7 +2,7 @@ import Project from "../renderer/domain/project";
 import { ProjectDto } from "../shared/dtos";
 import { projectOpenedEvent, projectUpdatedEvent } from "../shared/actions";
 import { BrowserWindow, dialog, ipcMain } from "electron";
-import { writeFile } from "fs";
+import { writeFile } from "fs/promises";
 
 export class ProjecManager {    
     mainWindow: BrowserWindow;
@@ -61,18 +61,20 @@ export class ProjecManager {
     }
     
     async saveProject(): Promise<void> {
-        return dialog.showSaveDialog({
+        const result: any = await dialog.showSaveDialog({
             filters: [{ name: 'Adaptizer Project', extensions: ['adz'] }]
-        }).then(async (result: any) => {
-            if (result.filePath) {
-                const filePath = result.filePath;
-                const projectData = JSON.stringify(this.project);
-                await writeFile(filePath, projectData, (err: any) => {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-            }
         });
+        if (!result.filePath) {
+            return;
+        }
+
+        try {
+            await writeFile(result.filePath, JSON.stringify(this.project), 'utf-8');
+        } catch (error) {
+            // A save that fails quietly is worse than one that fails loudly: the user walks away
+            // believing the work is on disk. Nothing here can recover it, so all we can do is say so.
+            const message = error instanceof Error ? error.message : String(error);
+            dialog.showErrorBox("Could not save project", `The project was not saved.\n\n${message}`);
+        }
     }
 }
