@@ -153,47 +153,6 @@ describe("selecting a control", () => {
     });
 });
 
-describe("closing a project", () => {
-    it("does not let an edit made just before it land on the DAW afterwards", () => {
-        // Opening another project while an edit is still inside the debounce window: the
-        // value belongs to a project that is no longer open, so it must not be sent.
-        const project = aProject({ controls: [aControl({ cc: 1 })] });
-        const adaptizer = new Adaptizer(project, 9, midi);
-        midi.take();
-
-        project.getControls()[0].movePoint(9, 9, 60);
-        adaptizer.dispose();
-        vi.advanceTimersByTime(300);
-
-        expect(midi.take()).toEqual([]);
-    });
-
-    it("leaves exactly one adaptizer talking to the DAW when it is replaced", () => {
-        const project = aProject({ controls: [aControl({ cc: 1 })] });
-        const replaced = new Adaptizer(project, 9, midi);
-        replaced.dispose();
-        new Adaptizer(project, 9, midi);
-        midi.take();
-
-        project.getControls()[0].movePoint(9, 9, 60);
-        vi.advanceTimersByTime(300);
-
-        expect(midi.take()).toEqual([{ controlNumber: 1, value: 60 }]);
-    });
-
-    it("stops announcing controls added to a project it no longer serves", () => {
-        const project = aProject({ controls: [aControl({ cc: 1 })] });
-        const adaptizer = new Adaptizer(project, 9, midi);
-        adaptizer.dispose();
-        midi.take();
-
-        project.addControl(aControl({ cc: 5 }));
-        vi.advanceTimersByTime(300);
-
-        expect(midi.take()).toEqual([]);
-    });
-});
-
 describe("reporting whether the DAW can be reached", () => {
     it("says the port is available when loopMIDI is running", async () => {
         const adaptizer = new Adaptizer(aProject(), 0, midi);

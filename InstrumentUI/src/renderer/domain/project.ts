@@ -67,10 +67,6 @@ class Project {
     this._controlAddedListeners.push(listener);
   }
 
-  unregisterControlAddedListener(listener: (control: Control) => void) {
-    this._controlAddedListeners = this._controlAddedListeners.filter(l => l !== listener);
-  }
-
   private notifyProjectUpdated() {
     this._projectUpdatedListeners.forEach(listener => listener());
   }

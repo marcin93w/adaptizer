@@ -38,7 +38,6 @@ export default function Configurator({ project }: { project: Project }) {
 
     React.useEffect(() => {
         adaptizer.initialize();
-        return () => adaptizer.dispose();
     }, [adaptizer]);
 
     React.useEffect(() => {
