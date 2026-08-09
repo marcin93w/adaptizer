@@ -28,6 +28,8 @@ export const inputValueMin = 0;
 export const inputValueMax = exportTrackCount - 1;
 export const midiValueMin = 0;
 export const midiValueMax = 127;
+export const midiControlNumberMin = 0;
+export const midiControlNumberMax = 127;
 
 export interface ExportSettingsDto {
   outputPath: string;

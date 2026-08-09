@@ -4,8 +4,9 @@ import { MidiPort } from "../services/midi-port";
 
 class Adaptizer {
     private _input: number;
+    private readonly _pendingSends = new Map<Control, ReturnType<typeof setTimeout>>();
 
-    constructor(private _project: Project, private initialInput: number, private readonly _midiPort: MidiPort) {
+    constructor(private _project: Project, initialInput: number, private readonly _midiPort: MidiPort) {
         this._input = initialInput;
         this._project.getControls().forEach((control: Control) => {
             this.sendNowAndOnEveryControlChange(control);
@@ -32,12 +33,16 @@ class Adaptizer {
 
     private sendNowAndOnEveryControlChange(control: Control) {
         this._calculateAndSendMidiMessage(control);
-        
+
+        // The debounce is this adaptizer's own, not a property parked on the control. Shared
+        // state there meant two adaptizers cancelled each other's sends instead of both
+        // sending, which is what hid the duplicate adaptizer the configurator used to build.
         control.registerControlChangedListener(() => {
-            clearTimeout(control['_debounceTimeout']);
-            control['_debounceTimeout'] = setTimeout(() => {
+            clearTimeout(this._pendingSends.get(control));
+            this._pendingSends.set(control, setTimeout(() => {
+                this._pendingSends.delete(control);
                 this._calculateAndSendMidiMessage(control);
-            }, 300);
+            }, 300));
         });
     }
 

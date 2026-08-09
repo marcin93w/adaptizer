@@ -11,6 +11,7 @@ A small suite of tests that pin **business rules and user-observable outcomes**,
 - **Minimal DI seams**, not module mocking. See below.
 - **Domain tested properly; components covered by a few coarse happy-path journeys.**
 - **No snapshots, anywhere.**
+- **A defect gets fixed, not pinned.** Asserting broken behavior bakes a wrong contract into the suite, and `it.fails` - green while the bug lives, red the day it dies - reads as a trap. Fix it and assert the real behavior; if it is not worth fixing, it is not worth a test either.
 - **Coverage collected, never gated.**
 
 ## The seams
@@ -36,6 +37,7 @@ Two design notes:
 | **T2** | `domain/__tests__/project-dto.test.ts` | Format-1 `.adz` round-trip asserted through evaluated outputs, deterministic point sorting, unsupported-format and invalid-curve rejection, and tolerance for harmless unknown metadata. |
 | **T3** | `domain/__tests__/adaptizer.test.ts` | Debounce and send rules, asserted against the fake port's message log: the DAW is in sync on load; a new control is auditionable at once; **dragging a curve point does not flood the port**; controls debounce independently; **turning the knob is instant**; selecting a control re-announces it so the DAW can learn the CC. |
 | **T4** | `domain/__tests__/exporter.test.ts` | The 10-track state machine: refuses to start with no MIDI port and with no export tools (**zero tracks rendered** in both cases); **every track is rendered with its own control values**; tracks 0-9 in order exactly once; progress ordering; cancellation between tracks and mid-conversion, throwing nothing; a failing track aborts the rest and surfaces the DAW's message verbatim. |
+| **T9** | `domain/__tests__/project-controls.test.ts` | Adding a control: the new number clears every number in use, so **a control the user configured is never replaced**; the first control of an empty project is 1; a number no MIDI controller can carry is refused. |
 
 ### Tier 2 - components: coarse happy-path journeys
 
@@ -51,6 +53,8 @@ Deliberately few. Each wires a **real `Project`, a real `Adaptizer` over a fake 
 - **T6 `configurator.test.tsx`** - the live audition journey; editing a curve point changes what the DAW hears after the debounce; adding a control never replaces one the user already configured; opening a different project replaces the controls, closes the export dialog, and leaves exactly one live connection to the DAW.
 - **T7 `app.test.tsx`** - every edit is reported to the main process so it can be saved; opening a project replaces what's on screen; the MIDI warning appears only when the port is missing and the refresh button dismisses it (the whole loopMIDI onboarding loop).
 - **T8 `midi-service.test.ts`** - small, but the only test that can catch "we send on the wrong channel". Stub `navigator.requestMIDIAccess` via `Object.defineProperty` (stubbing a *browser API* is an environment concern, not module mocking). The port is matched by the exact name `Adaptizer`; "Adaptizer 2" is not accepted; sending while the port is missing is silently ignored.
+
+**Written so far:** T1-T4, T9, T8, `automation-curve.test.tsx` and `project-manager.test.ts`. **T5-T7 are still to write, and are blocked on the seams above being finished**: `Configurator` still imports the `MidiService` singleton and reaches for `window.electronAPI` directly rather than taking them as props, so a component test cannot get a fake in. `Adaptizer` and `Exporter` already take theirs.
 
 **Two accessibility fixes are prerequisites for T5**, and are good changes in their own right: `<label>BPM: </label>` and its `<input>` are siblings with no `htmlFor`/`id`, so `getByLabelText('BPM')` throws; and **both** Browse buttons are named "Browse", so `getByRole('button', {name: 'Browse'})` throws on multiple matches. This is test pressure improving the product rather than distorting it.
 
@@ -72,28 +76,11 @@ Without this section the suite rots: the first person to see 0% coverage on `ada
 - **Snapshot tests - none, anywhere.** A snapshot asserts "the output is what it was", which is not a business rule. It goes stale, gets blessed with `-u` reflexively, and its failure message never says what broke.
 - **Browser SVG rendering.** Interaction tests pin the editor's coordinate conversion against an explicit view box, but visual grid alignment, responsive sizing and pointer feel still belong in the manual smoke check.
 - **The knob's `document` mousemove wiring.** jsdom does not populate `MouseEvent.movementY` (always 0), so a synthesized drag moves the value by exactly zero and the test would pass against a knob that does nothing. Forging the property means asserting that your forged event reaches `setValue`. The knob's contract toward the rest of the app is covered by T6.
-- **`valueToAngle`'s `min` bug** (`-135 + (v/max)*270` ignores `min`). Harmless while `min === 0`, purely visual; asserting a CSS rotation is asserting rendering. Worth a comment, not a test.
+- **Where the knob points.** The indicator angle and the ring both derive from the fraction of the way through the range, and getting that fraction wrong is invisible while `min` is 0 - but asserting a CSS rotation is asserting rendering, and it belongs in the manual smoke check.
 - **Trivial `Control` accessors in isolation.** Point edits are covered through curve output, invariants, notifications and MIDI consequences instead.
 - **The PowerShell scripts and `runScript`'s process spawning.** `ableton-export.ps1` drives Ableton's Export dialog with SendKeys against whatever window has focus - it needs a licensed Ableton install and an uncontested desktop, and running it on a dev machine steals keystrokes mid-typing. What *is* testable is covered from both sides: the arguments we pass and the errors we read back, with the `ADAPTIZER_ERROR:` prefix as the contract between them.
 - **Electron main-process wiring** - `main.ts`, `menu.ts`, `ipcMain` registration, native dialogs. Declarative glue; testing it needs `vi.mock('electron')` and the assertions would be "we called `ipcMain.handle` with this string".
-- **`ProjecManager.saveProject`'s error handling** - after fixing it (see defect f). `project-manager.ts` has no pure part to extract, and a `ProjectStore` port costs more than four lines of well-understood code are worth. It goes on the manual smoke checklist instead. *Being explicit about not testing something after fixing it is a legitimate call - the alternative is a test that exists to have a test.*
-
-## Known defects
-
-**Fix first** where the fix is cheap and pinning the broken behavior would bake a wrong contract into the suite; otherwise schedule it and say so.
-
-`it.fails` - a test that passes while a bug exists and fails the day it is fixed - was considered as a way to document defects without going red, and rejected: a test that passes *because* the code is broken reads as a trap, and it is more machinery than a scheduled fix deserves. Where a defect is worth pinning, fix it and assert the real behavior.
-
-| | Defect | Ruling |
-| --- | --- | --- |
-| a | Phantom hardcoded control 1 survives `fromDto` - a `.adz` holding just CC 7 opens with CC 1 **and** CC 7, and the DAW receives CC 1 messages the user never configured. Fix: a `Project.newDefault()` factory; the plain constructor starts empty. Three call sites. | **Fix (batch 1)** |
-| b | `addControl` overwrites on a `length + 1` collision - controls live in a `Map` keyed by control *number* while `configurator.tsx:52` derives the new one from the *count*. Open an `.adz` holding CC 1 and CC 3, press `+`, and the CC 3 the user configured is silently replaced. Fix: `max + 1`. | **Fix (batch 2)** |
-| c | Control-view listeners must not grow across rerenders. `control-summary.tsx` and the curve editor register in effects and unregister when the control changes or unmounts. Adaptizer listener lifecycle remains a separate concern. | **View leak fixed** |
-| d | Knob emits `onChange(5)` against an `inputValue` of 0 - on launch the DAW gets a 0 burst then a 5 burst, and for one frame the cards show value-0 outputs under a knob reading 5. Fix: `initialValue` prop, one source of truth. **The start value is a product decision** - 0 matches the export's first track; the midpoint is a defensible audition default. | **Fix (batch 2) - decide the value** |
-| e | `[project]` effect `initialize()`s the stale adaptizer from the closure. Harmless in itself, but it's the statement that creates the second Adaptizer in (c). Fix: `useMemo`. `react-hooks/exhaustive-deps` would have flagged it - the concrete argument for adding lint. | **Fix (batch 2)** |
-| f | `await writeFile(path, data, cb)` awaits the **callback** form, which returns `undefined` - the save is fire-and-forget and a failure is only `console.error`d, so **the user is told nothing and believes their project is saved.** Fix: `fs/promises` + `dialog.showErrorBox`. | **Fix, deliberately not tested** |
-| g | `0xB1` in code vs `0xB0` in the README - **resolved: the code is right.** `Instrument/midi_controller.py:23` sends `channel=1`, and mido channels are 0-indexed, so the wire byte is `0xB0 \| 1` = `0xB1`. Fix the README. *Two smaller README mismatches found while checking: it links to `InstrumentUI/conf.adz`, which does not exist in the repo, and `Instrument/conf.adp` uses `BINARY_ON`, a transform the TypeScript app cannot represent - so that sample cannot be loaded by InstrumentUI at all.* | **Fix the README; pin with T8** |
-| h | The former collapsed-range divide-by-zero path no longer exists. Format-2 controls always have distinct input positions and mandatory endpoints; validation rejects duplicate inputs before they can reach MIDI output. | **Superseded by curve editor** |
+- ~~**`ProjecManager.saveProject`'s error handling**~~ - **this call was reversed, and the reversal is the point.** It was excluded because testing it looked like it needed a `ProjectStore` port. It does not: `project-manager.test.ts` already mocks `electron` - an external boundary jsdom cannot run, the same kind of substitution as stubbing a browser API - and writes into a temp directory, so "the file is written" and "a failure reaches the user" cost three tests and no production seam. *Deciding not to test something is a cost judgement, and it expires when the cost changes.*
 
 ## Guardrails (later batch)
 

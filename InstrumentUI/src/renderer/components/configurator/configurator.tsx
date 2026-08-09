@@ -1,6 +1,6 @@
 import React from "react";
 import Project from "../../domain/project";
-import { InputType } from "../../../shared/dtos";
+import { InputType, inputValueMax, inputValueMin } from "../../../shared/dtos";
 import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
@@ -10,20 +10,35 @@ import Adaptizer from "../../domain/adaptizer";
 import MidiService from "../../services/midi-service";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
+// The input the app starts on, held in one place because the knob, the control list and the
+// adaptizer all have to agree about it on the very first render. It is the bottom of the
+// range on purpose: it is what the export's first track renders, so what the DAW hears
+// before the user touches anything is a value the finished song actually contains.
+const startingInputValue = inputValueMin;
+
 export default function Configurator({ project }: { project: Project }) {
     const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
-    const [inputValue, setInputValue] = React.useState(0);
-    const [adaptizer, setAdaptizer] = React.useState<Adaptizer>(() => new Adaptizer(project, inputValue, MidiService));
+    const [inputValue, setInputValue] = React.useState(startingInputValue);
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+
+    // The adaptizer starts sending as soon as it is built, so it has to be built with the input
+    // the knob is actually on - otherwise opening a project mid-audition announces every control
+    // at the wrong value first.
+    const inputValueRef = React.useRef(inputValue);
+    inputValueRef.current = inputValue;
+
+    // One adaptizer per project. Creating it in an effect that then initialized the one from the
+    // closure left two of them live on the same controls, and asked the stale one for MIDI access.
+    const adaptizer = React.useMemo(
+        () => new Adaptizer(project, inputValueRef.current, MidiService), [project]);
 
     React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
 
     React.useEffect(() => {
-        setAdaptizer(new Adaptizer(project, inputValue, MidiService));
         adaptizer.initialize();
-    }, [project]);
+    }, [adaptizer]);
 
     React.useEffect(() => {
         adaptizer.setInput(inputValue);
@@ -47,10 +62,7 @@ export default function Configurator({ project }: { project: Project }) {
     };
 
     const addNewControl = () => {
-        const newControl = new Control(project.getControls().length + 1, [
-            { input: 0, midi: 0 },
-            { input: 9, midi: 127 }
-        ]);
+        const newControl = Control.withDefaultCurve(project.nextControlNumber());
         project.addControl(newControl);
         setControls(project.getControls());
         setSelectedControl(newControl);
@@ -67,7 +79,8 @@ export default function Configurator({ project }: { project: Project }) {
                     <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>
                     <div className={`input-item ${selectedInput === InputType.EXPRESSION ? "selected" : ""}`} onClick={() => handleInputChange(InputType.EXPRESSION)}>Expression</div>
                 </div>
-                <AdaptizerKnob min={0} max={9} step={1} onChange={setInputValue} />
+                <AdaptizerKnob min={inputValueMin} max={inputValueMax} step={1}
+                    initialValue={startingInputValue} onChange={setInputValue} />
             </section>
             <div className="signal-link" aria-hidden="true" />
             <section className="controls-panel">

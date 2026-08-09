@@ -3,6 +3,8 @@ import {
   ControlPointDto,
   inputValueMax,
   inputValueMin,
+  midiControlNumberMax,
+  midiControlNumberMin,
   midiValueMax,
   midiValueMin
 } from "../../shared/dtos";
@@ -48,7 +50,7 @@ export class Control {
     private readonly _controlNumber: number,
     points: readonly ControlPointDto[]
   ) {
-    assertIntegerInRange("Control number", _controlNumber, 0, 127);
+    assertIntegerInRange("Control number", _controlNumber, midiControlNumberMin, midiControlNumberMax);
     this._points = validatePoints(points);
   }
 
@@ -136,5 +138,13 @@ export class Control {
       throw new Error("Every control must contain a control number and curve points.");
     }
     return new Control(dto.controlNumber, dto.points);
+  }
+
+  /** A control the user has not shaped yet: the whole MIDI range across the whole input range. */
+  static withDefaultCurve(controlNumber: number): Control {
+    return new Control(controlNumber, [
+      { input: inputValueMin, midi: midiValueMin },
+      { input: inputValueMax, midi: midiValueMax }
+    ]);
   }
 }
