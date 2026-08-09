@@ -125,4 +125,5 @@ src/
 
 Built with Electron, React, TypeScript, Parcel and Sass. MIDI output goes through
 the Web MIDI API (`navigator.requestMIDIAccess`), sending CC messages as
-`[0xB0, controlNumber, value]`.
+`[0xB1, controlNumber, value]` — control change on channel 2, matching the
+Python instrument, which asks mido for `channel=1` on its zero-based numbering.
