@@ -8,6 +8,8 @@ import { ControlSummary } from "../control-summary/control-summary";
 import { ControlDetail } from "../control-detail/control-detail";
 import Adaptizer from "../../domain/adaptizer";
 import MidiService from "../../services/midi-service";
+import { MidiPort } from "../../services/midi-port";
+import { ElectronApi } from "../../../shared/electron-api";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
 // The input the app starts on, held in one place because the knob, the control list and the
@@ -16,7 +18,16 @@ import { ExportDialog } from "../export-dialog/export-dialog";
 // before the user touches anything is a value the finished song actually contains.
 const startingInputValue = inputValueMin;
 
-export default function Configurator({ project }: { project: Project }) {
+interface ConfiguratorProps {
+    project: Project;
+    // The two boundaries the configurator sits on. Defaults are evaluated at render time, so
+    // production callers pass neither and nothing reaches for a global before a component mounts.
+    midiPort?: MidiPort;
+    electronApi?: ElectronApi;
+}
+
+export default function Configurator(
+    { project, midiPort = MidiService, electronApi = window.electronAPI }: ConfiguratorProps) {
     const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
@@ -32,9 +43,9 @@ export default function Configurator({ project }: { project: Project }) {
     // One adaptizer per project. Creating it in an effect that then initialized the one from the
     // closure left two of them live on the same controls, and asked the stale one for MIDI access.
     const adaptizer = React.useMemo(
-        () => new Adaptizer(project, inputValueRef.current, MidiService), [project]);
+        () => new Adaptizer(project, inputValueRef.current, midiPort), [project, midiPort]);
 
-    React.useEffect(() => window.electronAPI.onExportRequested(() => setIsExportDialogOpen(true)), []);
+    React.useEffect(() => electronApi.onExportRequested(() => setIsExportDialogOpen(true)), [electronApi]);
 
     React.useEffect(() => {
         adaptizer.initialize();
@@ -108,7 +119,7 @@ export default function Configurator({ project }: { project: Project }) {
                 ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} inputLabel={inputLabel} />
                 : <div className="detail-placeholder">Select a control above to edit it</div>}
         </section>
-        {isExportDialogOpen && <ExportDialog adaptizer={adaptizer} onClose={() => {
+        {isExportDialogOpen && <ExportDialog adaptizer={adaptizer} electronApi={electronApi} onClose={() => {
             setIsExportDialogOpen(false);
             adaptizer.setInput(inputValue);
         }} />}

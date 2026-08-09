@@ -2,11 +2,15 @@ import React from "react";
 import Adaptizer from "../../domain/adaptizer";
 import Exporter, { ExportProgress, ExportStage } from "../../domain/exporter";
 import { ExportSettingsDto } from "../../../shared/dtos";
+import { ElectronApi } from "../../../shared/electron-api";
 import "./export-dialog.scss";
 
 interface ExportDialogProps {
     adaptizer: Adaptizer;
     onClose: () => void;
+    // The dialog's own boundary. The Exporter takes its MIDI port from the adaptizer instead,
+    // so it can only ever check the port the tracks will actually be rendered through.
+    electronApi?: ElectronApi;
 }
 
 const settingsStorageKey = "adaptizer.exportSettings";
@@ -21,7 +25,8 @@ const readStoredSettings = (): Partial<ExportSettingsDto> => {
     }
 };
 
-export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }) => {
+export const ExportDialog: React.FC<ExportDialogProps> = (
+    { adaptizer, onClose, electronApi = window.electronAPI }) => {
     // The stored settings only seed the fields, so they are read once instead of on every render
     const [storedSettings] = React.useState(readStoredSettings);
     const [outputPath, setOutputPath] = React.useState<string>(storedSettings.outputPath ?? "");
@@ -46,14 +51,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
     const isBpmValid = Number.isFinite(parsedBpm) && parsedBpm > 0;
 
     const selectOutputPath = async () => {
-        const selectedPath = await window.electronAPI.selectExportFolder();
+        const selectedPath = await electronApi.selectExportFolder();
         if (selectedPath) {
             setOutputPath(selectedPath);
         }
     };
 
     const selectPackagerPath = async () => {
-        const selectedPath = await window.electronAPI.selectPackager();
+        const selectedPath = await electronApi.selectPackager();
         if (selectedPath) {
             setPackagerPath(selectedPath);
         }
@@ -63,7 +68,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
         const settings = { outputPath, bpm: parsedBpm, packagerPath };
         localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
 
-        const newExporter = new Exporter(adaptizer, window.electronAPI);
+        const newExporter = new Exporter(adaptizer, electronApi);
         exporter.current = newExporter;
         setIsExporting(true);
         setError(null);
@@ -127,17 +132,19 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ adaptizer, onClose }
             <div className="export-setting">
                 <label>Output folder: </label>
                 <span className="export-path">{outputPath || "No folder selected"}</span>
-                <button onClick={selectOutputPath} disabled={isExporting}>Browse</button>
+                <button onClick={selectOutputPath} disabled={isExporting}
+                    aria-label="Browse for output folder">Browse</button>
             </div>
             <div className="export-setting">
-                <label>BPM: </label>
-                <input type="number" min={0} step="any" value={bpm} disabled={isExporting}
+                <label htmlFor="export-bpm">BPM: </label>
+                <input id="export-bpm" type="number" min={0} step="any" value={bpm} disabled={isExporting}
                     onChange={(e) => setBpm(e.target.value)} />
             </div>
             <div className="export-setting">
                 <label>Shaka packager: </label>
                 <span className="export-path">{packagerPath || "Use packager-win-x64.exe from PATH"}</span>
-                <button onClick={selectPackagerPath} disabled={isExporting}>Browse</button>
+                <button onClick={selectPackagerPath} disabled={isExporting}
+                    aria-label="Browse for Shaka packager">Browse</button>
             </div>
             {renderProgress()}
             <div className="export-buttons">

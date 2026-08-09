@@ -20,6 +20,8 @@ Two hard dependencies block behavior testing. `src/renderer/services/midi-servic
 
 Two interfaces - `MidiPort` (`src/renderer/services/midi-port.ts`) and `ElectronApi` (`src/shared/electron-api.ts`) - with method names deliberately unchanged, so `midi-service.ts` is a one-line diff and no call site changes shape. `Adaptizer` and `Exporter` take them as constructor parameters; the components default them as props (`midiPort: MidiPort = MidiService`, `electronApi: ElectronApi = window.electronAPI`), so production callers need no edits.
 
+The props enter the tree at four places: `App` (which hands both down), `MidiConnectionWarning` (`midiPort`), `Configurator` (both - it builds the `Adaptizer` and subscribes to the export menu item), and `ExportDialog` (`electronApi`, for the two Browse dialogs and the `Exporter` it builds). `App` itself had to be **extracted from `index.tsx` into `src/renderer/app.tsx`**: it was defined inline in the module that calls `ReactDOM.createRoot(...)` at eval time, so importing it from a test mounted the real app against a `#root` that does not exist. `index.tsx` is now nothing but that mount.
+
 Two design notes:
 
 1. **`Exporter` takes the port from the adaptizer, not its own constructor.** Its first rule is "refuse to start if the port is missing, because otherwise every track renders the same". It must check *the port the adaptizer will actually send through*; a separate parameter would let a caller pass a different one and check the wrong thing. `Adaptizer` exposing `get midiPort()` makes that impossible by construction.
@@ -54,9 +56,9 @@ Deliberately few. Each wires a **real `Project`, a real `Adaptizer` over a fake 
 - **T7 `app.test.tsx`** - every edit is reported to the main process so it can be saved; opening a project replaces what's on screen; the MIDI warning appears only when the port is missing and the refresh button dismisses it (the whole loopMIDI onboarding loop).
 - **T8 `midi-service.test.ts`** - small, but the only test that can catch "we send on the wrong channel". Stub `navigator.requestMIDIAccess` via `Object.defineProperty` (stubbing a *browser API* is an environment concern, not module mocking). The port is matched by the exact name `Adaptizer`; "Adaptizer 2" is not accepted; sending while the port is missing is silently ignored.
 
-**Written so far:** T1-T4, T9, T8, `automation-curve.test.tsx` and `project-manager.test.ts`. **T5-T7 are still to write, and are blocked on the seams above being finished**: `Configurator` still imports the `MidiService` singleton and reaches for `window.electronAPI` directly rather than taking them as props, so a component test cannot get a fake in. `Adaptizer` and `Exporter` already take theirs.
+**Written so far:** T1-T4, T9, T8, `automation-curve.test.tsx` and `project-manager.test.ts`. **T5-T7 are still to write.** The seams they were blocked on are now finished: the four components above take their boundaries as defaulted props, and `App` lives in `app.tsx`.
 
-**Two accessibility fixes are prerequisites for T5**, and are good changes in their own right: `<label>BPM: </label>` and its `<input>` are siblings with no `htmlFor`/`id`, so `getByLabelText('BPM')` throws; and **both** Browse buttons are named "Browse", so `getByRole('button', {name: 'Browse'})` throws on multiple matches. This is test pressure improving the product rather than distorting it.
+**Three accessibility fixes landed with the seams**, prerequisites for the tests and good changes in their own right: `<label>BPM: </label>` and its `<input>` were siblings with no `htmlFor`/`id`, so `getByLabelText('BPM')` threw; **both** Browse buttons were named "Browse", so `getByRole('button', {name: 'Browse'})` threw on multiple matches, and each now carries an `aria-label` naming what it browses for while the visible text stays "Browse"; and the MIDI warning's refresh button was named only by its `⟳` glyph, which T7 has to click. This is test pressure improving the product rather than distorting it.
 
 ### The fake kit - `src/testing/`
 
