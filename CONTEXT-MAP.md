@@ -8,7 +8,6 @@ Adaptizer is four independent components — different stacks, no shared workspa
 - [InstrumentUI](./InstrumentUI/CONTEXT.md) — where a producer authors a song: maps a dimension onto MIDI CC curves and exports the variants
 - [Player](./Player/CONTEXT.md) — where a listener hears a song: measures the listener's context on the device and picks the matching variant
 - [API](./API/CONTEXT.md) — the catalog of published songs
-- [Instrument](./Instrument/CONTEXT.md) — the original Python console instrument, superseded by InstrumentUI and slated for removal. Frozen: its glossary exists to stop its vocabulary being read as current.
 
 ## The dimension vocabulary
 
@@ -18,9 +17,9 @@ byte-identical in every context that persists or transmits one — see
 [ADR-0001](./docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md),
 which every `CONTEXT.md` here names.
 
-The producer/player line runs through this vocabulary. InstrumentUI, the
-Instrument and the API sit on the producer side: they name dimensions and never
-know what is behind them. The Player sits on the other side, and is the only
+The producer/player line runs through this vocabulary. InstrumentUI and the API
+sit on the producer side: they name dimensions and never know what is behind
+them. The Player sits on the other side, and is the only
 context with **inputs** — device-side signal sources. An input appears in
 nothing a producer or the catalog sees.
 

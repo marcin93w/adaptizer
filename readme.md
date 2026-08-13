@@ -16,7 +16,6 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a son
 | Component | What it is |
 | --- | --- |
 | [InstrumentUI](InstrumentUI/README.md) | Desktop (Electron) editor for producers: pick the song's dimension, configure the dimension → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
-| [Instrument](Instrument/README.md) | The original Python console instrument. Same job as InstrumentUI, driven by typed commands. |
 | [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and switches tracks in real time. |
 | [API](API/README.md) | Cloudflare Worker serving the songs catalog to the Player. Audio is served from an R2 bucket. |
 

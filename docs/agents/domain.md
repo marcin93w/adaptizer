@@ -2,7 +2,7 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo is multi-context: `API`, `Instrument`, `InstrumentUI`, and `Player` are independent components (different stacks, different READMEs, no shared root `package.json`/workspace), each treated as its own context.
+This repo is multi-context: `API`, `InstrumentUI`, and `Player` are independent components (different stacks, different READMEs, no shared root `package.json`/workspace), each treated as its own context.
 
 ## Before exploring, read these
 
@@ -21,9 +21,6 @@ If any of these files don't exist yet, **proceed silently**. Don't flag their ab
 ├── API/
 │   ├── CONTEXT.md
 │   └── docs/adr/              ← API-specific decisions
-├── Instrument/
-│   ├── CONTEXT.md
-│   └── docs/adr/
 ├── InstrumentUI/
 │   ├── CONTEXT.md
 │   └── docs/adr/
