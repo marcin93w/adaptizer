@@ -9,10 +9,10 @@ A song declares one **dimension** — the axis a track index 0..9 means. The
 player measures the device-side **inputs** behind the four dimensions and
 resolves any of them to a track index.
 
-Today the app still asks for `intensity` whatever a song was authored against:
-the catalog does not record a dimension yet, so none reaches the player. And
-device volume is the only input, so `intensity` and `volume` resolve to the same
-value.
+Today the app still asks for `intensity` whatever a song was authored against.
+The catalog records each song's dimension and the React Native client reads it,
+but the native bridge does not yet carry it down to the resolver. And device
+volume is the only input, so `intensity` and `volume` resolve to the same value.
 
 ## Modules
 

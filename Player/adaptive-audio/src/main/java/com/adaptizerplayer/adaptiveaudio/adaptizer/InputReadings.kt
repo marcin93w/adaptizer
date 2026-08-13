@@ -33,7 +33,9 @@ data class InputReadings(
      * An unrecognised name resolves as the aggregate rather than rejecting the
      * song, so a dimension published after this build shipped still plays and
      * still adapts - see
-     * `docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md`.
+     * `docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md`. The
+     * catalog string is narrowed and the surprise logged one layer up, in
+     * `mobile/src/domain/dimension.ts`, where the song is known.
      */
     fun resolve(dimension: String): Int = when (dimension) {
         Dimensions.VOLUME -> volume ?: HELD

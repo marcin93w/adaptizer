@@ -69,10 +69,12 @@ distinction is drawn:
 Any input's `registerChangeListener` callback delivers a fresh snapshot, so the
 resolved value refreshes whenever *any* input changes.
 
-**No song's dimension reaches the player yet.** The catalog does not record one,
-so the native module asks the resolver for `intensity` for every song. The
-library resolves all four; wiring the song's own dimension through the prepare
-metadata, and re-cutting the bridge event around it, is the next piece of work.
+**No song's dimension reaches the resolver yet.** The catalog records one and
+the React Native client narrows it (`mobile/src/domain/dimension.ts`), but the
+bridge does not carry it, so the native module asks the resolver for `intensity`
+for every song. The library resolves all four; wiring the song's own dimension
+through the prepare metadata, and re-cutting the bridge event around it, is the
+next piece of work.
 
 ### The aggregate weights
 
