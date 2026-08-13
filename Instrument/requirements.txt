@@ -1,4 +1,0 @@
-mido==1.3.3
-python-rtmidi==1.5.8
-parameterized==0.9.0
-pywinauto==0.6.9

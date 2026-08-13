@@ -3,7 +3,7 @@ name: InstrumentUI
 # Quality gates for InstrumentUI (Electron + React + Vitest).
 #
 # This is a monorepo (the git root is above InstrumentUI/). Sibling projects
-# (API/, Instrument/, Player/) are untouched by this workflow. The path filters
+# (API/, Player/) are untouched by this workflow. The path filters
 # below are the ONLY thing that keeps this workflow from running on unrelated
 # changes - keep them in sync with any future restructuring of InstrumentUI.
 
