@@ -30,6 +30,8 @@ A decision is needed on: how the two runtimes are organized in the repository, w
 8. **Kotlin retains ownership of ExoPlayer, track selection, intensity calculation and device inputs.** React Native issues commands (`prepare`, `play`, `pause`, `seekTo`, `release`) and receives typed events (`onPlaybackState`, `onProgress`, `onIntensityChanged`, `onTrackChanged`, `onPlayerError`); it never computes intensity, never picks a track index, and never touches `AudioManager`/`SensorManager` directly. See [`../native-bridge-contract.md`](../native-bridge-contract.md) for the contract and its explicit "no `setIntensity()`/`selectTrack()` in production JS" constraint.
 9. **Legacy `app/` is retained until post-cutover deletion.** `app/` remains the production artifact and rollback reference until the React Native app has shipped and soaked in production. It is deleted only in its own isolated, deletion-only change, keeping rollback a simple branch/tag operation in the meantime.
 
+**Update, 2026-08-13 (decision 9 superseded).** `app/` was deleted as part of the adaptation-dimensions work ([issue #22](https://github.com/marcin93w/adaptizer/issues/22)), not as an isolated deletion-only change. It constructed the accelerometer input directly, and that input was being deleted as a mistake, so leaving the module in place would have broken the Gradle build for the whole project. Rollback to the legacy app remains a branch/tag operation, just to a commit before that change rather than to the tip. Everything else here stands.
+
 ## Consequences
 
 **Positive**
@@ -46,7 +48,7 @@ A decision is needed on: how the two runtimes are organized in the repository, w
 - Two build systems and two application shells (Gradle/Kotlin and Node/React Native's Gradle-wrapped Android build) must be maintained simultaneously until cutover, increasing CI time and local setup complexity.
 - The typed bridge is an additional layer between UI and engine; every new command or event requires coordinated changes across the Codegen spec, the Kotlin implementation and the TypeScript consumer, rather than a single-language change.
 - iOS is explicitly out of scope; stakeholders expecting a cross-platform outcome from "moving to React Native" must be told that only the UI/TypeScript layer is cross-platform-ready, not the playback engine, until a separate iOS engine project is approved and executed.
-- Keeping `app/` buildable and otherwise unchanged means some legacy defects (see [`../adaptive-audio.md`](../adaptive-audio.md) section 7) are knowingly left unresolved in `app/` itself; they are addressed only in the extracted `adaptive-audio/` library, not backported to the legacy call sites beyond what keeping `app/` compiling requires.
+- Keeping `app/` buildable and otherwise unchanged means some legacy defects are knowingly left unresolved in `app/` itself; they are addressed only in the extracted `adaptive-audio/` library, not backported to the legacy call sites beyond what keeping `app/` compiling requires.
 
 ## Alternatives considered
 

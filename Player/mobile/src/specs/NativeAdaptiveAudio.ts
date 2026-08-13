@@ -75,11 +75,10 @@ export type ProgressEvent = {
   bufferedMs: number;
 };
 
-/** `onIntensityChanged` payload. All three fields are integers 0-9. */
+/** `onIntensityChanged` payload. Both fields are integers 0-9. */
 export type IntensityChangedEvent = {
   intensity: number;
   volume: number;
-  acceleration: number;
 };
 
 /** `onTrackChanged` payload. Diagnostics/UI only, never decision input. */
@@ -125,8 +124,7 @@ export interface Spec extends TurboModule {
   // planned. Per `Player/docs/native-bridge-contract.md` ("API
   // constraint"), every adaptation decision (which DASH representation
   // plays, and when) is made entirely inside Kotlin (`adaptive-audio/`),
-  // driven by
-  // `VolumeInput`/`AccelerometerInput` and the
+  // driven by the device inputs and the
   // `Adaptizer`/`AdaptizerTrackSelector` pipeline. React Native only ever
   // *observes* adaptation outcomes through `onIntensityChanged` and
   // `onTrackChanged` below; it never *requests* a specific intensity or

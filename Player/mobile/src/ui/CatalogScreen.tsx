@@ -311,7 +311,7 @@ export function CatalogScreen({
 
       <View style={styles.tip}>
         <Text style={styles.tipText}>
-          Change volume or shake your phone to increase intensity.
+          Change your device volume to increase intensity.
         </Text>
       </View>
 

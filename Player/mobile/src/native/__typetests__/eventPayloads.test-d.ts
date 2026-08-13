@@ -98,7 +98,6 @@ export const missingAvailableCount: TrackChangedEvent = {
 export const extraField: IntensityChangedEvent = {
   intensity: 5,
   volume: 5,
-  acceleration: 5,
   // @ts-expect-error - excess-property check rejects a field the contract does not define.
   unexpected: true,
 };

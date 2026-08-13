@@ -71,8 +71,8 @@ describe('createMockAdaptiveAudio', () => {
       durationMs: 120_000,
       bufferedMs: 8_000,
     });
-    mock.emitIntensityChanged({ intensity: 3, volume: 3, acceleration: 0 });
-    mock.emitIntensityChanged({ intensity: 9, volume: 9, acceleration: 9 });
+    mock.emitIntensityChanged({ intensity: 3, volume: 3 });
+    mock.emitIntensityChanged({ intensity: 9, volume: 9 });
     mock.emitTrackChanged({
       requestedIndex: 9,
       selectedIndex: 4,

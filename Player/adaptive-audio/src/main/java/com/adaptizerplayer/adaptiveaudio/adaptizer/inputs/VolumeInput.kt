@@ -36,6 +36,14 @@ class VolumeInput(private val context: Context) : AdaptizerInput {
     // also makes initialize()/release() idempotent.
     private var receiver: BroadcastReceiver? = null
 
+    /**
+     * Device volume is always measurable: every Android device has a music
+     * stream, reading it needs no permission and no hardware that can be
+     * absent. This input is therefore the one member the aggregate can always
+     * count on, which is why it never has to handle an empty set.
+     */
+    override val isAvailable: Boolean = true
+
     override fun getCurrentValue(): Int {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)

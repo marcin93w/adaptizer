@@ -6,6 +6,7 @@ import android.content.Intent
 import android.media.AudioManager
 import android.os.Looper
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -116,9 +117,10 @@ class VolumeInputTest {
 
     @Test
     fun `registerChangeListener called after initialize still delivers callbacks - registration order independence`() {
-        // Mirrors the real call order in MainActivity + Adaptizer: MainActivity
-        // calls inputs.forEach { it.initialize() } first, and only afterwards
-        // does Adaptizer.onStateChange { ... } call registerChangeListener(...).
+        // Mirrors the real call order in the native module + Adaptizer: the
+        // module calls inputs.forEach { it.initialize() } first, and only
+        // afterwards does Adaptizer.onReadingsChange { ... } call
+        // registerChangeListener(...).
         volumeInput.initialize()
 
         var callbackCount = 0
@@ -154,6 +156,19 @@ class VolumeInputTest {
 
         sendBroadcastAndFlush(volumeChangedAction)
         assertEquals("no further callbacks after release", 1, callbackCount)
+    }
+
+    @Test
+    fun `device volume is always available, before initialize and after release`() {
+        // The one input the aggregate can always count on, which is why it
+        // never has to handle an empty member set.
+        assertTrue(volumeInput.isAvailable)
+
+        volumeInput.initialize()
+        assertTrue(volumeInput.isAvailable)
+
+        volumeInput.release()
+        assertTrue(volumeInput.isAvailable)
     }
 
     // --- Behavior-preservation: normalization maths must not change. ---

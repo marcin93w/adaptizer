@@ -70,13 +70,13 @@ Notes:
 - The debug APK is written to
   `Player/mobile/android/app/build/outputs/apk/debug/`. CI uploads it as the
   `player-mobile-debug-apk` artifact.
-- This does **not** touch `Player/app` (the legacy Android app) or any root
-  Gradle file.
+- This does **not** touch the repo-root Gradle files under `Player/`.
 
 ### Kotlin library tests
 
-The `adaptive-audio/` unit tests are JVM-only (Robolectric where Android classes
-are needed) and need no emulator:
+The `adaptive-audio/` unit tests are JVM-only (Robolectric only where Android
+classes are needed - the dimension resolver's own tests touch nothing Android)
+and need no emulator:
 
 ```bash
 cd Player && ./gradlew :adaptive-audio:test
@@ -99,8 +99,7 @@ The workflow is `.github/workflows/player-mobile.yml` at the **monorepo root** -
 GitHub only reads `.github/` at the git root of `mp5`, not inside `Player/`. It
 is path-filtered to `Player/mobile/**`, `Player/adaptive-audio/**`,
 `Player/test-media/**` and the workflow file itself, so changes to sibling
-projects (`Instrument/`, `InstrumentUI/`) or to the legacy `Player/app` never
-trigger it.
+projects (`Instrument/`, `InstrumentUI/`) never trigger it.
 
 Three jobs:
 

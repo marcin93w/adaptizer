@@ -3,9 +3,9 @@ name: Player mobile
 # React Native quality gates for Player/mobile.
 #
 # This is a monorepo (the git root is above Player/). Sibling projects
-# (Instrument/, InstrumentUI/) and the legacy Player/app Android app are
-# untouched by this workflow. The path filters below are the ONLY thing that
-# keeps this workflow from running on unrelated changes - keep them in sync
+# (Instrument/, InstrumentUI/) are untouched by this workflow. The path
+# filters below are the ONLY thing that keeps this workflow from running on
+# unrelated changes - keep them in sync
 # with any future restructuring of Player/mobile, Player/adaptive-audio or
 # Player/test-media.
 
@@ -72,9 +72,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # Job 2: React Native Android host debug build. Does NOT touch Player/app
-  # (the legacy Android app) or the repo-root Gradle files - it only builds
-  # Player/mobile/android.
+  # Job 2: React Native Android host debug build. Does NOT touch the
+  # Player/ root Gradle files - it only builds Player/mobile/android.
   android-debug-build:
     name: Android debug build
     runs-on: ubuntu-latest

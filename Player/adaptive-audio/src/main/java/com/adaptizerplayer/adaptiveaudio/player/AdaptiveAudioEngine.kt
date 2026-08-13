@@ -25,11 +25,9 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 class AdaptiveAudioEngineStateException(message: String) : IllegalStateException(message)
 
 /**
- * Observer for playback state and error events produced by the underlying player. This is new
- * capability relative to the legacy `MainActivity`, which never registered a `Player.Listener` at
- * all (see docs/adaptive-audio.md section 7, known issue 4). Registering zero listeners - i.e. a
- * host that never calls [AdaptiveAudioEngine.addListener] - reproduces the legacy app's observable
- * behavior exactly.
+ * Observer for playback state and error events produced by the underlying player. Registering
+ * zero listeners - i.e. a host that never calls [AdaptiveAudioEngine.addListener] - means no
+ * ExoPlayer error is observed or surfaced anywhere.
  */
 interface AdaptiveAudioListener {
     fun onPlaybackStateChanged(playbackState: Int)
@@ -125,9 +123,9 @@ class AdaptiveAudioEngine(private val context: Context) {
 
     /**
      * Builds the [ExoPlayer] with an [AdaptizerTrackSelector] seeded at [initialTrackIndex] -
-     * mirroring the legacy `MainActivity`, which computed the intensity synchronously and built
-     * `AdaptizerTrackSelector(adaptizer.getTrackIndex())` before constructing the player (see
-     * the intensity formula in docs/adaptive-audio.md). Idempotent: a second call while already
+     * the caller resolves the current song's dimension synchronously and passes the resulting
+     * index before playback starts (see docs/adaptive-audio.md section 1). Idempotent: a second
+     * call while already
      * initialized has no effect. Safe to call again after [release] to start a new session.
      */
     fun initialize(initialTrackIndex: Int) {
