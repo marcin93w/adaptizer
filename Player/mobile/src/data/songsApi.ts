@@ -16,11 +16,10 @@ export type SongsApiErrorCode = 'network' | 'unknown';
  * Typed error thrown by the songs API for every failure mode *except*
  * cancellation (see `SongsFetchCancelledError`). Carries a stable `code`
  * or `status` from `Player/docs/native-bridge-contract.md`, and never
- * degrades a failure into an empty array — this is what fixes the legacy
- * defect recorded in `Player/docs/adaptive-audio.md` section 7, issue 2,
- * where `SongsRepository.fetchSongs()` swallowed every exception and
- * returned `emptyList()`, making a network failure indistinguishable from
- * a genuinely empty catalog.
+ * degrades a failure into an empty array. A network failure and a
+ * genuinely empty catalog must stay distinguishable to callers — the
+ * deleted Kotlin repository caught every exception and returned
+ * `emptyList()`, so no error state ever reached the UI.
  */
 export class SongsApiError extends Error {
   readonly code: SongsApiErrorCode;

@@ -48,6 +48,10 @@ Three contracts hold across the whole set:
   does**, so a held dimension unpins and the aggregate re-weights live,
   mid-song, without a restart.
 
+`registerChangeListener` has **one listener slot**: registering twice silently
+overwrites the first callback. Latent today - `Adaptizer` registers exactly once
+per input - but it is a trap for a second observer.
+
 `Adaptizer` owns the inputs and hands out an `InputReadings` snapshot — one
 nullable reading per input, `null` meaning unavailable. `InputReadings.resolve`
 is the one resolver function, and the only place the single-versus-aggregate
@@ -73,10 +77,10 @@ metadata, and re-cutting the bridge event around it, is the next piece of work.
 ### The aggregate weights
 
 `volume` 0.5, `movementSpeed` 0.3, `heartRate` 0.2, written down in exactly one
-place — `INTENSITY_WEIGHTS` in `adaptizer/InputReadings.kt`. They are
-renormalized over whatever is available (the implementation divides by the
-weight actually present, which is the same thing), so they only need to sum to
-`1.0` when every member is available.
+place — the member list in `InputReadings.aggregate()`, which pairs each reading
+with its own weight. They are renormalized over whatever is available (the
+implementation divides by the weight actually present, which is the same thing),
+so they only need to sum to `1.0` when every member is available.
 
 **Today only the volume input exists**, so `intensity` is a one-member aggregate
 identical to `volume` exactly, and `heartRate`/`movementSpeed` are always held
@@ -101,8 +105,9 @@ Two properties worth knowing before touching the formula:
    `VolumeInputTest`.
 2. **`Adaptizer`** - pass it in the matching constructor parameter. An input
    left unwired is indistinguishable from one reporting itself unavailable.
-3. **`INTENSITY_WEIGHTS`** - only if the aggregate should gain a member;
-   changing a weight is a one-line change there and nothing else.
+3. **The member list in `InputReadings.aggregate()`** - only if the aggregate
+   should gain a member; changing a weight is a one-line change there and
+   nothing else.
 4. **The bridge payload** - `onIntensityChanged` ships one diagnostic field per
    input, so it gains one too. That is a contract change: see
    [`native-bridge-contract.md`](native-bridge-contract.md) and update it and
@@ -207,29 +212,3 @@ was rejected; see the ADR's alternatives section.
 The React Native client centralizes both base URLs in `mobile/src/config/`. The
 songs API is a Cloudflare Worker backed by a D1 catalog; its source lives in
 [`../../API/`](../../API/README.md).
-
-## 7. Mistakes the deleted legacy `app/` module made
-
-The legacy Android application module is gone, deleted alongside the
-accelerometer input it constructed. Its known defects are recorded here so
-nobody reintroduces them in the React Native path.
-
-1. **Unchecked `songs[0]` access.** It called `prepareSong(songs[0])` with no
-   empty check, so an empty catalog crashed on launch. The React Native catalog
-   deliberately does not reproduce this.
-2. **A songs repository that swallowed every exception.** It caught
-   `Exception`, printed the stack trace and returned `emptyList()`, so a
-   genuinely empty catalog and any network/parse failure were indistinguishable
-   to callers and no error state ever reached the UI. The TypeScript client
-   distinguishes them.
-3. **A single change-listener slot per input.** Repeated registration silently
-   overwrites the previous callback - still true of `AdaptizerInput`
-   implementations today, and still latent, since the call site registers
-   exactly once.
-4. **No `Player.Listener` was registered anywhere**, so no ExoPlayer error was
-   observed or surfaced. `AdaptiveAudioEngine` offers `AdaptiveAudioListener`;
-   error reporting through the bridge is therefore a **behavior addition**, not
-   parity with the legacy app.
-5. **`READ_MEDIA_AUDIO` was declared but unused.** All audio is streamed;
-   nothing reads local media. The React Native host omits it and keeps only
-   `INTERNET`.
