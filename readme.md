@@ -2,19 +2,14 @@
 
 Real-time listener context as MIDI input for music production.
 
-Adaptizer maps *real-world listener context* — how the song is being listened to,
-reduced to a single **dimension** the song adapts along — to MIDI CC messages in
-your DAW. You pick the dimension your song is authored against and are free to use
-it however you like to adapt the song to the listener's situation. It opens
-something entirely new, connecting the artist with the listener in a unique way.
+Adaptizer maps *real-world listener context* — how the song is being listened to — to MIDI CC messages in your DAW. 
+You pick the input your song adapts along — volume, listener heart rate, movement speed, or combination of them — and use it however you like to adapt the song to the listener's situation. 
+It opens an entirely new dimension, one that connects the artist with the listener in a unique way.
 
-Once the song is ready, Adaptizer helps you export it in multiple variants, in a
-format ready to stream from the Adaptizer mobile app. The player app measures the
-listener's context on the device and smoothly switches to the matching variant
-while the song plays, so the music adapts to the situation it is heard in.
+Once the song is ready, Adaptizer helps you export it in multiple variants, in a format ready to stream from the Adaptizer mobile app. 
+The player app measures the listener's context on the device and smoothly switches to the matching variant while the song plays.
 
-Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a song
-currently supports Ableton Live only.
+Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a song currently supports Ableton Live only.
 
 ## Components
 
