@@ -21,7 +21,7 @@
  */
 import type {
   AdaptiveAudioErrorCode,
-  IntensityChangedEvent,
+  DimensionChangedEvent,
   PlaybackState,
   PlaybackStateEvent,
   PlayerErrorEvent,
@@ -93,19 +93,43 @@ export const missingAvailableCount: TrackChangedEvent = {
   requestedIndex: 0,
   selectedIndex: 0,
 };
-// --- IntensityChangedEvent: excess/unknown fields are rejected -------------
+// --- DimensionChangedEvent: closed dimension + nested readings -------------
 
-export const extraField: IntensityChangedEvent = {
-  intensity: 5,
-  volume: 5,
+export const extraField: DimensionChangedEvent = {
+  dimension: 'intensity',
+  value: 5,
+  readings: { volume: 5, movementSpeed: null, heartRate: null },
   // @ts-expect-error - excess-property check rejects a field the contract does not define.
   unexpected: true,
+};
+export const wrongEventDimension: DimensionChangedEvent = {
+  // @ts-expect-error - `dimension` must be one of the four contract names, not a bare string.
+  dimension: 'loudness',
+  value: 5,
+  readings: { volume: 5, movementSpeed: null, heartRate: null },
+};
+export const wrongReadingType: DimensionChangedEvent = {
+  dimension: 'volume',
+  value: 5,
+  readings: {
+    // @ts-expect-error - a reading is `number | null`; `-1` sentinels are narrowed away before this layer.
+    volume: '5',
+    movementSpeed: null,
+    heartRate: null,
+  },
 };
 // --- PrepareMetadata: field types are exact, per the contract --------------
 
 export const wrongIdType: PrepareMetadata = {
   // @ts-expect-error - `id` must be the stringified legacy Song.id (`string`), not a number.
   id: 1,
+  title: 'Title',
+  artist: 'Artist',
+  dimension: 'intensity',
+};
+// @ts-expect-error - `dimension` is required on prepare metadata.
+export const missingDimension: PrepareMetadata = {
+  id: '1',
   title: 'Title',
   artist: 'Artist',
 };

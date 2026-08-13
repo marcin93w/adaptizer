@@ -69,12 +69,16 @@ distinction is drawn:
 Any input's `registerChangeListener` callback delivers a fresh snapshot, so the
 resolved value refreshes whenever *any* input changes.
 
-**No song's dimension reaches the resolver yet.** The catalog records one and
-the React Native client narrows it (`mobile/src/domain/dimension.ts`), but the
-bridge does not carry it, so the native module asks the resolver for `intensity`
-for every song. The library resolves all four; wiring the song's own dimension
-through the prepare metadata, and re-cutting the bridge event around it, is the
-next piece of work.
+**The song's dimension reaches the resolver.** The catalog records one, the
+React Native client narrows it (`mobile/src/domain/dimension.ts`) and the bridge
+carries it: `prepare` metadata includes the song's `dimension`, the native
+module (`NativeAdaptiveAudioModule`) holds it and asks the resolver for that
+dimension, and only it, to select the track. Holding it in the module rather
+than the library keeps the library ignorant of songs and stops a song switch
+racing a stale dimension into selection. The resolved dimension, the resolved
+value that drives selection, and the per-input diagnostic readings ride back to
+JS on the `onDimensionChanged` event — see
+[`native-bridge-contract.md`](native-bridge-contract.md).
 
 ### The aggregate weights
 
@@ -110,8 +114,9 @@ Two properties worth knowing before touching the formula:
 3. **The member list in `InputReadings.aggregate()`** - only if the aggregate
    should gain a member; changing a weight is a one-line change there and
    nothing else.
-4. **The bridge payload** - `onIntensityChanged` ships one diagnostic field per
-   input, so it gains one too. That is a contract change: see
+4. **The bridge payload** - `onDimensionChanged` ships one diagnostic field per
+   input (`volume`, `movementSpeed`, `heartRate`, each `-1` when unavailable),
+   so it gains one too. That is a contract change: see
    [`native-bridge-contract.md`](native-bridge-contract.md) and update it and
    the TypeScript types in the same change.
 

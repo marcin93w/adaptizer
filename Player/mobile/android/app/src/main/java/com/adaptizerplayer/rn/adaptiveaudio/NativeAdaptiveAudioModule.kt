@@ -29,12 +29,14 @@ import com.facebook.react.module.annotations.ReactModule
  * Commands may arrive on React Native's module queue, while Media3 must be
  * accessed from Android's main thread. Adaptizer and the device inputs are
  * initialized and released with this module; JS only observes their typed
- * intensity/track events and has no track-selection command.
+ * dimension/track events and has no track-selection command.
  *
- * This module asks the resolver for [Dimensions.INTENSITY] for every song. The
- * song's own dimension reaches the module in the prepare metadata in a later
- * change; until then the library resolves any of the four, and this caller
- * only ever wants one of them.
+ * The song's dimension arrives in the prepare metadata and is held here, in
+ * the native module - not in the library, which stays ignorant of songs and
+ * their lifecycle. This module asks the resolver for that dimension, and only
+ * that dimension, so a song switch cannot race a stale dimension into track
+ * selection: [currentDimension] is updated on the main thread inside
+ * [prepare], and every resolve reads it there too.
  */
 @ReactModule(name = NativeAdaptiveAudioSpec.NAME)
 class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
@@ -45,6 +47,14 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
 
     const val EXPECTED_TRACK_COUNT = AdaptizerTrackSelector.EXPECTED_TRACK_COUNT
     const val PROGRESS_INTERVAL_MS = 250L
+
+    /**
+     * The `-1` an input reading is reported as in the `onDimensionChanged`
+     * diagnostics when that input is unavailable - inputs never fabricate a
+     * value, and JS narrows this sentinel back to `null`. Matches the
+     * `durationMs` sentinel already used by `onProgress`.
+     */
+    const val UNAVAILABLE_READING = -1
 
     const val STATE_IDLE = "idle"
     const val STATE_BUFFERING = "buffering"
@@ -58,6 +68,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private var engine: AdaptiveAudioEngine? = null
   private var adaptizer: Adaptizer? = null
   private var inputs: List<AdaptizerInput> = emptyList()
+  private var currentDimension: String = Dimensions.INTENSITY
   private var sourceId: String? = null
   private var playRequested = false
   private var explicitlyPaused = false
@@ -131,12 +142,30 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
               null
             } ?: sourceUri
 
-        val activeEngine = engine ?: createActiveEngine()
+        // Hold the new song's dimension before anything resolves against it,
+        // so the first engine seeds its index from it and a song switch never
+        // resolves the previous song's dimension.
+        currentDimension = dimensionFrom(metadata)
+
+        val existingEngine = engine
+        val activeEngine = existingEngine ?: createActiveEngine()
         stopProgressUpdates()
         sourceId = requestedSourceId
         playRequested = false
         explicitlyPaused = false
         activeEngine.prepare(sourceUri)
+
+        if (existingEngine != null) {
+          // Reusing a live engine for a new song: re-resolve for the new
+          // dimension so a stale index from the previous song cannot drive
+          // selection, and the meter updates immediately rather than waiting
+          // for the next reading. (The first engine already did this in
+          // createActiveEngine.)
+          adaptizer?.currentReadings()?.let { readings ->
+            activeEngine.changeTrack(readings.resolve(currentDimension))
+            emitDimensionChanged(readings)
+          }
+        }
       } catch (error: Exception) {
         sourceId = null
         reportCommandError(error)
@@ -235,9 +264,9 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       adaptizer = newAdaptizer
       newInputs.forEach { it.initialize() }
       newEngine.addListener(engineListener)
-      newEngine.initialize(newAdaptizer.resolve(Dimensions.INTENSITY))
+      newEngine.initialize(newAdaptizer.resolve(currentDimension))
       engine = newEngine
-      emitIntensityChanged(newAdaptizer.currentReadings())
+      emitDimensionChanged(newAdaptizer.currentReadings())
       return newEngine
     } catch (error: Exception) {
       newInputs.asReversed().forEach { it.release() }
@@ -250,13 +279,14 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private fun onReadingsChanged(readings: InputReadings) {
     onMain {
       if (released) return@onMain
-      emitIntensityChanged(readings)
+      emitDimensionChanged(readings)
 
       val activeEngine = engine ?: return@onMain
       try {
         // This is the only native track-selection path. The JS contract has
-        // no setIntensity/selectTrack command by design.
-        val trackIndex = readings.resolve(Dimensions.INTENSITY)
+        // no setDimension/selectTrack command by design. The current song's
+        // dimension - not a fixed one - decides which variant plays.
+        val trackIndex = readings.resolve(currentDimension)
         activeEngine.changeTrack(trackIndex)
         emitCurrentTrackChanged(trackIndex)
       } catch (error: Exception) {
@@ -264,6 +294,16 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       }
     }
   }
+
+  private fun dimensionFrom(metadata: ReadableMap): String =
+      if (metadata.hasKey("dimension") && !metadata.isNull("dimension")) {
+        // The identical-string contract: stored and compared as-is, never
+        // re-cased or mapped. An unrecognised name simply resolves as the
+        // aggregate. A missing field defaults to intensity.
+        metadata.getString("dimension") ?: Dimensions.INTENSITY
+      } else {
+        Dimensions.INTENSITY
+      }
 
   private fun checkUsable(): Boolean {
     if (released) {
@@ -327,16 +367,20 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         })
   }
 
-  private fun emitIntensityChanged(readings: InputReadings) {
-    emitOnIntensityChanged(
+  private fun emitDimensionChanged(readings: InputReadings) {
+    emitOnDimensionChanged(
         Arguments.createMap().apply {
-          putInt("intensity", readings.resolve(Dimensions.INTENSITY))
-          // The resolved `volume` dimension, not the raw reading behind it -
-          // held at 5 rather than fabricated if volume ever stops being
-          // measurable. The event is replaced with the resolved dimension
-          // plus explicit per-input diagnostics and availability flags when
-          // the bridge is re-cut.
-          putInt("volume", readings.resolve(Dimensions.VOLUME))
+          // The current song's dimension, echoed back as-is, and the resolved
+          // value that actually drives track selection.
+          putString("dimension", currentDimension)
+          putInt("value", readings.resolve(currentDimension))
+          // The per-input readings, demoted to diagnostics: each is its real
+          // measurement or -1 when that input is unavailable, so the same
+          // fields say what was read and which inputs are missing. movementSpeed
+          // and heartRate have no input yet, so they are always -1 today.
+          putInt("volume", readings.volume ?: UNAVAILABLE_READING)
+          putInt("movementSpeed", readings.movementSpeed ?: UNAVAILABLE_READING)
+          putInt("heartRate", readings.heartRate ?: UNAVAILABLE_READING)
         })
   }
 

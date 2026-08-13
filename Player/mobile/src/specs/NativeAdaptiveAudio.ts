@@ -52,11 +52,22 @@ import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
 import type { EventEmitter } from 'react-native/Libraries/Types/CodegenTypesNamespace';
 
-/** `prepare()`'s second argument. Field types per the frozen contract. */
+/**
+ * `prepare()`'s second argument. Field types per the frozen contract.
+ *
+ * `dimension` is the song's adaptation dimension — one of the four
+ * identical-string contract names (`volume`, `heartRate`, `movementSpeed`,
+ * `intensity`). It is wire-level `string` here, as the closed sets below are
+ * (see the module-level comment): it crosses this boundary byte-identical,
+ * never re-cased or mapped, and the native module compares it against
+ * `Dimensions` to resolve the value that drives track selection. The typed,
+ * closed `Dimension` union lives in `src/domain/dimension.ts`.
+ */
 export type PrepareMetadata = {
   id: string;
   title: string;
   artist: string;
+  dimension: string;
 };
 
 /**
@@ -75,10 +86,25 @@ export type ProgressEvent = {
   bufferedMs: number;
 };
 
-/** `onIntensityChanged` payload. Both fields are integers 0-9. */
-export type IntensityChangedEvent = {
-  intensity: number;
+/**
+ * `onDimensionChanged` payload. All integer fields are 0-9 while the
+ * corresponding reading is available.
+ *
+ * `dimension` is the resolved dimension the native module used, echoed back
+ * as a wire-level `string` (see the module-level comment for why the closed
+ * set is not a union here); `value` is the resolved value 0-9 that actually
+ * drives track selection. `volume`, `movementSpeed` and `heartRate` are the
+ * per-input diagnostic readings, each `-1` when that input is unavailable
+ * (the `-1` sentinel matches `ProgressEvent.durationMs`) — so the same
+ * fields say what each input read *and* which inputs are unavailable.
+ * Presentation/diagnostics only; JS never feeds these back into a decision.
+ */
+export type DimensionChangedEvent = {
+  dimension: string;
+  value: number;
   volume: number;
+  movementSpeed: number;
+  heartRate: number;
 };
 
 /** `onTrackChanged` payload. Diagnostics/UI only, never decision input. */
@@ -126,9 +152,9 @@ export interface Spec extends TurboModule {
   // plays, and when) is made entirely inside Kotlin (`adaptive-audio/`),
   // driven by the device inputs and the
   // `Adaptizer`/`AdaptizerTrackSelector` pipeline. React Native only ever
-  // *observes* adaptation outcomes through `onIntensityChanged` and
-  // `onTrackChanged` below; it never *requests* a specific intensity or
-  // track. Do not add either command to this spec — doing so would
+  // *observes* adaptation outcomes through `onDimensionChanged` and
+  // `onTrackChanged` below; it never *requests* a specific dimension value
+  // or track. Do not add either command to this spec — doing so would
   // silently reopen a closed architecture decision (see
   // `Player/docs/adr/0001-react-native-shell-with-kotlin-adaptive-audio.md`).
   // Debug-only input overrides, if ever added, must stay out of this
@@ -141,8 +167,9 @@ export interface Spec extends TurboModule {
   // Fired periodically during playback, and at minimum once immediately
   // after a successful seek.
   readonly onProgress: EventEmitter<ProgressEvent>;
-  // Fired whenever Kotlin recomputes intensity. Presentation only.
-  readonly onIntensityChanged: EventEmitter<IntensityChangedEvent>;
+  // Fired whenever Kotlin re-resolves the current song's dimension — a new
+  // input reading or an availability flip alike. Presentation only.
+  readonly onDimensionChanged: EventEmitter<DimensionChangedEvent>;
   // Fired whenever the Kotlin track selector processes a track-change
   // request. Diagnostics/UI only.
   readonly onTrackChanged: EventEmitter<TrackChangedEvent>;

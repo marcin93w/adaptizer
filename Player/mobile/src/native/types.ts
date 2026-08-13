@@ -11,6 +11,7 @@
  * incoming wire string into one of these types before it reaches typed
  * application code — screens never see a bare `string`.
  */
+import type { Dimension } from '../domain/dimension';
 
 /**
  * Closed set of playback states.
@@ -85,6 +86,13 @@ export interface PrepareMetadata {
   readonly id: string;
   readonly title: string;
   readonly artist: string;
+  /**
+   * The song's dimension, already narrowed to a contract name on the catalog
+   * side (see `data/songsApi.ts`). Carried byte-identical to the native
+   * module, which compares it against `Dimensions` to resolve track
+   * selection.
+   */
+  readonly dimension: Dimension;
 }
 
 /** `onPlaybackState` payload, narrowed. */
@@ -101,13 +109,33 @@ export interface ProgressEvent {
 }
 
 /**
- * `onIntensityChanged` payload. Both fields are integers 0-9: `intensity`
- * is the aggregate, `volume` the one input behind it today. The input set
- * is expected to grow, so treat the per-input fields as an open set.
+ * The per-input diagnostic readings carried by a `DimensionChangedEvent`,
+ * narrowed from the wire's `-1`-sentinel integers to `number | null`, where
+ * `null` means that input was unavailable when the snapshot was taken.
+ * Diagnostics only: `DimensionChangedEvent.value` is what drives selection.
+ *
+ * One field per input the resolver reasons about. `movementSpeed` and
+ * `heartRate` have no input behind them yet, so they are always `null` today
+ * — indistinguishable from a permission-denied or absent one, by design.
  */
-export interface IntensityChangedEvent {
-  readonly intensity: number;
-  readonly volume: number;
+export interface DimensionReadings {
+  readonly volume: number | null;
+  readonly movementSpeed: number | null;
+  readonly heartRate: number | null;
+}
+
+/**
+ * `onDimensionChanged` payload, narrowed. `dimension` is the resolved
+ * dimension the native module used (the current song's), `value` the
+ * resolved value 0-9 that actually drives track selection, and `readings`
+ * the per-input diagnostics behind it. Fired on every input reading change
+ * and every availability flip, so a signal appearing mid-song starts
+ * driving the meter without a restart.
+ */
+export interface DimensionChangedEvent {
+  readonly dimension: Dimension;
+  readonly value: number;
+  readonly readings: DimensionReadings;
 }
 
 /** `onTrackChanged` payload. Diagnostics/UI only, never decision input. */

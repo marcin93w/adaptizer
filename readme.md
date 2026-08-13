@@ -3,7 +3,7 @@
 Real-time listener context as MIDI input for music production.
 
 Adaptizer maps *real-world listener context* — how the song is being listened to — to MIDI CC messages in your DAW. 
-You pick the input your song adapts along — volume, listener heart rate, movement speed, or combination of them — and use it however you like to adapt the song to the listener's situation. 
+You pick the dimension your song adapts along — volume, listener heart rate, movement speed, or a combination of them — and use it however you like to adapt the song to the listener's situation. 
 It opens an entirely new dimension, one that connects the artist with the listener in a unique way.
 
 Once the song is ready, Adaptizer helps you export it in multiple variants, in a format ready to stream from the Adaptizer mobile app. 

@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
  * Adaptizer exposes the existing AdaptizerInput interface, so this test uses
  * a test-only input implementation rather than physical sensors or hidden
  * production hooks. It records the same resolved values the native module
- * observes before it forwards intensity and track events.
+ * observes before it forwards dimension and track events.
  */
 @RunWith(AndroidJUnit4::class)
 class DeterministicInputInstrumentedTest {

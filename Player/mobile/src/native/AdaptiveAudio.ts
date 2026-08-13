@@ -28,9 +28,11 @@
  */
 import { TurboModuleRegistry } from 'react-native';
 import type { Spec } from '../specs/NativeAdaptiveAudio';
+import type { Dimension } from '../domain/dimension';
+import { DIMENSIONS } from '../domain/dimension';
 import type {
   AdaptiveAudioErrorCode,
-  IntensityChangedEvent,
+  DimensionChangedEvent,
   PlaybackState,
   PlaybackStateEvent,
   PlayerErrorEvent,
@@ -86,8 +88,8 @@ export interface AdaptiveAudioFacade {
     listener: (event: PlaybackStateEvent) => void,
   ): Unsubscribe;
   addProgressListener(listener: (event: ProgressEvent) => void): Unsubscribe;
-  addIntensityChangedListener(
-    listener: (event: IntensityChangedEvent) => void,
+  addDimensionChangedListener(
+    listener: (event: DimensionChangedEvent) => void,
   ): Unsubscribe;
   addTrackChangedListener(
     listener: (event: TrackChangedEvent) => void,
@@ -123,6 +125,34 @@ function narrowErrorCode(value: string): AdaptiveAudioErrorCode {
     );
   }
   return 'unknown';
+}
+
+/**
+ * Narrows the `onDimensionChanged` event's wire `dimension` string into the
+ * closed `Dimension` union, alongside `narrowPlaybackState` above. Unlike the
+ * catalog-side `narrowDimension` in `src/domain/dimension.ts` (which warns in
+ * production because a mismatch there is a real hand-typed catalog row), a
+ * mismatch here would be a native bug on a value that already round-tripped
+ * through the catalog narrowing — so it warns only under `__DEV__`, as the
+ * other wire narrowers do.
+ */
+function narrowEventDimension(value: string): Dimension {
+  if ((DIMENSIONS as readonly string[]).includes(value)) {
+    return value as Dimension;
+  }
+  if (__DEV__) {
+    console.warn(
+      `[AdaptiveAudio] Received unknown dimension "${value}" from ` +
+        'native; the wire contract promises one of ' +
+        `${DIMENSIONS.join(', ')}. Treating as "intensity".`,
+    );
+  }
+  return 'intensity';
+}
+
+/** Maps a wire reading to `null` when it is the `-1` unavailable sentinel. */
+function narrowReading(value: number): number | null {
+  return value < 0 ? null : value;
 }
 
 class NativeAdaptiveAudioFacade implements AdaptiveAudioFacade {
@@ -187,11 +217,19 @@ class NativeAdaptiveAudioFacade implements AdaptiveAudioFacade {
     return { remove: () => subscription.remove() };
   }
 
-  addIntensityChangedListener(
-    listener: (event: IntensityChangedEvent) => void,
+  addDimensionChangedListener(
+    listener: (event: DimensionChangedEvent) => void,
   ): Unsubscribe {
-    const subscription = this.requireNative().onIntensityChanged(event => {
-      listener(event);
+    const subscription = this.requireNative().onDimensionChanged(event => {
+      listener({
+        dimension: narrowEventDimension(event.dimension),
+        value: event.value,
+        readings: {
+          volume: narrowReading(event.volume),
+          movementSpeed: narrowReading(event.movementSpeed),
+          heartRate: narrowReading(event.heartRate),
+        },
+      });
     });
     return { remove: () => subscription.remove() };
   }

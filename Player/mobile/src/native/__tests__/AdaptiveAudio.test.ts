@@ -24,7 +24,12 @@ describe('adaptiveAudio (real facade, module unavailable in tests)', () => {
       AdaptiveAudioUnavailableError,
     );
     expect(() =>
-      adaptiveAudio.prepare('uri', { id: '1', title: 't', artist: 'a' }),
+      adaptiveAudio.prepare('uri', {
+        id: '1',
+        title: 't',
+        artist: 'a',
+        dimension: 'intensity',
+      }),
     ).toThrow(AdaptiveAudioUnavailableError);
   });
 
@@ -35,7 +40,7 @@ describe('adaptiveAudio (real facade, module unavailable in tests)', () => {
     expect(() => adaptiveAudio.addProgressListener(() => {})).toThrow(
       AdaptiveAudioUnavailableError,
     );
-    expect(() => adaptiveAudio.addIntensityChangedListener(() => {})).toThrow(
+    expect(() => adaptiveAudio.addDimensionChangedListener(() => {})).toThrow(
       AdaptiveAudioUnavailableError,
     );
     expect(() => adaptiveAudio.addTrackChangedListener(() => {})).toThrow(

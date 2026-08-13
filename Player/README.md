@@ -9,10 +9,12 @@ A song declares one **dimension** — the axis a track index 0..9 means. The
 player measures the device-side **inputs** behind the four dimensions and
 resolves any of them to a track index.
 
-Today the app still asks for `intensity` whatever a song was authored against.
-The catalog records each song's dimension and the React Native client reads it,
-but the native bridge does not yet carry it down to the resolver. And device
-volume is the only input, so `intensity` and `volume` resolve to the same value.
+A song's dimension now reaches the resolver end to end: the catalog records it,
+the React Native client reads it, and the native bridge carries it down in the
+`prepare` metadata so the player honours the dimension its author chose. Device
+volume is still the only input, so `intensity` (a one-member aggregate today)
+and `volume` resolve to the same value, and `heartRate`/`movementSpeed` songs
+are held at 5 until those inputs land.
 
 ## Modules
 

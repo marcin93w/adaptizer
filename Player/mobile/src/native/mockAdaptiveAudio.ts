@@ -14,7 +14,7 @@
  *  - Requires no native module and no device: it never touches
  *    `TurboModuleRegistry` or any React Native native API.
  *  - Deterministic: it starts NO timers of its own. Every event
- *    (`onPlaybackState`, `onProgress`, `onIntensityChanged`,
+ *    (`onPlaybackState`, `onProgress`, `onDimensionChanged`,
  *    `onTrackChanged`, `onPlayerError`) is only emitted when a test
  *    explicitly calls the corresponding `emit*` driving method — there is
  *    no hidden `setInterval` a test would need to fake/advance.
@@ -26,7 +26,7 @@
 import { AdaptiveAudioUnavailableError } from './AdaptiveAudio';
 import type { AdaptiveAudioFacade } from './AdaptiveAudio';
 import type {
-  IntensityChangedEvent,
+  DimensionChangedEvent,
   PlaybackStateEvent,
   PlayerErrorEvent,
   PrepareMetadata,
@@ -77,7 +77,7 @@ export interface MockAdaptiveAudio extends AdaptiveAudioFacade {
   // --- Driving API: simulate events Kotlin would emit --------------------
   emitPlaybackState(event: PlaybackStateEvent): void;
   emitProgress(event: ProgressEvent): void;
-  emitIntensityChanged(event: IntensityChangedEvent): void;
+  emitDimensionChanged(event: DimensionChangedEvent): void;
   emitTrackChanged(event: TrackChangedEvent): void;
   emitPlayerError(event: PlayerErrorEvent): void;
 
@@ -100,7 +100,7 @@ export interface MockAdaptiveAudio extends AdaptiveAudioFacade {
   readonly listenerCounts: {
     playbackState: number;
     progress: number;
-    intensityChanged: number;
+    dimensionChanged: number;
     trackChanged: number;
     playerError: number;
   };
@@ -117,7 +117,7 @@ export function createMockAdaptiveAudio(): MockAdaptiveAudio {
 
   const playbackStateListeners = new ListenerSet<PlaybackStateEvent>();
   const progressListeners = new ListenerSet<ProgressEvent>();
-  const intensityChangedListeners = new ListenerSet<IntensityChangedEvent>();
+  const dimensionChangedListeners = new ListenerSet<DimensionChangedEvent>();
   const trackChangedListeners = new ListenerSet<TrackChangedEvent>();
   const playerErrorListeners = new ListenerSet<PlayerErrorEvent>();
 
@@ -159,8 +159,8 @@ export function createMockAdaptiveAudio(): MockAdaptiveAudio {
     addProgressListener(listener) {
       return progressListeners.add(listener);
     },
-    addIntensityChangedListener(listener) {
-      return intensityChangedListeners.add(listener);
+    addDimensionChangedListener(listener) {
+      return dimensionChangedListeners.add(listener);
     },
     addTrackChangedListener(listener) {
       return trackChangedListeners.add(listener);
@@ -175,8 +175,8 @@ export function createMockAdaptiveAudio(): MockAdaptiveAudio {
     emitProgress(event: ProgressEvent): void {
       progressListeners.emit(event);
     },
-    emitIntensityChanged(event: IntensityChangedEvent): void {
-      intensityChangedListeners.emit(event);
+    emitDimensionChanged(event: DimensionChangedEvent): void {
+      dimensionChangedListeners.emit(event);
     },
     emitTrackChanged(event: TrackChangedEvent): void {
       trackChangedListeners.emit(event);
@@ -208,7 +208,7 @@ export function createMockAdaptiveAudio(): MockAdaptiveAudio {
       return {
         playbackState: playbackStateListeners.size,
         progress: progressListeners.size,
-        intensityChanged: intensityChangedListeners.size,
+        dimensionChanged: dimensionChangedListeners.size,
         trackChanged: trackChangedListeners.size,
         playerError: playerErrorListeners.size,
       };
