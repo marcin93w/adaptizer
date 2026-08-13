@@ -40,11 +40,12 @@ one context at a time. InstrumentUI speaks it now: a project declares its
 records one per song, and the Player's React Native client reads it. The
 Player's Kotlin library speaks it too: it resolves any of the four dimensions
 against the inputs available, holds an unmeasurable one at 5 and renormalizes
-the aggregate.
+the aggregate. And the Player now honours it end to end: the `prepare` metadata
+carries the song's dimension to the native module, which resolves that dimension
+to select the variant, and the meter names it and shows the resolved value.
 
-What is still ahead of the code, all of it Player-side: no song's dimension
-reaches the resolver, because the native bridge does not carry it — the app asks
-for `intensity` whatever a song was authored against, and nothing on screen
-reports a held dimension. Heart rate and movement speed have no input behind
-them. Where the code and a glossary disagree, the glossary is right and the code
-is behind.
+What is still ahead of the code, all of it Player-side: heart rate and movement
+speed have no input behind them yet, so a song mapped to either is held at 5 and
+the meter says so. Until those inputs land, `intensity` is a one-member
+aggregate equal to `volume`. Where the code and a glossary disagree, the
+glossary is right and the code is behind.

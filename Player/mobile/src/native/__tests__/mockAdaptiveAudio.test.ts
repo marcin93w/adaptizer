@@ -46,14 +46,16 @@ describe('createMockAdaptiveAudio', () => {
     expect(seen).toHaveLength(7);
   });
 
-  it('drives progress, intensity and track-change events explicitly, with no hidden timers', () => {
+  it('drives progress, dimension and track-change events explicitly, with no hidden timers', () => {
     const mock = createMockAdaptiveAudio();
     const progress: number[] = [];
-    const intensity: number[] = [];
+    const dimensionValues: number[] = [];
     const trackChanges: Array<{ requested: number; selected: number }> = [];
 
     mock.addProgressListener(event => progress.push(event.positionMs));
-    mock.addIntensityChangedListener(event => intensity.push(event.intensity));
+    mock.addDimensionChangedListener(event =>
+      dimensionValues.push(event.value),
+    );
     mock.addTrackChangedListener(event =>
       trackChanges.push({
         requested: event.requestedIndex,
@@ -71,8 +73,16 @@ describe('createMockAdaptiveAudio', () => {
       durationMs: 120_000,
       bufferedMs: 8_000,
     });
-    mock.emitIntensityChanged({ intensity: 3, volume: 3 });
-    mock.emitIntensityChanged({ intensity: 9, volume: 9 });
+    mock.emitDimensionChanged({
+      dimension: 'volume',
+      value: 3,
+      readings: { volume: 3, movementSpeed: null, heartRate: null },
+    });
+    mock.emitDimensionChanged({
+      dimension: 'volume',
+      value: 9,
+      readings: { volume: 9, movementSpeed: null, heartRate: null },
+    });
     mock.emitTrackChanged({
       requestedIndex: 9,
       selectedIndex: 4,
@@ -80,7 +90,7 @@ describe('createMockAdaptiveAudio', () => {
     });
 
     expect(progress).toEqual([0, 5_000]);
-    expect(intensity).toEqual([3, 9]);
+    expect(dimensionValues).toEqual([3, 9]);
     expect(trackChanges).toEqual([{ requested: 9, selected: 4 }]);
   });
 
@@ -91,6 +101,7 @@ describe('createMockAdaptiveAudio', () => {
       id: '42',
       title: 'Title',
       artist: 'Artist',
+      dimension: 'heartRate',
     });
     mock.play();
     mock.pause();
@@ -101,7 +112,12 @@ describe('createMockAdaptiveAudio', () => {
     expect(mock.prepareCalls).toEqual([
       {
         sourceUri: 'https://example.test/manifest.mpd',
-        metadata: { id: '42', title: 'Title', artist: 'Artist' },
+        metadata: {
+          id: '42',
+          title: 'Title',
+          artist: 'Artist',
+          dimension: 'heartRate',
+        },
       },
     ]);
     expect(mock.playCallCount).toBe(1);
@@ -117,7 +133,12 @@ describe('createMockAdaptiveAudio', () => {
     expect(mock.isAvailable).toBe(false);
     expect(() => mock.play()).toThrow(AdaptiveAudioUnavailableError);
     expect(() =>
-      mock.prepare('uri', { id: '1', title: 't', artist: 'a' }),
+      mock.prepare('uri', {
+        id: '1',
+        title: 't',
+        artist: 'a',
+        dimension: 'intensity',
+      }),
     ).toThrow(AdaptiveAudioUnavailableError);
   });
 

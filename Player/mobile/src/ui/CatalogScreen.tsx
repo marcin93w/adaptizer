@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SongsFetchCancelledError, songsApi } from '../data/songsApi';
 import { buildDashManifestUrl } from '../data/dashUrl';
+import type { Dimension } from '../domain/dimension';
 import type { Song } from '../domain/song';
 import type { SongsRepository } from '../domain/song';
 import {
@@ -25,6 +26,8 @@ import {
   type AdaptiveAudioFacade,
 } from '../native/AdaptiveAudio';
 import type {
+  DimensionChangedEvent,
+  DimensionReadings,
   PlaybackState,
   PlayerErrorEvent,
   ProgressEvent,
@@ -57,7 +60,8 @@ export function CatalogScreen({
   const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
   const [progress, setProgress] = useState<ProgressEvent>(INITIAL_PROGRESS);
-  const [intensity, setIntensity] = useState(0);
+  const [dimensionChange, setDimensionChange] =
+    useState<DimensionChangedEvent | null>(null);
   const [error, setError] = useState<PlayerErrorEvent | null>(null);
   const requestId = useRef(0);
   const abortController = useRef<AbortController | null>(null);
@@ -144,9 +148,7 @@ export function CatalogScreen({
         setError(null);
       }),
       player.addProgressListener(setProgress),
-      player.addIntensityChangedListener(event => {
-        setIntensity(Math.max(0, Math.min(9, event.intensity)));
-      }),
+      player.addDimensionChangedListener(setDimensionChange),
       player.addPlayerErrorListener(setError),
     ];
 
@@ -156,6 +158,9 @@ export function CatalogScreen({
   const startSong = useCallback(
     (song: Song, shouldStartPlayback: boolean) => {
       setProgress(INITIAL_PROGRESS);
+      // Drop the previous song's readings so the meter never shows a stale
+      // dimension between songs; the fresh prepare emits a new snapshot.
+      setDimensionChange(null);
 
       try {
         player.prepare(
@@ -263,6 +268,17 @@ export function CatalogScreen({
     catalogLoading || selectedSong == null || !player.isAvailable;
   const status = playbackStatus(playbackState, error);
 
+  // The meter follows the resolved event once one arrives; before that it
+  // names the selected song's own dimension so the label is never blank or
+  // wrong. The degradation note needs live readings, so it comes only from
+  // the event.
+  const meterDimension: Dimension =
+    dimensionChange?.dimension ?? selectedSong?.dimension ?? 'intensity';
+  const meterValue = dimensionChange?.value ?? 0;
+  const meterNote = dimensionChange
+    ? degradationNote(dimensionChange.dimension, dimensionChange.readings)
+    : null;
+
   return (
     <SafeAreaView accessibilityLabel="Adaptizer Player" style={styles.screen}>
       {/* No `backgroundColor`: edge-to-edge ignores it. The Android theme's
@@ -310,8 +326,8 @@ export function CatalogScreen({
       </View>
 
       <View style={styles.tip}>
-        <Text style={styles.tipText}>
-          Change your device volume to increase intensity.
+        <Text accessibilityLabel="Adaptation hint" style={styles.tipText}>
+          {DIMENSION_HINTS[meterDimension]}
         </Text>
       </View>
 
@@ -369,7 +385,11 @@ export function CatalogScreen({
         ) : null}
 
         <View style={styles.telemetryRow}>
-          <IntensityMeter value={intensity} />
+          <AdaptationMeter
+            dimension={meterDimension}
+            note={meterNote}
+            value={meterValue}
+          />
         </View>
 
         <View style={styles.transport}>
@@ -525,22 +545,40 @@ function CatalogBody({
   );
 }
 
-function IntensityMeter({ value }: { value: number }): React.JSX.Element {
-  const percentage = `${(Math.max(0, Math.min(9, value)) / 9) * 100}%` as const;
+function AdaptationMeter({
+  dimension,
+  note,
+  value,
+}: {
+  dimension: Dimension;
+  note: string | null;
+  value: number;
+}): React.JSX.Element {
+  const label = DIMENSION_LABELS[dimension];
+  const clamped = Math.max(0, Math.min(9, value));
+  const percentage = `${(clamped / 9) * 100}%` as const;
   return (
     <View style={styles.intensityRow}>
       <View style={styles.intensityLabelRow}>
-        <Text style={styles.intensityLabel}>INTENSITY</Text>
-        <Text style={styles.intensityValue}>{value}/9</Text>
+        <Text style={styles.intensityLabel}>{label.toUpperCase()}</Text>
+        <Text style={styles.intensityValue}>{clamped}/9</Text>
       </View>
       <View
-        accessibilityLabel="Playback intensity"
+        accessibilityLabel={`Playback ${label.toLowerCase()}`}
         accessibilityRole="progressbar"
-        accessibilityValue={{ min: 0, max: 9, now: value }}
+        accessibilityValue={{ min: 0, max: 9, now: clamped }}
         style={styles.intensityTrack}
       >
         <View style={[styles.intensityFill, { width: percentage }]} />
       </View>
+      {note ? (
+        <Text
+          accessibilityLabel="Adaptation status"
+          style={styles.degradationNote}
+        >
+          {note}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -574,7 +612,86 @@ function TransportButton({
 }
 
 function metadataFor(song: Song) {
-  return { id: String(song.id), title: song.name, artist: song.author };
+  return {
+    id: String(song.id),
+    title: song.name,
+    artist: song.author,
+    dimension: song.dimension,
+  };
+}
+
+/** Producer-facing display names for each dimension. */
+const DIMENSION_LABELS: Record<Dimension, string> = {
+  volume: 'Volume',
+  heartRate: 'Heart rate',
+  movementSpeed: 'Movement speed',
+  intensity: 'Intensity',
+};
+
+/**
+ * The empty-state hint under the catalog follows the current song's
+ * dimension — it describes the signal that actually matters for this song,
+ * and never tells anyone to shake their phone.
+ */
+const DIMENSION_HINTS: Record<Dimension, string> = {
+  volume: 'Change your device volume to move this song.',
+  heartRate: 'This song follows your heart rate.',
+  movementSpeed: 'This song follows how fast you are moving.',
+  intensity: 'This song blends everything your device can sense.',
+};
+
+const AGGREGATE_MEMBERS: readonly (keyof DimensionReadings)[] = [
+  'volume',
+  'movementSpeed',
+  'heartRate',
+];
+
+/** The member's name lower-cased for the degradation note sentence. */
+function memberLabel(member: keyof DimensionReadings): string {
+  return DIMENSION_LABELS[member].toLowerCase();
+}
+
+/**
+ * The badge under the meter, or `null` when everything the song needs is
+ * available (so a static-sounding song reads as a limitation, never a bug):
+ *
+ * - a **single** dimension whose input is unavailable is held at 5, and says
+ *   so;
+ * - the **aggregate** names which members dropped out and which remain.
+ */
+function degradationNote(
+  dimension: Dimension,
+  readings: DimensionReadings,
+): string | null {
+  if (dimension === 'intensity') {
+    const remaining: (keyof DimensionReadings)[] = [];
+    const dropped: (keyof DimensionReadings)[] = [];
+    for (const member of AGGREGATE_MEMBERS) {
+      (readings[member] === null ? dropped : remaining).push(member);
+    }
+    if (dropped.length === 0) {
+      return null;
+    }
+    return `Blending ${joinMembers(remaining)}; ${joinMembers(
+      dropped,
+    )} unavailable.`;
+  }
+
+  if (readings[dimension] === null) {
+    return `${DIMENSION_LABELS[dimension]} unavailable — holding at 5.`;
+  }
+  return null;
+}
+
+function joinMembers(members: readonly (keyof DimensionReadings)[]): string {
+  const labels = members.map(memberLabel);
+  if (labels.length <= 1) {
+    return labels.join('');
+  }
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`;
+  }
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
 function catalogErrorMessage(error: unknown): string {
@@ -855,6 +972,12 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 5,
     backgroundColor: colors.accent,
+  },
+  degradationNote: {
+    marginTop: 6,
+    color: colors.muted,
+    fontSize: 11,
+    fontStyle: 'italic',
   },
   transport: {
     marginTop: 10,

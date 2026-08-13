@@ -78,6 +78,7 @@ describe('CatalogScreen', () => {
           id: '1',
           title: SONGS[0].name,
           artist: SONGS[0].author,
+          dimension: SONGS[0].dimension,
         },
       },
     ]);
@@ -108,6 +109,7 @@ describe('CatalogScreen', () => {
         id: '2',
         title: SONGS[1].name,
         artist: SONGS[1].author,
+        dimension: SONGS[1].dimension,
       },
     });
     expect(
@@ -198,7 +200,7 @@ describe('CatalogScreen', () => {
     expect(player.playCallCount).toBe(0);
   });
 
-  it('renders progress and intensity, and retries recoverable errors', async () => {
+  it('renders progress and the resolved dimension value, and retries recoverable errors', async () => {
     const repository = createRepository(SONGS);
     const { renderer, player } = await renderScreen(repository);
 
@@ -208,9 +210,12 @@ describe('CatalogScreen', () => {
         durationMs: 120_000,
         bufferedMs: 60_000,
       });
-      player.emitIntensityChanged({
-        intensity: 7,
-        volume: 6,
+      // SONGS[0] is authored against movement speed; the meter names it and
+      // shows the resolved value that drives selection.
+      player.emitDimensionChanged({
+        dimension: 'movementSpeed',
+        value: 7,
+        readings: { volume: 6, movementSpeed: 7, heartRate: null },
       });
       player.emitPlaybackState({ state: 'playing', sourceId: '1' });
     });
@@ -231,8 +236,9 @@ describe('CatalogScreen', () => {
         .props.children,
     ).toEqual(['Buffered ', '1:00']);
     expect(
-      renderer.root.findByProps({ accessibilityLabel: 'Playback intensity' })
-        .props.accessibilityValue,
+      renderer.root.findByProps({
+        accessibilityLabel: 'Playback movement speed',
+      }).props.accessibilityValue,
     ).toEqual({ min: 0, max: 9, now: 7 });
 
     await ReactTestRenderer.act(async () => {
@@ -321,5 +327,101 @@ describe('CatalogScreen', () => {
         .disabled,
     ).toBe(true);
     expect(player.prepareCalls).toHaveLength(0);
+  });
+
+  it('holds a single dimension at 5 with a badge, and follows availability mid-song without a restart', async () => {
+    const repository = createRepository(SONGS);
+    const { renderer, player } = await renderScreen(repository);
+
+    // SONGS[0] adapts to movement speed; the hint follows that dimension.
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Adaptation hint' }).props
+        .children,
+    ).toBe('This song follows how fast you are moving.');
+
+    // Its input is unavailable: the meter names the dimension, sits at 5, and
+    // the badge says it is being held there rather than measured.
+    await ReactTestRenderer.act(async () => {
+      player.emitDimensionChanged({
+        dimension: 'movementSpeed',
+        value: 5,
+        readings: { volume: 6, movementSpeed: null, heartRate: null },
+      });
+    });
+    expect(
+      renderer.root.findByProps({
+        accessibilityLabel: 'Playback movement speed',
+      }).props.accessibilityValue,
+    ).toEqual({ min: 0, max: 9, now: 5 });
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Adaptation status' })
+        .props.children,
+    ).toBe('Movement speed unavailable — holding at 5.');
+
+    // The signal becomes available mid-song: the meter starts tracking it and
+    // the badge clears, with no fresh prepare/play.
+    await ReactTestRenderer.act(async () => {
+      player.emitDimensionChanged({
+        dimension: 'movementSpeed',
+        value: 8,
+        readings: { volume: 6, movementSpeed: 8, heartRate: null },
+      });
+    });
+    expect(
+      renderer.root.findByProps({
+        accessibilityLabel: 'Playback movement speed',
+      }).props.accessibilityValue,
+    ).toEqual({ min: 0, max: 9, now: 8 });
+    expect(
+      renderer.root.findAllByProps({ accessibilityLabel: 'Adaptation status' }),
+    ).toHaveLength(0);
+    expect(player.prepareCalls).toHaveLength(1);
+    expect(player.playCallCount).toBe(0);
+  });
+
+  it('reports which aggregate members dropped out, and shows no badge when all are available', async () => {
+    const repository = createRepository(SONGS);
+    const { renderer, player } = await renderScreen(repository);
+
+    // Move to the intensity song (SONGS[1]).
+    await ReactTestRenderer.act(async () => {
+      renderer.root
+        .findByProps({ accessibilityLabel: 'Orange Horizon by Pulse Assembly' })
+        .props.onPress();
+    });
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Adaptation hint' }).props
+        .children,
+    ).toBe('This song blends everything your device can sense.');
+
+    // Only volume is available today: the aggregate badge names what remains
+    // and what dropped out.
+    await ReactTestRenderer.act(async () => {
+      player.emitDimensionChanged({
+        dimension: 'intensity',
+        value: 6,
+        readings: { volume: 6, movementSpeed: null, heartRate: null },
+      });
+    });
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Playback intensity' })
+        .props.accessibilityValue,
+    ).toEqual({ min: 0, max: 9, now: 6 });
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: 'Adaptation status' })
+        .props.children,
+    ).toBe('Blending volume; movement speed and heart rate unavailable.');
+
+    // With every member available, there is nothing to report and no badge.
+    await ReactTestRenderer.act(async () => {
+      player.emitDimensionChanged({
+        dimension: 'intensity',
+        value: 5,
+        readings: { volume: 5, movementSpeed: 5, heartRate: 5 },
+      });
+    });
+    expect(
+      renderer.root.findAllByProps({ accessibilityLabel: 'Adaptation status' }),
+    ).toHaveLength(0);
   });
 });
