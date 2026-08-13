@@ -12,10 +12,10 @@ import { MidiPort } from "../../services/midi-port";
 import { ElectronApi } from "../../../shared/electron-api";
 import { ExportDialog } from "../export-dialog/export-dialog";
 
-// The input the app starts on, held in one place because the knob, the control list and the
-// adaptizer all have to agree about it on the very first render. It is the bottom of the
+// The input level the app starts on, held in one place because the knob, the control list and
+// the adaptizer all have to agree about it on the very first render. It is the bottom of the
 // range on purpose: it is what the export's first track renders, so what the DAW hears
-// before the user touches anything is a value the finished song actually contains.
+// before the user touches anything is a level the finished song actually contains.
 const startingInputValue = inputValueMin;
 
 // Presentation only. The contract string is what gets persisted; these labels are produced for

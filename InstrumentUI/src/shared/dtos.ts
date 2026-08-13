@@ -26,7 +26,7 @@ export enum Dimension {
   INTENSITY = "intensity"
 }
 
-// One track is rendered per input value (0..9)
+// One track is rendered per input level (0..9)
 export const exportTrackCount = 10;
 export const inputValueMin = 0;
 export const inputValueMax = exportTrackCount - 1;

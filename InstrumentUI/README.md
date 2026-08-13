@@ -88,7 +88,7 @@ the same string is typed into the [catalog](../API/README.md) and compared by th
 
 ## Exporting a song
 
-InstrumentUI renders your song into a DASH stream — one track per input value
+InstrumentUI renders your song into a DASH stream — one variant per input level
 (0..9), so the player can switch between them as the listener context changes.
 Only Ableton Live is supported for now.
 
@@ -109,7 +109,7 @@ Additional prerequisites:
 1. Press *Export* and leave Ableton Live alone until it finishes — the export
    drives its Export Audio/Video dialog for every track.
 
-Each input value is sent to Ableton as MIDI before its track is rendered, so
+Each input level is sent to Ableton as MIDI before its track is rendered, so
 every track sounds the way the knob sounds at that value. The rendered
 `0.wav`..`9.wav` files are then encoded and packaged — host the resulting
 `manifest.mpd` in the same directory as the `.webm` files. See
