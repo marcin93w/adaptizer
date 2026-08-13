@@ -37,6 +37,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.play.services.location)
     // AdaptiveAudioEngine's public listener/player surface exposes Media3
     // types, so these must be API dependencies for bridge consumers.
     api(libs.androidx.media3.exoplayer)

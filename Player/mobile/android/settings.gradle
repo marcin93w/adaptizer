@@ -22,6 +22,7 @@ dependencyResolutionManagement {
             version("media3", "1.5.1")
             version("coroutines", "1.7.3")
             version("robolectric", "4.14.1")
+            version("playServicesLocation", "21.3.0")
 
             plugin("android-library", "com.android.library").versionRef("agp")
             plugin("kotlin-android", "org.jetbrains.kotlin.android").versionRef("kotlin")
@@ -34,6 +35,7 @@ dependencyResolutionManagement {
             library("androidx-media3-exoplayer-dash", "androidx.media3", "media3-exoplayer-dash").versionRef("media3")
             library("kotlinx-coroutines-android", "org.jetbrains.kotlinx", "kotlinx-coroutines-android").versionRef("coroutines")
             library("robolectric", "org.robolectric", "robolectric").versionRef("robolectric")
+            library("play-services-location", "com.google.android.gms", "play-services-location").versionRef("playServicesLocation")
         }
     }
 }

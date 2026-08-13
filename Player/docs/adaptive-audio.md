@@ -88,10 +88,10 @@ with its own weight. They are renormalized over whatever is available (the
 implementation divides by the weight actually present, which is the same thing),
 so they only need to sum to `1.0` when every member is available.
 
-**Today volume and heart rate inputs exist.** `intensity` includes heart rate at
-weight 0.2 while a bonded strap is reporting, and renormalizes to volume alone
-when it is not. `movementSpeed` is always held at `5`. The old accelerometer was
-judged a mistake and deleted rather than retained as a stand-in for that input.
+`intensity` includes heart rate while a bonded strap is reporting and movement
+speed while a fresh fused-location speed and moving activity are available.
+Either unavailable input is renormalized away, leaving the available inputs to
+determine the aggregate.
 
 Two properties worth knowing before touching the formula:
 
@@ -186,10 +186,29 @@ See
 [`adr/0002-ble-heart-rate-profile-over-health-connect.md`](adr/0002-ble-heart-rate-profile-over-health-connect.md)
 for why this live BLE path is used instead of Health Connect.
 
-## 4. Input not yet built
+## 4. Input: movement speed
 
-`movementSpeed` (weight 0.3) has no input behind it yet. Until it does, that
-dimension is held at `5` and it does not contribute to the aggregate.
+Movement speed has aggregate weight **0.3**. Fused location supplies metres per
+second and activity recognition selects the listener-relative band. `still`
+makes the input unavailable; walking maps `0.3-2.0 m/s` to `0-9`; running
+`2.0-5.5`; cycling `2.0-11`; and in-vehicle `3-35`. Values outside a moving
+band clamp at its ends. Activities outside those four moving bands also make
+the input unavailable.
+
+The host requests precise foreground location and activity-recognition
+permissions only when playback first starts for a `movementSpeed` or
+`intensity` song. A denial is recorded and is not requested again; playback
+continues with the input unavailable. A later grant in system settings is
+picked up when the host resumes.
+
+When an `intensity` song needs both Bluetooth and movement-speed permissions,
+the requests are serialized: the movement-speed request waits until the
+heart-rate request has completed, avoiding concurrent system dialogs.
+
+The input starts updates only in the foreground. Host pause releases the
+location and activity subscriptions and clears both measurements immediately,
+making the input unavailable instead of retaining a stale reading. Host resume
+restarts it when permissions are present and the current dimension needs it.
 
 There was previously an accelerometer input, weighted 0.25, reading phone shake.
 It was deleted: shake is not a meaningful measure of listening context, and

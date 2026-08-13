@@ -6,9 +6,9 @@ package com.adaptizerplayer.adaptiveaudio.adaptizer
  * That is the current song's business, and songs are not this library's
  * concern.
  *
- * The movement-speed input is not wired yet. An input that is absent here is
- * indistinguishable from one reporting itself unavailable: its dimension is
- * held at 5 and it contributes nothing to the aggregate.
+ * An input that is absent here is indistinguishable from one reporting itself
+ * unavailable: its dimension is held at 5 and it contributes nothing to the
+ * aggregate.
  *
  * Parameters are ordered as [InputReadings] declares them, so a positional
  * call cannot mean one thing here and another there.
