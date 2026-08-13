@@ -38,6 +38,7 @@ describe('HttpSongsRepository.fetchSongs', () => {
         album: 'Album One',
         name: 'Song One',
         storage_location: 'songs/one',
+        dimension: 'heartRate',
       },
       {
         id: 2,
@@ -45,6 +46,7 @@ describe('HttpSongsRepository.fetchSongs', () => {
         album: 'Album Two',
         name: 'Song Two',
         storage_location: 'songs/two',
+        dimension: 'intensity',
       },
     ];
     mockFetch.mockResolvedValueOnce(jsonResponse(200, wirePayload));
@@ -59,6 +61,7 @@ describe('HttpSongsRepository.fetchSongs', () => {
         album: 'Album One',
         name: 'Song One',
         storageLocation: 'songs/one',
+        dimension: 'heartRate',
       },
       {
         id: 2,
@@ -66,10 +69,90 @@ describe('HttpSongsRepository.fetchSongs', () => {
         album: 'Album Two',
         name: 'Song Two',
         storageLocation: 'songs/two',
+        dimension: 'intensity',
       },
     ]);
     // Confirm the snake_case wire field never leaks into the domain object.
     expect(songs[0]).not.toHaveProperty('storage_location');
+  });
+
+  it.each(['volume', 'heartRate', 'movementSpeed', 'intensity'])(
+    'carries a recognised dimension "%s" through unchanged and un-re-cased',
+    async dimension => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(200, [
+          {
+            id: 1,
+            author: 'Author',
+            album: 'Album',
+            name: 'Name',
+            storage_location: 'songs/one',
+            dimension,
+          },
+        ]),
+      );
+
+      const repository = new HttpSongsRepository();
+      const [song] = await repository.fetchSongs();
+
+      // Byte-identical to the wire value: the same object reference is not
+      // required, but the string must be exactly what arrived.
+      expect(song.dimension).toBe(dimension);
+    },
+  );
+
+  it('narrows an unrecognised dimension to intensity, logs it, and still returns the song', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(200, [
+        {
+          id: 1,
+          author: 'Author',
+          album: 'Album',
+          name: 'Name',
+          storage_location: 'songs/one',
+          // A dimension a newer catalog names but this build has never heard of.
+          dimension: 'galaxyBrain',
+        },
+      ]),
+    );
+
+    const repository = new HttpSongsRepository();
+    const songs = await repository.fetchSongs();
+
+    // The song is returned rather than rejected...
+    expect(songs).toHaveLength(1);
+    // ...narrowed to intensity...
+    expect(songs[0].dimension).toBe('intensity');
+    // ...and the unrecognised value is logged.
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('galaxyBrain');
+
+    warn.mockRestore();
+  });
+
+  it('narrows a missing dimension to intensity so a payload without the field still parses', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse(200, [
+        {
+          id: 1,
+          author: 'Author',
+          album: 'Album',
+          name: 'Name',
+          storage_location: 'songs/one',
+          // dimension intentionally omitted
+        },
+      ]),
+    );
+
+    const repository = new HttpSongsRepository();
+    const songs = await repository.fetchSongs();
+
+    expect(songs).toHaveLength(1);
+    expect(songs[0].dimension).toBe('intensity');
+
+    warn.mockRestore();
   });
 
   it('resolves with an empty array for an empty catalog, and this is not an error', async () => {

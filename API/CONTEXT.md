@@ -40,10 +40,21 @@ never mapped, never parsed — only compared. See
 [ADR-0001](../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md).
 
 This context holds the string at its thinnest: typed by hand into a row, stored,
-served. The Worker does not validate it against the four, does not normalize its
+served. It lives in the `songs.dimension` column — `TEXT NOT NULL DEFAULT
+'intensity'`, so a row inserted without one is `intensity` and the pre-existing
+row backfilled to it — and travels out on the existing `GET /` response, which
+already selects every column, so serving it costs no Worker change and no second
+request. The Worker does not validate it against the four, does not normalize its
 case and has no enum to check it against — the contract is what keeps a
 hand-typed row correct, not the schema. The set is flat and closed; the catalog
 records no notion of a dimension being single or aggregate.
+
+Correctness of a hand-typed row is enforced nowhere here, but a wrong one does
+not break the app: the client narrows any name it does not recognise to
+`intensity` and logs it, rather than rejecting the song (see
+`Player/mobile/src/domain/dimension.ts` and `Player/CONTEXT.md`). That is what
+makes naming a new dimension in a row a non-breaking catalog change for apps
+already in the field — at the cost of a typo degrading silently to `intensity`.
 
 The API sits on the producer side of the producer/player line. It knows
 dimensions and never **inputs**, which exist only in the Player.

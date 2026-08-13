@@ -13,6 +13,7 @@ const SONGS: readonly Song[] = [
     album: 'Motion',
     name: 'Signal in Motion',
     storageLocation: 'songs/signal-in-motion',
+    dimension: 'movementSpeed',
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const SONGS: readonly Song[] = [
     album: 'Ten Levels',
     name: 'Orange Horizon',
     storageLocation: 'songs/orange-horizon',
+    dimension: 'intensity',
   },
 ];
 

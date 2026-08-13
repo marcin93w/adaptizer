@@ -6,8 +6,16 @@ Worker at `https://adaptizer.marcin93w.workers.dev`.
 `GET /` returns the full catalog as a JSON array:
 
 ```json
-[{ "id": 1, "author": "Wednesday Habits", "album": "Demo", "name": "Adaptizer Sample", "storage_location": "Sample" }]
+[{ "id": 1, "author": "Wednesday Habits", "album": "Demo", "name": "Adaptizer Sample", "storage_location": "Sample", "dimension": "intensity" }]
 ```
+
+`dimension` is the adaptation axis the song was authored against, one of the
+four contract names `volume`, `heartRate`, `movementSpeed`, `intensity` (see
+[CONTEXT.md](CONTEXT.md)). The Worker serves it as an opaque string — it does
+not validate it against the four or re-case it. The client narrows anything it
+does not recognise to `intensity` rather than rejecting the song
+(`Player/mobile/src/domain/dimension.ts`), so naming a new dimension in a
+catalog row is a non-breaking change for apps already in the field.
 
 `GET /` and `HEAD /` are the only accepted requests. Any other path is a `404`
 and any other method a `405` with an `Allow: GET, HEAD` header; both respond
@@ -50,8 +58,11 @@ catalog, `npm run db:songs`.
 1. Export the song from your DAW with `e <outputPath> <bpm>` (see the root
    [readme](../readme.md)) to produce the DASH output.
 2. Upload the output directory to the `adaptizer` R2 bucket under a new prefix.
-3. Insert the catalog row, using that prefix as `storage_location`:
+3. Insert the catalog row, using that prefix as `storage_location` and the
+   dimension the song was authored against as `dimension` — one of `volume`,
+   `heartRate`, `movementSpeed`, `intensity`, spelled byte-identically. Omit
+   `dimension` to take the column default, `intensity`.
 
    ```sh
-   npx wrangler d1 execute adaptizer --remote --command="INSERT INTO songs (author, album, name, storage_location) VALUES ('Author', 'Album', 'Name', 'Prefix')"
+   npx wrangler d1 execute adaptizer --remote --command="INSERT INTO songs (author, album, name, storage_location, dimension) VALUES ('Author', 'Album', 'Name', 'Prefix', 'intensity')"
    ```

@@ -1,4 +1,5 @@
 import { config } from '../config';
+import { narrowDimension } from '../domain/dimension';
 import type { Song, SongsRepository } from '../domain/song';
 
 /**
@@ -69,11 +70,12 @@ function isAbortError(error: unknown): boolean {
 /**
  * Validates that a raw JSON value has the shape of the wire-format Song
  * record documented in `Player/docs/adaptive-audio.md` section 6:
- * `{ id: number, author: string, album: string, name: string, storage_location: string }`.
+ * `{ id: number, author: string, album: string, name: string, storage_location: string, dimension: string }`.
  * Returns the parsed domain `Song` (with `storageLocation` camelCased) or
  * `null` if the value does not match. Deliberately does not use a blind
  * `as Song` cast — every field's presence and primitive type is checked
- * explicitly.
+ * explicitly. `dimension` is the exception: `narrowDimension` never rejects,
+ * so an unrecognised or absent one narrows rather than nulling the song.
  */
 function parseSong(value: unknown): Song | null {
   if (typeof value !== 'object' || value === null) {
@@ -95,6 +97,7 @@ function parseSong(value: unknown): Song | null {
       album: record.album,
       name: record.name,
       storageLocation: record.storage_location,
+      dimension: narrowDimension(record.dimension),
     };
   }
 

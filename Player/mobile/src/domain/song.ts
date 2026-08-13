@@ -10,12 +10,16 @@
  * it can be depended on by both the data layer and, later, UI/native code
  * without pulling in an HTTP implementation.
  */
+import type { Dimension } from './dimension';
+
 export interface Song {
   readonly id: number;
   readonly author: string;
   readonly album: string;
   readonly name: string;
   readonly storageLocation: string;
+  /** Narrowed to a contract name on the way in (see `data/songsApi.ts`). */
+  readonly dimension: Dimension;
 }
 
 /**
