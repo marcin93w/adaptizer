@@ -58,3 +58,25 @@ _Avoid_: Render, bounce, build
 **Variant**:
 One rendered version of the song, corresponding to a single input level.
 _Avoid_: Track (which in a DAW means something else entirely), representation
+
+## The identical-string contract
+
+The four dimensions above are written into the `.adz` project as exactly these
+strings — `volume`, `heartRate`, `movementSpeed`, `intensity` — and the same
+string is then typed by hand into the catalog, returned by the Worker, narrowed
+in React Native and resolved in Kotlin. It is byte-identical at every layer:
+never re-cased, never mapped, never parsed — only compared. See
+[ADR-0001](../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md).
+
+This context is where the string is first written, so it is where a mistake
+would originate. The display labels — "Heart rate", "Movement speed" — are
+presentation only; they are produced for the screen and never persisted, and no
+code path turns a label back into a name.
+
+The set is flat and closed. InstrumentUI offers four names and knows nothing
+else about them: not how a dimension is measured, not whether it is one signal
+or a blend of several. Intensity is picked here the same way volume is.
+
+InstrumentUI is the producer side of the producer/player line. An **input** —
+the Player's word for a device-side signal source — does not exist in this
+context, and a producer never sees one.

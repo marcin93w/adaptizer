@@ -55,3 +55,25 @@ _Avoid_: Environment, activity, state
 **Catalog**:
 The list of published songs the app fetches on launch. Each entry names where the song's audio lives and which dimension it was authored against.
 _Avoid_: Library, songs list
+
+## The identical-string contract
+
+A song's dimension arrives here as one of exactly four strings — `volume`,
+`heartRate`, `movementSpeed`, `intensity` — byte-identical to what InstrumentUI
+wrote into the `.adz` and what the catalog row holds. It crosses the API
+response, the native-bridge payload and into the Kotlin resolver unchanged:
+never re-cased, never mapped, never parsed — only compared. See
+[ADR-0001](../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md).
+
+This context is the end of that chain and the only one that interprets the name.
+The set is flat and closed: the distinction between a **single dimension** and
+the **aggregate dimension** is drawn in one resolver function, which switches on
+the name and either returns an input's reading or computes the weighted mean.
+Nothing above that function — not the bridge, not the catalog, not the UI —
+carries which kind a dimension is. An unrecognised name resolves to `intensity`
+and is logged, so a fifth dimension in the catalog does not break an installed
+app.
+
+The Player is the listener side of the producer/player line, and the only
+context with **inputs**. An input appears in nothing a producer or the catalog
+sees.
