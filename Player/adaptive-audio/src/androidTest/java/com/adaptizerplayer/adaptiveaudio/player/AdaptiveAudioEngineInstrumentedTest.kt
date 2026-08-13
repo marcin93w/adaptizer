@@ -298,7 +298,7 @@ class AdaptiveAudioEngineInstrumentedTest {
     /**
      * The important case: a structurally valid manifest whose audio AdaptationSet has only 3
      * Representations, directly exercising the ten-representation manifest contract
-     * (docs/adaptive-audio.md section 4).
+     * (docs/adaptive-audio.md section 5).
      *
      * [AdaptizerTrackSelector] validates the count before constructing BaseTrackSelection, so
      * Media3 reports a PlaybackException whose cause chain includes

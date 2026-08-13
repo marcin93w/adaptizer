@@ -3,7 +3,7 @@
 Deterministic, offline DASH audio fixture. It lets instrumentation tests
 exercise representation selection (`AdaptizerTrackSelection` /
 `AdaptizerTrackSelector`, see [`../docs/adaptive-audio.md`](../docs/adaptive-audio.md)
-section 4) without depending on the production CDN.
+section 5) without depending on the production CDN.
 
 ## Tooling used
 

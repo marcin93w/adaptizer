@@ -2,7 +2,7 @@
  * Centralized configuration for network base URLs.
  *
  * These values mirror the legacy Android app's hard-coded endpoints
- * (see `Player/docs/adaptive-audio.md`, section 6:
+ * (see `Player/docs/adaptive-audio.md`, section 7:
  * `app/src/main/java/com/adaptizerplayer/SongsRepository.kt` for the
  * songs API base URL and `MainActivity.kt` for the media base URL).
  * Nothing outside this module should hard-code either URL.

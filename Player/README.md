@@ -12,9 +12,10 @@ resolves any of them to a track index.
 A song's dimension now reaches the resolver end to end: the catalog records it,
 the React Native client reads it, and the native bridge carries it down in the
 `prepare` metadata so the player honours the dimension its author chose. Device
-volume is still the only input, so `intensity` (a one-member aggregate today)
-and `volume` resolve to the same value, and `heartRate`/`movementSpeed` songs
-are held at 5 until those inputs land.
+Device volume and a bonded BLE Heart Rate Profile strap are the available
+inputs. `heartRate` songs follow the strap live; `intensity` includes it at
+weight 0.2 when available and renormalizes it away otherwise. `movementSpeed`
+songs remain held at 5 until that input lands.
 
 ## Modules
 
