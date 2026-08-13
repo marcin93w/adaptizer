@@ -29,3 +29,21 @@ _Avoid_: Track, representation
 **Published**:
 A song is published once its audio is uploaded and its catalog row exists. Both steps are done by hand.
 _Avoid_: Released, live, deployed
+
+## The identical-string contract
+
+A song's dimension is one of exactly four names — `volume`, `heartRate`,
+`movementSpeed`, `intensity` — and the string is byte-identical everywhere it is
+persisted or transmitted: the `.adz` project, this D1 column, this Worker's
+response, the native-bridge payload and the Kotlin resolver. Never re-cased,
+never mapped, never parsed — only compared. See
+[ADR-0001](../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md).
+
+This context holds the string at its thinnest: typed by hand into a row, stored,
+served. The Worker does not validate it against the four, does not normalize its
+case and has no enum to check it against — the contract is what keeps a
+hand-typed row correct, not the schema. The set is flat and closed; the catalog
+records no notion of a dimension being single or aggregate.
+
+The API sits on the producer side of the producer/player line. It knows
+dimensions and never **inputs**, which exist only in the Player.

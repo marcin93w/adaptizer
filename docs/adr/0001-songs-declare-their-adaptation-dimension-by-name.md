@@ -28,6 +28,30 @@ this across three build systems costs far more than it protects for four
 constant strings; a documented contract plus each context's `CONTEXT.md` is the
 deliberate trade.
 
+## A flat, closed set of four
+
+The set is exactly `volume`, `heartRate`, `movementSpeed`, `intensity`, and it
+is **flat**. Deliberately not built:
+
+- **No tagged union.** Nothing carries a `kind: 'single' | 'aggregate'` alongside
+  the name. Whether a dimension is one input's reading or a blend of several is a
+  fact about how the Player computes a value, not about how a song records one,
+  and it has no business travelling through four layers to get there.
+- **No registry.** No dimension registers itself, and nothing enumerates the set
+  at runtime to discover what exists. Four constants, spelled out again at each
+  layer that needs them.
+- **No route toward user-defined aggregates.** A producer cannot compose a new
+  dimension, and there is no partial step in that direction to be completed
+  later. If that is ever wanted it is a redesign, not an extension point left
+  open here.
+
+The single-versus-aggregate distinction lives **inside one resolver function**
+in the Player: it switches on the name and either returns an input's reading or
+computes the weighted mean. Nothing above it knows which kind a dimension is —
+InstrumentUI offers four names, the catalog stores one string, the bridge passes
+it through. Adding a fifth dimension is therefore a name added at each layer plus
+a branch in that function, and that cost is accepted rather than designed away.
+
 ## Consequences
 
 A dimension name the installed Player does not recognise resolves to `intensity`
