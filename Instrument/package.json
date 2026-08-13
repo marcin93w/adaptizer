@@ -1,9 +1,9 @@
 {
-  "name": "adaptizer-instrumentui",
+  "name": "adaptizer-instrument",
   "version": "1.0.0",
   "description": "",
   "build": {
-    "appId": "com.adaptizer.instrumentui",
+    "appId": "com.adaptizer.instrument",
     "directories": {
       "output": "release"
     },
