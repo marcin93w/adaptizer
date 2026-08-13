@@ -5,7 +5,7 @@ interface AdaptizerKnobProps {
     min?: number;
     max?: number;
     step?: number;
-    /** Where the knob starts. Required, because the owner of the input value has to be the one
+    /** Where the knob starts. Required, because the owner of the input level has to be the one
      *  that decides it - a knob that picks its own start reports a value the rest of the app
      *  does not have, and the DAW hears the disagreement as a burst of two different values. */
     initialValue: number;

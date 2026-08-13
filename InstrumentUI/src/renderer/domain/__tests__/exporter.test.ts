@@ -6,7 +6,7 @@ import { createFakeElectronApi, FakeElectronApi } from "../../../testing/fake-el
 import { createFakeMidiPort } from "../../../testing/fake-midi-port";
 import { aControl, aProject } from "../../../testing/project-builders";
 
-// An export renders ten tracks by walking the DAW through input values 0..9, then hands
+// An export renders ten tracks by walking the DAW through input levels 0..9, then hands
 // the WAVs to the DASH converter. It takes long enough that everything which can be
 // checked up front is, and the failure it exists to prevent - ten tracks that all sound
 // the same - is invisible until somebody listens to the result.

@@ -2,7 +2,7 @@ import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./app";
-import { InputType } from "../shared/dtos";
+import { Dimension } from "../shared/dtos";
 import { createFakeElectronApi } from "../testing/fake-electron-api";
 import { createFakeMidiPort } from "../testing/fake-midi-port";
 import { aControl, aProject } from "../testing/project-builders";
@@ -34,17 +34,49 @@ describe("keeping the main process up to date", () => {
 
         const lastSent = api.sentProjects[api.sentProjects.length - 1];
         expect(lastSent.controls.map(control => control.controlNumber)).toEqual([1, 2]);
-        expect(lastSent.inputType).toBe(InputType.VOLUME);
+        expect(lastSent.dimension).toBe(Dimension.VOLUME);
     });
 
     it("shows the project the main process opened instead of the one on screen", async () => {
         const { api } = await setUp();
-        const opened = aProject({ controls: [aControl({ cc: 5 })], inputType: InputType.EXPRESSION }).toDto();
+        const opened = aProject({ controls: [aControl({ cc: 5 })], dimension: Dimension.HEART_RATE }).toDto();
 
         await act(async () => api.emitProjectOpened(opened));
 
         expect(isControlOnScreen(5)).toBe(true);
         expect(isControlOnScreen(1)).toBe(false);
+    });
+});
+
+describe("the dimension a project was authored against", () => {
+    // The producer's decision has to survive the trip through the main process and back, which
+    // is the only place the whole round trip exists: the renderer hands the project over, a
+    // file is what comes back. Anything narrower than this misses a field dropped in between.
+    it("comes back after saving and reopening, with the controls it was saved with", async () => {
+        const { api } = await setUp();
+
+        fireEvent.click(screen.getByRole("radio", { name: "Movement speed" }));
+        const saved = api.sentProjects[api.sentProjects.length - 1];
+        // Carry on authoring after the save, so what comes back has to be read out of the file
+        // rather than being whatever the screen happened to be left on.
+        fireEvent.click(screen.getByRole("radio", { name: "Volume" }));
+        const reopenedFromDisk = JSON.parse(JSON.stringify(saved));
+        await act(async () => api.emitProjectOpened(reopenedFromDisk));
+
+        expect(screen.getByRole("radio", { name: "Movement speed" })).toBeChecked();
+        expect(screen.getByRole("group", { name: "Movement speed to MIDI control curve" })).toBeInTheDocument();
+        expect(isControlOnScreen(1)).toBe(true);
+    });
+
+    it("leaves the controls alone when it changes, so switching is never a re-authoring job", async () => {
+        const { api } = await setUp();
+        const lastSent = () => api.sentProjects[api.sentProjects.length - 1];
+
+        fireEvent.click(screen.getByRole("radio", { name: "Volume" }));
+        const before = lastSent().controls;
+        fireEvent.click(screen.getByRole("radio", { name: "Heart rate" }));
+
+        expect(lastSent().controls).toEqual(before);
     });
 });
 

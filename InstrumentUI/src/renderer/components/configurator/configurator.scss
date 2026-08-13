@@ -16,7 +16,7 @@
     color: $muted-text-color;
 }
 
-// Top row: the input source on the left, everything it drives on the right.
+// Top row: the dimension on the left, everything it drives on the right.
 #workspace {
     display: flex;
     flex-direction: row;
@@ -24,7 +24,7 @@
     gap: 1.25rem;
 }
 
-// Raised material - deliberately lighter than the controls so the input source
+// Raised material - deliberately lighter than the controls so the dimension
 // reads as a different kind of thing than the things it drives.
 .source-panel {
     flex-shrink: 0;
@@ -39,9 +39,11 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-// Segmented switcher, matched to the knob's width so the two line up as one stack.
-#inputs {
+// Segmented switcher, matched to the knob's width so the two line up as one stack. Stacked
+// rather than side by side: "Movement speed" does not fit a quarter of the knob's width.
+#dimensions {
     display: flex;
+    flex-direction: column;
     width: $knob-size;
     border: 1px solid $panel-border-color;
     border-radius: 8px;
@@ -49,9 +51,8 @@
     background-color: rgba(0, 0, 0, 0.25);
 }
 
-.input-item {
-    flex: 1 1 0;
-    padding: 0.5rem 0.25rem;
+.dimension-item {
+    padding: 0.5rem 0.75rem;
     text-align: center;
     font-size: 0.8rem;
     cursor: pointer;
@@ -59,22 +60,22 @@
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.input-item + .input-item {
-    border-left: 1px solid $panel-border-color;
+.dimension-item + .dimension-item {
+    border-top: 1px solid $panel-border-color;
 }
 
-.input-item:hover {
+.dimension-item:hover {
     color: $accent-text-color;
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.input-item.selected {
+.dimension-item.selected {
     background-color: $brand-color;
     color: $accent-text-color;
     font-weight: 600;
 }
 
-// Arrow showing the input feeding the controls.
+// Arrow showing the dimension feeding the controls.
 .signal-link {
     flex-shrink: 0;
     display: flex;

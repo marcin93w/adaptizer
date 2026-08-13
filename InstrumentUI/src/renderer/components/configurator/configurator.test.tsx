@@ -79,6 +79,23 @@ describe("auditioning a control", () => {
     });
 });
 
+describe("choosing the dimension the song adapts to", () => {
+    it("offers every dimension the player can deliver, and nothing else", async () => {
+        await setUp();
+
+        expect(screen.getAllByRole("radio").map(option => option.textContent))
+            .toEqual(["Volume", "Heart rate", "Movement speed", "Intensity"]);
+    });
+
+    it("names the curve after the chosen dimension, so the axis says what it is", async () => {
+        await setUp();
+
+        fireEvent.click(screen.getByRole("radio", { name: "Heart rate" }));
+
+        expect(screen.getByRole("group", { name: "Heart rate to MIDI control curve" })).toBeInTheDocument();
+    });
+});
+
 describe("opening another project", () => {
     it("replaces the controls and ends the export the old project started", async () => {
         const { api, showProject } = await setUp();

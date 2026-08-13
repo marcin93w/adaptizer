@@ -3,7 +3,7 @@
 Real-time listener context as MIDI input for music production.
 
 Adaptizer maps *real-world listener context* — how the song is being listened to — to MIDI CC messages in your DAW. 
-Whether it's volume, listener heart rate, movement speed, or a combination of different inputs, you are free to use that however you like to adapt your song to the listener's activity. 
+You pick the input your song adapts along — volume, listener heart rate, movement speed, or combination of them — and use it however you like to adapt the song to the listener's situation. 
 It opens an entirely new dimension, one that connects the artist with the listener in a unique way.
 
 Once the song is ready, Adaptizer helps you export it in multiple variants, in a format ready to stream from the Adaptizer mobile app. 
@@ -15,7 +15,7 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a son
 
 | Component | What it is |
 | --- | --- |
-| [InstrumentUI](InstrumentUI/README.md) | Desktop (Electron) editor for producers: configure the context → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
+| [InstrumentUI](InstrumentUI/README.md) | Desktop (Electron) editor for producers: pick the song's dimension, configure the dimension → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
 | [Instrument](Instrument/README.md) | The original Python console instrument. Same job as InstrumentUI, driven by typed commands. |
 | [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and switches tracks in real time. |
 | [API](API/README.md) | Cloudflare Worker serving the songs catalog to the Player. Audio is served from an R2 bucket. |

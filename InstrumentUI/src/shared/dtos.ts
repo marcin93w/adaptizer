@@ -1,6 +1,6 @@
 export interface ProjectDto {
   formatVersion: typeof projectFormatVersion;
-  inputType: InputType;
+  dimension: Dimension;
   controls: ControlDto[];
 }
 
@@ -16,13 +16,17 @@ export interface ControlDto {
   points: ControlPointDto[];
 }
 
-export enum InputType {
+// The adaptation axis a song is mapped to - what an input level of 0..9 means. These four
+// strings are the contract: the same spelling is typed into the catalog, returned by the
+// Worker and resolved in the player, never re-cased and never mapped. See ADR-0001.
+export enum Dimension {
   VOLUME = "volume",
-  INTENSITY = "intensity",
-  EXPRESSION = "expression"
+  HEART_RATE = "heartRate",
+  MOVEMENT_SPEED = "movementSpeed",
+  INTENSITY = "intensity"
 }
 
-// One track is rendered per input value (0..9)
+// One track is rendered per input level (0..9)
 export const exportTrackCount = 10;
 export const inputValueMin = 0;
 export const inputValueMax = exportTrackCount - 1;

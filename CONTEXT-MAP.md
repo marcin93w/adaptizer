@@ -34,7 +34,9 @@ nothing a producer or the catalog sees.
 ## A note on timing
 
 The **dimension** vocabulary in these glossaries is the agreed model, introduced
-by [issue #17](https://github.com/marcin93w/adaptizer/issues/17). Until that
-lands, the code still says `inputType` and offers an `expression` value that
-does nothing. Where the code and the glossary disagree, the glossary is right
-and the code is behind.
+by [issue #17](https://github.com/marcin93w/adaptizer/issues/17), and it lands
+one context at a time. InstrumentUI speaks it now: a project declares its
+`dimension`, and `expression` — which never did anything — is gone. The Player
+does not yet, and still selects a track by `intensity` whatever a song was
+authored against. Where the code and the glossary disagree, the glossary is
+right and the code is behind.

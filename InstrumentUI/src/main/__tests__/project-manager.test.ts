@@ -4,7 +4,7 @@ import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dialog, ipcMain } from "electron";
 import { ProjecManager } from "../project-manager";
-import { InputType } from "../../shared/dtos";
+import { Dimension } from "../../shared/dtos";
 
 vi.mock("electron", () => ({
     dialog: {
@@ -18,7 +18,7 @@ vi.mock("electron", () => ({
 
 const projectDto = {
     formatVersion: 1 as const,
-    inputType: InputType.INTENSITY,
+    dimension: Dimension.INTENSITY,
     controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 9, midi: 127 }] }]
 };
 
@@ -46,7 +46,7 @@ describe("opening project files", () => {
         const path = join(temporaryDirectory, "invalid.adz");
         writeFileSync(path, JSON.stringify({
             formatVersion: 1,
-            inputType: "intensity",
+            dimension: "intensity",
             controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 8, midi: 127 }] }]
         }));
         vi.mocked(dialog.showOpenDialog).mockResolvedValue({ canceled: false, filePaths: [path] });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import Project from "../project";
 import { Control } from "../control";
-import { InputType, ProjectDto } from "../../../shared/dtos";
+import { Dimension, ProjectDto } from "../../../shared/dtos";
 import { aControl, aProject } from "../../../testing/project-builders";
 
 const savedAndReopened = (project: Project): Project =>
@@ -11,9 +11,9 @@ const valuesForEveryInput = (control: Control): number[] =>
     Array.from({ length: 10 }, (_, input) => control.calculateControlValue(input));
 
 describe("saving and reopening a format-1 project", () => {
-    it("preserves every control curve and the input type", () => {
+    it("preserves every control curve and the dimension", () => {
         const original = aProject({
-            inputType: InputType.EXPRESSION,
+            dimension: Dimension.MOVEMENT_SPEED,
             controls: [
                 aControl({ cc: 1 }),
                 aControl({ cc: 4, points: [
@@ -28,9 +28,24 @@ describe("saving and reopening a format-1 project", () => {
 
         const reopened = savedAndReopened(original);
 
-        expect(reopened.getInputType()).toBe(InputType.EXPRESSION);
+        expect(reopened.getDimension()).toBe(Dimension.MOVEMENT_SPEED);
         expect(reopened.getControls().map(valuesForEveryInput))
             .toEqual(original.getControls().map(valuesForEveryInput));
+    });
+
+    // The name is the contract: the same spelling is typed into the catalog and compared in the
+    // player, so a project file that re-cased or abbreviated one would break a layer this app
+    // never sees. Spelled out here rather than looped over the enum, which would assert nothing.
+    it.each([
+        ["volume", Dimension.VOLUME],
+        ["heartRate", Dimension.HEART_RATE],
+        ["movementSpeed", Dimension.MOVEMENT_SPEED],
+        ["intensity", Dimension.INTENSITY]
+    ])("writes %s to the file and reads it back unchanged", (name, dimension) => {
+        const saved = aProject({ dimension }).toDto();
+
+        expect(saved.dimension).toBe(name);
+        expect(Project.fromDto(JSON.parse(JSON.stringify(saved)) as ProjectDto).getDimension()).toBe(dimension);
     });
 
     it("holds exactly the controls that were saved", () => {
@@ -47,7 +62,7 @@ describe("saving and reopening a format-1 project", () => {
 
         expect(project.toDto()).toEqual({
             formatVersion: 1,
-            inputType: "intensity",
+            dimension: "intensity",
             controls: [{
                 controlNumber: 3,
                 points: [
@@ -71,7 +86,7 @@ describe("starting a new project", () => {
     it("does not add that control to a project opened from a file", () => {
         const empty = {
             formatVersion: 1,
-            inputType: InputType.INTENSITY,
+            dimension: Dimension.INTENSITY,
             controls: []
         } as ProjectDto;
 
@@ -83,17 +98,30 @@ describe("rejecting unsupported or invalid projects", () => {
     it("rejects an unsupported project format", () => {
         const unsupported = {
             formatVersion: 99,
-            inputType: InputType.INTENSITY,
+            dimension: Dimension.INTENSITY,
             controls: []
         } as unknown as ProjectDto;
 
         expect(() => Project.fromDto(unsupported)).toThrow("format version 1");
     });
 
+    // expression was offered by an earlier build and named something that never existed, so a
+    // project saved by one is exactly the file this has to refuse rather than silently open.
+    it.each(["expression", "Volume", "heart_rate", ""])
+        ("rejects %o, which is not one of the four dimensions", (dimension) => {
+            const unknownDimension = {
+                formatVersion: 1,
+                dimension,
+                controls: []
+            } as unknown as ProjectDto;
+
+            expect(() => Project.fromDto(unknownDimension)).toThrow("unsupported dimension");
+        });
+
     it("rejects invalid point data", () => {
         const invalid = {
             formatVersion: 1,
-            inputType: InputType.INTENSITY,
+            dimension: Dimension.INTENSITY,
             controls: [{ controlNumber: 1, points: [{ input: 0, midi: 0 }, { input: 8, midi: 127 }] }]
         } as ProjectDto;
 
@@ -103,7 +131,7 @@ describe("rejecting unsupported or invalid projects", () => {
     it("continues to ignore harmless unknown fields", () => {
         const withExtras = {
             formatVersion: 1,
-            inputType: InputType.VOLUME,
+            dimension: Dimension.VOLUME,
             projectNotes: "future metadata",
             controls: [{
                 controlNumber: 3,
