@@ -88,7 +88,7 @@ class Project {
       throw new Error("The project file does not contain a project.");
     }
     if (dto.formatVersion !== projectFormatVersion) {
-      throw new Error(`Unsupported project format. InstrumentUI requires format version ${projectFormatVersion}.`);
+      throw new Error(`Unsupported project format. Instrument requires format version ${projectFormatVersion}.`);
     }
     if (!Object.values(Dimension).includes(dto.dimension)) {
       throw new Error("The project contains an unsupported dimension.");

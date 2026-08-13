@@ -15,12 +15,12 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting a son
 
 | Component | What it is |
 | --- | --- |
-| [InstrumentUI](InstrumentUI/README.md) | Desktop (Electron) editor for producers: pick the song's dimension, configure the dimension → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
+| [Instrument](Instrument/README.md) | Desktop (Electron) editor for producers: pick the song's dimension, configure the dimension → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
 | [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and switches tracks in real time. |
 | [API](API/README.md) | Cloudflare Worker serving the songs catalog to the Player. Audio is served from an R2 bucket. |
 
 ## Publishing a song
 
-1. Map your controls and export the song with [InstrumentUI](InstrumentUI/README.md).
+1. Map your controls and export the song with [Instrument](Instrument/README.md).
 2. Upload the export and add a catalog row — see [API](API/README.md).
 3. Play it in the [Player](Player/README.md).

@@ -3,7 +3,7 @@ name: Player mobile
 # React Native quality gates for Player/mobile.
 #
 # This is a monorepo (the git root is above Player/). Sibling projects
-# (Instrument/, InstrumentUI/) are untouched by this workflow. The path
+# (Instrument/) is untouched by this workflow. The path
 # filters below are the ONLY thing that keeps this workflow from running on
 # unrelated changes - keep them in sync
 # with any future restructuring of Player/mobile, Player/adaptive-audio or

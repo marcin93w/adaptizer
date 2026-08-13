@@ -2,13 +2,13 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo is multi-context: `API`, `InstrumentUI`, and `Player` are independent components (different stacks, different READMEs, no shared root `package.json`/workspace), each treated as its own context.
+This repo is multi-context: `API`, `Instrument`, and `Player` are independent components (different stacks, different READMEs, no shared root `package.json`/workspace), each treated as its own context.
 
 ## Before exploring, read these
 
 - **`CONTEXT-MAP.md`** at the repo root — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`** at the repo root — system-wide decisions that span components (e.g. the MIDI CC contract, the DASH export format, the catalog schema shared between InstrumentUI, Player, and API).
-- **`<Component>/docs/adr/`** — context-scoped decisions for that component only (e.g. `Player/docs/adr/`, `InstrumentUI/docs/adr/`).
+- **`docs/adr/`** at the repo root — system-wide decisions that span components (e.g. the MIDI CC contract, the DASH export format, the catalog schema shared between Instrument, Player, and API).
+- **`<Component>/docs/adr/`** — context-scoped decisions for that component only (e.g. `Player/docs/adr/`, `Instrument/docs/adr/`).
 
 If any of these files don't exist yet, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
@@ -21,7 +21,7 @@ If any of these files don't exist yet, **proceed silently**. Don't flag their ab
 ├── API/
 │   ├── CONTEXT.md
 │   └── docs/adr/              ← API-specific decisions
-├── InstrumentUI/
+├── Instrument/
 │   ├── CONTEXT.md
 │   └── docs/adr/
 └── Player/

@@ -1,4 +1,4 @@
-# Adaptizer — InstrumentUI
+# Adaptizer — Instrument
 
 Desktop (Electron) editor for [Adaptizer](../readme.md). You pick the *dimension*
 your song adapts to, configure the mapping between that dimension and *MIDI CC
@@ -88,7 +88,7 @@ the same string is typed into the [catalog](../API/README.md) and compared by th
 
 ## Exporting a song
 
-InstrumentUI renders your song into a DASH stream — one variant per input level
+Instrument renders your song into a DASH stream — one variant per input level
 (0..9), so the player can switch between them as the listener context changes.
 Only Ableton Live is supported for now.
 
@@ -99,7 +99,7 @@ Additional prerequisites:
 
 1. Open your song in Ableton Live and make sure the `Adaptizer` MIDI port is
    mapped to your controls.
-1. Configure the export settings in Ableton once (`Ctrl+Shift+R`) — InstrumentUI
+1. Configure the export settings in Ableton once (`Ctrl+Shift+R`) — Instrument
    reuses whatever is set there.
 1. Select `File → Export Ableton Project` and choose:
    - *Output folder* — where the rendered tracks and the DASH stream are written.

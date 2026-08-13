@@ -3,7 +3,7 @@ package com.adaptizerplayer.adaptiveaudio.adaptizer
 /**
  * The four dimension names a song can be authored against.
  *
- * These strings are byte-identical to what InstrumentUI writes into the `.adz`
+ * These strings are byte-identical to what Instrument writes into the `.adz`
  * project, what the catalog row holds, and what the native-bridge payload
  * carries. They are never re-cased, never mapped, never parsed - only
  * compared. See `docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md`.

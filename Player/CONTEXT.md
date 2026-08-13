@@ -59,7 +59,7 @@ _Avoid_: Library, songs list
 ## The identical-string contract
 
 A song's dimension arrives here as one of exactly four strings — `volume`,
-`heartRate`, `movementSpeed`, `intensity` — byte-identical to what InstrumentUI
+`heartRate`, `movementSpeed`, `intensity` — byte-identical to what Instrument
 wrote into the `.adz` and what the catalog row holds. It crosses the API
 response, the native-bridge payload and into the Kotlin resolver unchanged:
 never re-cased, never mapped, never parsed — only compared. See

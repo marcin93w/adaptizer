@@ -1,32 +1,32 @@
-name: InstrumentUI
+name: Instrument
 
-# Quality gates for InstrumentUI (Electron + React + Vitest).
+# Quality gates for Instrument (Electron + React + Vitest).
 #
-# This is a monorepo (the git root is above InstrumentUI/). Sibling projects
+# This is a monorepo (the git root is above Instrument/). Sibling projects
 # (API/, Player/) are untouched by this workflow. The path filters
 # below are the ONLY thing that keeps this workflow from running on unrelated
-# changes - keep them in sync with any future restructuring of InstrumentUI.
+# changes - keep them in sync with any future restructuring of Instrument.
 
 on:
   pull_request:
     paths:
-      - 'InstrumentUI/**'
-      - '.github/workflows/instrument-ui.yml'
+      - 'Instrument/**'
+      - '.github/workflows/instrument.yml'
   push:
     paths:
-      - 'InstrumentUI/**'
-      - '.github/workflows/instrument-ui.yml'
+      - 'Instrument/**'
+      - '.github/workflows/instrument.yml'
 
 # Cancel superseded runs on the same PR/branch to save CI minutes.
 concurrency:
-  group: instrument-ui-${{ github.workflow }}-${{ github.ref }}
+  group: instrument-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # Type checking, unit tests and the production build.
   #
   # Runs on windows-latest even though the Vitest suite is OS-independent by
-  # design (see InstrumentUI/docs/testing-strategy.md): the *product* is
+  # design (see Instrument/docs/testing-strategy.md): the *product* is
   # Windows-only - PowerShell export scripts, Ableton, `taskkill`, backslash
   # paths - and this job also runs `npm run build`, which is where `tsc` and
   # Parcel path/casing problems actually surface.
@@ -35,7 +35,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        working-directory: InstrumentUI
+        working-directory: Instrument
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,9 +43,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: InstrumentUI/.nvmrc
+          node-version-file: Instrument/.nvmrc
           cache: npm
-          cache-dependency-path: InstrumentUI/package-lock.json
+          cache-dependency-path: Instrument/package-lock.json
 
       - name: Install dependencies (npm ci)
         run: npm ci
@@ -68,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: instrument-ui-coverage
-          path: InstrumentUI/coverage
+          name: instrument-coverage
+          path: Instrument/coverage
           if-no-files-found: ignore
           retention-days: 14

@@ -40,7 +40,7 @@ builds `{mediaBaseUrl}/{storage_location}/manifest.mpd` itself
 (`Player/mobile/src/data/dashUrl.ts`) and fetches it without touching this
 Worker. Each `storage_location` prefix in the bucket holds a
 `manifest.mpd` plus the ten `audioN_dash.webm` representations produced by
-[`InstrumentUI/src/main/scripts/dash-converter.ps1`](../InstrumentUI/src/main/scripts/dash-converter.ps1).
+[`Instrument/src/main/scripts/dash-converter.ps1`](../Instrument/src/main/scripts/dash-converter.ps1).
 
 ## Development
 

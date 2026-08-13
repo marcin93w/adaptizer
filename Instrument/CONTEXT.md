@@ -1,4 +1,4 @@
-# InstrumentUI
+# Instrument
 
 The desktop editor where a producer authors an adaptive song: chooses the
 dimension the song adapts to, shapes how that dimension drives the DAW, auditions
@@ -73,10 +73,10 @@ would originate. The display labels — "Heart rate", "Movement speed" — are
 presentation only; they are produced for the screen and never persisted, and no
 code path turns a label back into a name.
 
-The set is flat and closed. InstrumentUI offers four names and knows nothing
+The set is flat and closed. Instrument offers four names and knows nothing
 else about them: not how a dimension is measured, not whether it is one signal
 or a blend of several. Intensity is picked here the same way volume is.
 
-InstrumentUI is the producer side of the producer/player line. An **input** —
+Instrument is the producer side of the producer/player line. An **input** —
 the Player's word for a device-side signal source — does not exist in this
 context, and a producer never sees one.

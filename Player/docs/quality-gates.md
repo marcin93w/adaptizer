@@ -99,7 +99,7 @@ The workflow is `.github/workflows/player-mobile.yml` at the **monorepo root** -
 GitHub only reads `.github/` at the git root of `mp5`, not inside `Player/`. It
 is path-filtered to `Player/mobile/**`, `Player/adaptive-audio/**`,
 `Player/test-media/**` and the workflow file itself, so changes to sibling
-projects (`Instrument/`, `InstrumentUI/`) never trigger it.
+project (`Instrument/`) never triggers it.
 
 Three jobs:
 
