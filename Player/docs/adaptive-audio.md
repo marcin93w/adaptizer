@@ -1,10 +1,11 @@
 # Adaptive audio behavior
 
-Reference for how Adaptizer Player aggregates real-time listener-context signals
-into a single intensity value, and how that value selects a DASH representation.
-This is the authoritative description of the product's defining feature; the
-implementation lives in the `adaptive-audio/` Kotlin library and is consumed by
-both the legacy `app/` module and the React Native host in `mobile/`.
+Reference for how Adaptizer Player measures real-time listener-context signals,
+resolves a dimension into a value 0..9, and how that value selects a DASH
+representation. This is the authoritative description
+of the product's defining feature; the implementation lives in the
+`adaptive-audio/` Kotlin library and is consumed by the React Native host in
+`mobile/`.
 
 Related: [`native-bridge-contract.md`](native-bridge-contract.md) for the typed
 JS/Kotlin boundary, [`adr/0001-react-native-shell-with-kotlin-adaptive-audio.md`](adr/0001-react-native-shell-with-kotlin-adaptive-audio.md)
@@ -12,83 +13,111 @@ for why this logic stays in Kotlin.
 
 ---
 
-## 1. Intensity: the aggregate signal
+## 1. Dimensions, inputs and the resolver
 
-**Intensity is an aggregate metric over a set of listener-context inputs, not a
-function of any one of them.** It is a single integer, `0-9`, and it is the only
-thing track selection consumes. The input set is expected to grow; the aggregate
-is the stable concept, the current membership is not.
+A song is authored against exactly one **dimension** — the axis a track index
+`0-9` means — and names it with one of exactly four strings: `volume`,
+`heartRate`, `movementSpeed`, `intensity`. Three are **single dimensions**, each
+one input's reading; `intensity` is the **aggregate dimension**, a weighted mean
+over the inputs currently available. See
+[`../../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md`](../../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md)
+for why the name, not the formula, is what a song records.
 
-Every input implements one interface
-(`adaptizer/AdaptizerInput.kt`), which is what makes the set extensible:
+An **input** is a device-side signal source. Every input implements one
+interface (`adaptizer/AdaptizerInput.kt`):
 
 ```kotlin
 interface AdaptizerInput {
-    fun getCurrentValue(): Int          // normalized to 0-9
+    val isAvailable: Boolean            // measurable right now?
+    fun getCurrentValue(): Int          // normalized to 0-9, only while available
     fun registerChangeListener(listener: () -> Unit)
     fun initialize()
     fun release()
 }
 ```
 
-Two contracts hold across the whole set:
+Three contracts hold across the whole set:
 
 - **Every input normalizes itself to `0-9`.** Normalization is the input's own
-  job, so the aggregation step never needs to know a sensor's native range.
-- **The aggregation is a weighted mean whose weights sum to `1.0`.** That is the
-  only reason the result lands back in `0-9`.
+  job, so resolution never needs to know a sensor's native range.
+- **An input never fabricates a reading.** Absent hardware, a denied permission
+  and an unbonded device are all the same state — `isAvailable` is false and
+  `getCurrentValue()` is meaningless. Inventing a stand-in value is the
+  resolver's job, so a value in the aggregate is always a real measurement.
+- **An availability change fires the same change notification a value change
+  does**, so a held dimension unpins and the aggregate re-weights live,
+  mid-song, without a restart.
 
-Today the set has **two** members, weighted 0.75 volume / 0.25 acceleration
-(`adaptizer/AdaptizerState.kt`):
+`Adaptizer` owns the inputs and hands out an `InputReadings` snapshot — one
+nullable reading per input, `null` meaning unavailable. `InputReadings.resolve`
+is the one resolver function, and the only place the single-versus-aggregate
+distinction is drawn:
 
-```kotlin
-val intensity: Int
-    get() = round(volume * 0.75 + acceleration * 0.25).toInt()
-```
+- A **single dimension** is its input's reading, or **held at `5`** — the middle
+  of the range, not the bottom — while that input is unavailable.
+- The **aggregate** drops its unavailable members and renormalizes the rest, so
+  a missing sensor never systematically drags a song quieter than its author
+  intended.
+- An **unrecognised name** resolves as the aggregate rather than rejecting the
+  song, so a dimension published after a build shipped still plays and still
+  adapts.
 
-`Adaptizer.getState()` samples each input on demand via `getCurrentValue()` and
-builds an `AdaptizerState` from the readings; `getTrackIndex()` returns the
-resulting `intensity`. Any input's `registerChangeListener` callback triggers a
-recompute, so the aggregate refreshes whenever *any* member changes.
+Any input's `registerChangeListener` callback delivers a fresh snapshot, so the
+resolved value refreshes whenever *any* input changes.
+
+**No song's dimension reaches the player yet.** The catalog does not record one,
+so the native module asks the resolver for `intensity` for every song. The
+library resolves all four; wiring the song's own dimension through the prepare
+metadata, and re-cutting the bridge event around it, is the next piece of work.
+
+### The aggregate weights
+
+`volume` 0.5, `movementSpeed` 0.3, `heartRate` 0.2, written down in exactly one
+place — `INTENSITY_WEIGHTS` in `adaptizer/InputReadings.kt`. They are
+renormalized over whatever is available (the implementation divides by the
+weight actually present, which is the same thing), so they only need to sum to
+`1.0` when every member is available.
+
+**Today only the volume input exists**, so `intensity` is a one-member aggregate
+identical to `volume` exactly, and `heartRate`/`movementSpeed` are always held
+at `5`. That is deliberate: the accelerometer was judged a mistake and deleted
+before its replacements landed, and a one-member aggregate exercises the
+renormalization path from the first commit rather than the fourth.
 
 Two properties worth knowing before touching the formula:
 
 - **`kotlin.math.round` is round-half-to-even**, not half-up. An exact `.5`
-  rounds to the even integer, so `AdaptizerState(0, 2).intensity == 0`. This is
-  pinned by unit test. It matters only if the formula is ever reimplemented
-  outside Kotlin - which the ADR rules out.
-- **`intensity` is not clamped.** It is bounded to `0-9` only because every
-  input is and the weights sum to 1. Also pinned by test.
+  rounds to the even integer, so readings of `(volume 1, movementSpeed 0,
+  heartRate 0)` resolve to `0`. Pinned by unit test. It matters only if the
+  formula is ever reimplemented outside Kotlin - which the ADR rules out.
+- **The resolved value is not clamped.** It is bounded to `0-9` only because
+  every input is and the renormalized weights sum to 1.
 
 ### Adding an input
 
-The `AdaptizerInput` interface and the weighted-mean shape are built for this;
-the surrounding types are not yet generic over the set, so a third input touches
-four places:
-
 1. **The input itself** - implement `AdaptizerInput`, normalize to `0-9`, make
-   `initialize()`/`release()` idempotent, and degrade to a constant `0` when the
-   underlying sensor is absent (see how `AccelerometerInput.isAvailable` does
-   it). Cover it with Robolectric tests like the existing two.
-2. **`AdaptizerState`** - currently a fixed `(volume, acceleration)` pair. Add
-   the field and re-weight so the weights still sum to `1.0`; re-pin the
-   boundary cases by test.
-3. **`Adaptizer`** - currently takes its two inputs as named constructor
-   parameters and registers a listener on each. A third member is the point at
-   which taking a `List<AdaptizerInput>` is likely worth the refactor.
-4. **The bridge payload** - `onIntensityChanged` ships
-   `{ intensity, volume, acceleration }` with a field per input, so it must gain
-   one too. That is a contract change: see
+   `initialize()`/`release()` idempotent, report `isAvailable` honestly and fire
+   the change listener when it flips. Cover it with Robolectric tests like
+   `VolumeInputTest`.
+2. **`Adaptizer`** - pass it in the matching constructor parameter. An input
+   left unwired is indistinguishable from one reporting itself unavailable.
+3. **`INTENSITY_WEIGHTS`** - only if the aggregate should gain a member;
+   changing a weight is a one-line change there and nothing else.
+4. **The bridge payload** - `onIntensityChanged` ships one diagnostic field per
+   input, so it gains one too. That is a contract change: see
    [`native-bridge-contract.md`](native-bridge-contract.md) and update it and
    the TypeScript types in the same change.
 
 Note what does *not* change: the `0-9` output range, the ten-representation
 manifest contract (section 4), and the rule that React Native only observes the
-aggregate and never contributes to or overrides it.
+resolved value and never contributes to or overrides it.
 
 ## 2. Input: device volume
 
-Weight in the aggregate: **0.75**. `adaptizer/inputs/VolumeInput.kt`:
+Weight in the aggregate: **0.5**. Always available: every device has a music
+stream, and reading it needs no permission and no hardware that can be absent.
+This is why the aggregate always has at least one member and never has to handle
+an empty set. `adaptizer/inputs/VolumeInput.kt`:
 
 ```kotlin
 val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
@@ -117,26 +146,17 @@ test target has no merged manifest to supply.
 is stored so `release()` unregisters exactly it, and a second `initialize()`
 does not register a duplicate.
 
-## 3. Input: accelerometer
+## 3. Inputs not yet built
 
-Weight in the aggregate: **0.25**. `adaptizer/inputs/AccelerometerInput.kt`:
+`movementSpeed` (weight 0.3) and `heartRate` (weight 0.2) have no input behind
+them yet. Until they do, both dimensions are held at `5` and neither
+contributes to the aggregate.
 
-- `onSensorChanged` computes `sqrt(x² + y² + z²) - SensorManager.GRAVITY_EARTH`
-  - the acceleration beyond gravity.
-- `updateInputValue` clamps that to `min(abs(value.toInt()), 9)` and stamps
-  `lastUpdateTime`.
-- **Throttle interval: 2000 ms. Stop delay: 2000 ms.** While motion continues,
-  the change listener fires at most once every 2 s; emissions stop roughly 2 s
-  after the last sensor update.
-- `getCurrentValue()` always returns the freshest value, which `onSensorChanged`
-  keeps updating independently of the throttle loop's own cadence.
-
-Lifecycle: the coroutine scope is owned per `initialize()`/`release()` cycle -
-`release()` cancels the throttle job and the scope outright, and a subsequent
-`initialize()` creates a fresh one. Both calls are idempotent.
-
-Devices with no accelerometer are handled without crashing: `isAvailable` is
-`false`, registration is a no-op, and `getCurrentValue()` stays at 0.
+There was previously an accelerometer input, weighted 0.25, reading phone shake.
+It was deleted: shake is not a meaningful measure of listening context, and
+telling a listener to shake their phone to hear the song change is not a
+feature. The legacy `app/` Android module went with it, since it constructed
+that input directly.
 
 ## 4. Manifest contract
 
@@ -188,27 +208,28 @@ The React Native client centralizes both base URLs in `mobile/src/config/`. The
 songs API is a Cloudflare Worker backed by a D1 catalog; its source lives in
 [`../../API/`](../../API/README.md).
 
-## 7. Known issues in the legacy `app/` module
+## 7. Mistakes the deleted legacy `app/` module made
 
-The lifecycle and manifest problems above were fixed during the extraction into
-`adaptive-audio/`. These remain in `app/` itself, which is retained unchanged as
-the rollback reference until cutover. They are recorded here so nobody
-reintroduces them in the React Native path.
+The legacy Android application module is gone, deleted alongside the
+accelerometer input it constructed. Its known defects are recorded here so
+nobody reintroduces them in the React Native path.
 
-1. **Unchecked `songs[0]` access.** `MainActivity.kt` calls
-   `prepareSong(songs[0])` with no empty check, so an empty catalog crashes on
-   launch. The React Native catalog deliberately does not reproduce this.
-2. **`SongsRepository.fetchSongs()` swallows every exception.** It catches
-   `Exception`, prints the stack trace and returns `emptyList()`, so a genuinely
-   empty catalog and any network/parse failure are indistinguishable to callers
-   and no error state ever reaches the UI. The TypeScript client distinguishes
-   them.
-3. **`Adaptizer.onStateChange` has a single listener slot per input.** Repeated
-   registration silently overwrites the previous callback. Latent today, since
-   the call site registers exactly once.
-4. **No `Player.Listener` is registered anywhere in `app/`**, so no ExoPlayer
-   error is observed or surfaced. `AdaptiveAudioEngine` now offers
-   `AdaptiveAudioListener`; error reporting through the bridge is therefore a
-   **behavior addition**, not parity with the legacy app.
-5. **`READ_MEDIA_AUDIO` is declared but unused.** All audio is streamed; nothing
-   reads local media. The React Native host omits it and keeps only `INTERNET`.
+1. **Unchecked `songs[0]` access.** It called `prepareSong(songs[0])` with no
+   empty check, so an empty catalog crashed on launch. The React Native catalog
+   deliberately does not reproduce this.
+2. **A songs repository that swallowed every exception.** It caught
+   `Exception`, printed the stack trace and returned `emptyList()`, so a
+   genuinely empty catalog and any network/parse failure were indistinguishable
+   to callers and no error state ever reached the UI. The TypeScript client
+   distinguishes them.
+3. **A single change-listener slot per input.** Repeated registration silently
+   overwrites the previous callback - still true of `AdaptizerInput`
+   implementations today, and still latent, since the call site registers
+   exactly once.
+4. **No `Player.Listener` was registered anywhere**, so no ExoPlayer error was
+   observed or surfaced. `AdaptiveAudioEngine` offers `AdaptiveAudioListener`;
+   error reporting through the bridge is therefore a **behavior addition**, not
+   parity with the legacy app.
+5. **`READ_MEDIA_AUDIO` was declared but unused.** All audio is streamed;
+   nothing reads local media. The React Native host omits it and keeps only
+   `INTERNET`.

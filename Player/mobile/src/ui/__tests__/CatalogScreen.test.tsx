@@ -209,7 +209,6 @@ describe('CatalogScreen', () => {
       player.emitIntensityChanged({
         intensity: 7,
         volume: 6,
-        acceleration: 8,
       });
       player.emitPlaybackState({ state: 'playing', sourceId: '1' });
     });

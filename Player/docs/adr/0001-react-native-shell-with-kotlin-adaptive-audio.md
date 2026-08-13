@@ -30,6 +30,8 @@ A decision is needed on: how the two runtimes are organized in the repository, w
 8. **Kotlin retains ownership of ExoPlayer, track selection, intensity calculation and device inputs.** React Native issues commands (`prepare`, `play`, `pause`, `seekTo`, `release`) and receives typed events (`onPlaybackState`, `onProgress`, `onIntensityChanged`, `onTrackChanged`, `onPlayerError`); it never computes intensity, never picks a track index, and never touches `AudioManager`/`SensorManager` directly. See [`../native-bridge-contract.md`](../native-bridge-contract.md) for the contract and its explicit "no `setIntensity()`/`selectTrack()` in production JS" constraint.
 9. **Legacy `app/` is retained until post-cutover deletion.** `app/` remains the production artifact and rollback reference until the React Native app has shipped and soaked in production. It is deleted only in its own isolated, deletion-only change, keeping rollback a simple branch/tag operation in the meantime.
 
+**Update, 2026-08-13 (decision 9 superseded).** `app/` was deleted as part of the adaptation-dimensions work ([issue #22](https://github.com/marcin93w/adaptizer/issues/22)), not as an isolated deletion-only change. It constructed the accelerometer input directly, and that input was being deleted as a mistake, so leaving the module in place would have broken the Gradle build for the whole project. Rollback to the legacy app remains a branch/tag operation, just to a commit before that change rather than to the tip. Everything else here stands.
+
 ## Consequences
 
 **Positive**

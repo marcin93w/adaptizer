@@ -15,11 +15,9 @@
  */
 
 /**
- * The only route. Both clients request exactly this path - the React Native
- * app via `SONGS_PATH` in Player/mobile/src/data/songsApi.ts, and the legacy
- * Android app via the `@GET("/")` annotation in
- * Player/app/src/main/java/com/adaptizerplayer/SongsRepository.kt - so
- * anything else is a caller error rather than a path worth serving.
+ * The only route. The client requests exactly this path - the React Native
+ * app via `SONGS_PATH` in Player/mobile/src/data/songsApi.ts - so anything
+ * else is a caller error rather than a path worth serving.
  */
 const SONGS_PATH = '/';
 

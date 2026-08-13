@@ -8,8 +8,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.adaptizerplayer.adaptiveaudio.adaptizer.Adaptizer
 import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
-import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerState
-import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.AccelerometerInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.Dimensions
+import com.adaptizerplayer.adaptiveaudio.adaptizer.InputReadings
 import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.VolumeInput
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngine
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngineStateException
@@ -27,9 +27,14 @@ import com.facebook.react.module.annotations.ReactModule
  * Native adaptation bridge for [AdaptiveAudioEngine].
  *
  * Commands may arrive on React Native's module queue, while Media3 must be
- * accessed from Android's main thread. Adaptizer and both device inputs are
+ * accessed from Android's main thread. Adaptizer and the device inputs are
  * initialized and released with this module; JS only observes their typed
  * intensity/track events and has no track-selection command.
+ *
+ * This module asks the resolver for [Dimensions.INTENSITY] for every song. The
+ * song's own dimension reaches the module in the prepare metadata in a later
+ * change; until then the library resolves any of the four, and this caller
+ * only ever wants one of them.
  */
 @ReactModule(name = NativeAdaptiveAudioSpec.NAME)
 class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
@@ -218,22 +223,21 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
 
   private fun createActiveEngine(): AdaptiveAudioEngine {
     val volumeInput = VolumeInput(reactApplicationContext)
-    val accelerometerInput = AccelerometerInput(reactApplicationContext)
-    val newAdaptizer = Adaptizer(volumeInput, accelerometerInput)
-    newAdaptizer.onStateChange { state -> onAdaptizerStateChanged(state) }
+    val newAdaptizer = Adaptizer(volumeInput)
+    newAdaptizer.onReadingsChange { readings -> onReadingsChanged(readings) }
 
-    val newInputs = listOf<AdaptizerInput>(volumeInput, accelerometerInput)
+    val newInputs = listOf<AdaptizerInput>(volumeInput)
     val newEngine = AdaptiveAudioEngine(reactApplicationContext)
     try {
-      // Match the legacy ordering: listeners are wired before native inputs
-      // begin reporting, and the initial selector index uses live input state.
+      // Listeners are wired before native inputs begin reporting, and the
+      // initial selector index uses live input state.
       inputs = newInputs
       adaptizer = newAdaptizer
       newInputs.forEach { it.initialize() }
       newEngine.addListener(engineListener)
-      newEngine.initialize(newAdaptizer.getTrackIndex())
+      newEngine.initialize(newAdaptizer.resolve(Dimensions.INTENSITY))
       engine = newEngine
-      emitIntensityChanged(newAdaptizer.getCurrentState())
+      emitIntensityChanged(newAdaptizer.currentReadings())
       return newEngine
     } catch (error: Exception) {
       newInputs.asReversed().forEach { it.release() }
@@ -243,17 +247,18 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  private fun onAdaptizerStateChanged(state: AdaptizerState) {
+  private fun onReadingsChanged(readings: InputReadings) {
     onMain {
       if (released) return@onMain
-      emitIntensityChanged(state)
+      emitIntensityChanged(readings)
 
       val activeEngine = engine ?: return@onMain
       try {
         // This is the only native track-selection path. The JS contract has
         // no setIntensity/selectTrack command by design.
-        activeEngine.changeTrack(state.intensity)
-        emitCurrentTrackChanged(state.intensity)
+        val trackIndex = readings.resolve(Dimensions.INTENSITY)
+        activeEngine.changeTrack(trackIndex)
+        emitCurrentTrackChanged(trackIndex)
       } catch (error: Exception) {
         reportCommandError(error)
       }
@@ -322,12 +327,16 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         })
   }
 
-  private fun emitIntensityChanged(state: AdaptizerState) {
+  private fun emitIntensityChanged(readings: InputReadings) {
     emitOnIntensityChanged(
         Arguments.createMap().apply {
-          putInt("intensity", state.intensity)
-          putInt("volume", state.volume)
-          putInt("acceleration", state.acceleration)
+          putInt("intensity", readings.resolve(Dimensions.INTENSITY))
+          // The resolved `volume` dimension, not the raw reading behind it -
+          // held at 5 rather than fabricated if volume ever stops being
+          // measurable. The event is replaced with the resolved dimension
+          // plus explicit per-input diagnostics and availability flags when
+          // the bridge is re-cut.
+          putInt("volume", readings.resolve(Dimensions.VOLUME))
         })
   }
 

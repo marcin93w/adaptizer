@@ -125,9 +125,9 @@ class AdaptiveAudioEngine(private val context: Context) {
 
     /**
      * Builds the [ExoPlayer] with an [AdaptizerTrackSelector] seeded at [initialTrackIndex] -
-     * mirroring the legacy `MainActivity`, which computed the intensity synchronously and built
-     * `AdaptizerTrackSelector(adaptizer.getTrackIndex())` before constructing the player (see
-     * the intensity formula in docs/adaptive-audio.md). Idempotent: a second call while already
+     * the caller resolves the current song's dimension synchronously and passes the resulting
+     * index before playback starts (see docs/adaptive-audio.md section 1). Idempotent: a second
+     * call while already
      * initialized has no effect. Safe to call again after [release] to start a new session.
      */
     fun initialize(initialTrackIndex: Int) {

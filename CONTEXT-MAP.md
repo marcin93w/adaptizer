@@ -36,7 +36,10 @@ nothing a producer or the catalog sees.
 The **dimension** vocabulary in these glossaries is the agreed model, introduced
 by [issue #17](https://github.com/marcin93w/adaptizer/issues/17), and it lands
 one context at a time. InstrumentUI speaks it now: a project declares its
-`dimension`, and `expression` — which never did anything — is gone. The Player
-does not yet, and still selects a track by `intensity` whatever a song was
-authored against. Where the code and the glossary disagree, the glossary is
-right and the code is behind.
+`dimension`, and `expression` — which never did anything — is gone. The Player's
+Kotlin library speaks it too: it resolves any of the four dimensions against the
+inputs available, holds an unmeasurable one at 5 and renormalizes the aggregate.
+But no song's dimension reaches it yet — the catalog does not record one, and
+the app still asks for `intensity` whatever a song was authored against. Where
+the code and the glossary disagree, the glossary is right and the code is
+behind.

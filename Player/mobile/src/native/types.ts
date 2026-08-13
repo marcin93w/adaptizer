@@ -100,11 +100,14 @@ export interface ProgressEvent {
   readonly bufferedMs: number;
 }
 
-/** `onIntensityChanged` payload. All three fields are integers 0-9. */
+/**
+ * `onIntensityChanged` payload. Both fields are integers 0-9: `intensity`
+ * is the aggregate, `volume` the one input behind it today. The input set
+ * is expected to grow, so treat the per-input fields as an open set.
+ */
 export interface IntensityChangedEvent {
   readonly intensity: number;
   readonly volume: number;
-  readonly acceleration: number;
 }
 
 /** `onTrackChanged` payload. Diagnostics/UI only, never decision input. */

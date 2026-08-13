@@ -19,7 +19,7 @@ and [`adaptive-audio.md`](adaptive-audio.md).
 | `play` | `play(): void` | Starts or resumes playback of the currently prepared source. No-op (or `not_initialized` error, see taxonomy below) if nothing has been prepared. |
 | `pause` | `pause(): void` | Pauses playback. No-op if already paused or nothing is prepared. |
 | `seekTo` | `seekTo(positionMs: number): void` | Seeks the current source to `positionMs` (milliseconds from the start of the media). Out-of-range values are clamped to the valid duration by the Kotlin implementation. |
-| `release` | `release(): void` | Releases the underlying player and any Kotlin-owned native inputs (volume/accelerometer) associated with this module instance. After `release`, all other commands must resolve as `not_initialized` rather than throwing or being silently ignored, and must not be reachable again without a new `prepare`. |
+| `release` | `release(): void` | Releases the underlying player and any Kotlin-owned native inputs associated with this module instance. After `release`, all other commands must resolve as `not_initialized` rather than throwing or being silently ignored, and must not be reachable again without a new `prepare`. |
 
 **Explicitly not included:** there is no `stop()` distinct from `pause()` plus a
 fresh `prepare()`, and no volume/intensity/track command (see "API constraint"
@@ -31,7 +31,7 @@ below).
 | --- | --- | --- |
 | `onPlaybackState` | `{ state: PlaybackState; sourceId: string \| null }` | Fired whenever the player's playback state changes (see Playback states below). `sourceId` is the `metadata.id` passed to the most recent `prepare` call, or `null` if nothing is prepared. |
 | `onProgress` | `{ positionMs: number; durationMs: number; bufferedMs: number }` | Fired periodically during playback (and at minimum once immediately after a successful seek) to drive progress UI. `durationMs` is `-1` if not yet known. `bufferedMs` is the buffered position, always `>= positionMs`. |
-| `onIntensityChanged` | `{ intensity: number; volume: number; acceleration: number }` | Fired whenever Kotlin recomputes intensity, i.e. whenever any contributing input changes - see [`adaptive-audio.md`](adaptive-audio.md) sections 1-3. `intensity` is the aggregate; `volume` and `acceleration` are the inputs it aggregates, one field per input. All values are integers in `0-9`, matching `AdaptizerState`. **The input set is expected to grow**, so treat the per-input fields as an open set: consumers should render `intensity` and must not assume these are the only two. Adding an input adds a field here and is a contract change. Presentation only; it implies no JS-side decision-making. |
+| `onIntensityChanged` | `{ intensity: number; volume: number }` | Fired whenever any input changes - a new reading or an availability flip alike - see [`adaptive-audio.md`](adaptive-audio.md) sections 1-3. `intensity` is the resolved aggregate dimension and `volume` the resolved `volume` dimension - both resolved values, not raw readings, so an unavailable input reports its held `5` rather than a number nobody measured. Both are integers in `0-9`. **The input set is expected to grow** (and has shrunk once, when the accelerometer was deleted), so treat the per-input fields as an open set: consumers should render `intensity` and must not assume which others exist. Adding or removing an input changes the fields here and is a contract change. Presentation only; it implies no JS-side decision-making. |
 | `onTrackChanged` | `{ requestedIndex: number; selectedIndex: number; availableCount: number }` | Fired whenever the Kotlin track selector processes a track-change request. `requestedIndex` is the index Kotlin attempted to select; `selectedIndex` is the index ExoPlayer actually applied (normally equal, but may differ if the request was rejected - see `unsupported_track`); `availableCount` is the number of audio representations detected in the prepared manifest's first `AdaptationSet`. Diagnostics/UI only. |
 | `onPlayerError` | `{ code: ErrorCode; message: string; recoverable: boolean }` | Fired on any player, manifest, network, decoder or lifecycle error. See error taxonomy below. |
 
@@ -79,7 +79,7 @@ first, matching normal ExoPlayer state semantics).
 
 There is no production `setIntensity()` or `selectTrack()` command in the
 JavaScript API, and none is planned. Adaptation decisions stay entirely inside
-`adaptive-audio/`, driven by `VolumeInput`/`AccelerometerInput` and the
+`adaptive-audio/`, driven by the device inputs and the
 `Adaptizer`/`AdaptizerTrackSelector` pipeline. React Native only ever *observes*
 adaptation outcomes via `onIntensityChanged` and `onTrackChanged`; it never
 *requests* a specific intensity or track.

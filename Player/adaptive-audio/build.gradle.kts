@@ -1,7 +1,7 @@
 plugins {
     // Use plugin IDs instead of versioned catalog aliases so this module can
-    // be included by both the legacy Player build and the RN host build. Each
-    // root build supplies the plugin versions on its own classpath.
+    // be included by both the standalone Player build and the RN host build.
+    // Each root build supplies the plugin versions on its own classpath.
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
 }
@@ -10,12 +10,8 @@ android {
     namespace = "com.adaptizerplayer.adaptiveaudio"
     compileSdk = 35
 
-    // The RN host's AGP toolchain compiles Java sources for 17, while the
-    // standalone legacy build remains on 11. Keep both consumers valid while
-    // this module is shared as a local project dependency.
-    val javaTarget =
-        if (rootProject.name == "com.adaptizerplayer.rn") JavaVersion.VERSION_17
-        else JavaVersion.VERSION_11
+    // Matches the RN host's AGP toolchain, which compiles Java sources for 17.
+    val javaTarget = JavaVersion.VERSION_17
 
     defaultConfig {
         minSdk = 24
@@ -47,9 +43,10 @@ dependencies {
     api(libs.androidx.media3.exoplayer.dash)
 
     testImplementation(libs.junit)
-    // Robolectric lets these tests exercise real Context/AudioManager/
-    // SensorManager behavior (receiver registration, stream volume shadows,
-    // sensor availability) on the plain JVM, without an emulator/device.
+    // Robolectric lets the input tests exercise real (shadowed)
+    // Context/AudioManager behavior - receiver registration, stream volume -
+    // on the plain JVM, without an emulator/device. The dimension resolver's
+    // own tests need none of it and touch nothing Android.
     testImplementation(libs.robolectric)
 
     // Instrumentation (device/emulator) tests characterizing real Media3/ExoPlayer behavior
