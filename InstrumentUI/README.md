@@ -1,20 +1,22 @@
 # Adaptizer — InstrumentUI
 
-Desktop (Electron) editor for [Adaptizer](../readme.md). You configure the
-mapping between *listener context* (the input a player reports, e.g. how intense
-the listening situation is) and *MIDI CC messages* sent to your DAW, hear the
-result immediately while the song plays, and export the finished song as a DASH
-stream.
+Desktop (Electron) editor for [Adaptizer](../readme.md). You pick the *dimension*
+your song adapts to, configure the mapping between that dimension and *MIDI CC
+messages* sent to your DAW, hear the result immediately while the song plays, and
+export the finished song as a DASH stream.
 
 Adaptizer relies on the MIDI protocol, so it works with any DAW.
 
 ## What it does
 
-- **Pick an input type** — `Volume`, `Intensity` or `Expression`.
+- **Pick a dimension** — `Volume`, `Heart rate`, `Movement speed` or `Intensity`.
+  A song adapts along exactly one of them, and the player honours the one you
+  picked. Which dimension you choose is a labelling decision: everything below
+  behaves identically whichever it is.
 - **Draw MIDI controls (CC)** — each control has a breakpoint curve mapping the
   input levels 0..9 onto MIDI CC values 0..127. Straight segments interpolate
   between points, so curves can rise, fall, flatten or change direction.
-- **Audition live** — the big knob simulates the input value. Turning it
+- **Audition live** — the big knob simulates the input level. Turning it
   recalculates every control and sends CC messages out of the `Adaptizer` MIDI
   port in real time, so you hear your DAW respond while the song is playing.
 - **Save / open projects** — `.adz` files via `File → New / Open / Save Project`.
@@ -62,12 +64,15 @@ and renderer processes.
    react to changing listener context.
 1. Save the configuration as an `.adz` project.
 
-`.adz` files use project format version 1:
+`.adz` files use project format version 1. `dimension` is one of `volume`,
+`heartRate`, `movementSpeed` or `intensity` — spelled exactly like that, because
+the same string is typed into the [catalog](../API/README.md) and compared by the
+[player](../Player/README.md):
 
 ```json
 {
   "formatVersion": 1,
-  "inputType": "intensity",
+  "dimension": "intensity",
   "controls": [
     {
       "controlNumber": 1,
@@ -118,7 +123,7 @@ src/
     scripts/     PowerShell scripts driving the Ableton export and the DASH conversion
   renderer/   React UI
     components/  knob, per-control editor, MIDI connection warning, export dialog
-    domain/      Project, Control, Adaptizer (input → CC value calculation), Exporter
+    domain/      Project, Control, Adaptizer (input level → CC value calculation), Exporter
     services/    Web MIDI access and CC message sending
   shared/     DTOs and IPC event names shared by both processes
 ```

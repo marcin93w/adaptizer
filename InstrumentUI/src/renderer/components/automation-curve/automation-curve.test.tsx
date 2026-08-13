@@ -6,7 +6,7 @@ import { AutomationCurve } from "./automation-curve";
 import { ControlSummary } from "../control-summary/control-summary";
 
 const renderCurve = (control = aControl(), inputValue = 3) => {
-    const result = render(<AutomationCurve control={control} inputValue={inputValue} inputLabel="Intensity" />);
+    const result = render(<AutomationCurve control={control} inputValue={inputValue} dimensionLabel="Intensity" />);
     const svg = screen.getByRole("group", { name: "Intensity to MIDI control curve" });
     vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({
         x: 0, y: 0, left: 0, top: 0, right: 720, bottom: 300,

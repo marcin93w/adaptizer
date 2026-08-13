@@ -48,10 +48,10 @@ export const CurvePreview: React.FC<CurvePreviewProps> = ({ control, inputValue 
 interface AutomationCurveProps {
     control: Control;
     inputValue: number;
-    inputLabel: string;
+    dimensionLabel: string;
 }
 
-export const AutomationCurve: React.FC<AutomationCurveProps> = ({ control, inputValue, inputLabel }) => {
+export const AutomationCurve: React.FC<AutomationCurveProps> = ({ control, inputValue, dimensionLabel }) => {
     const [selectedInput, setSelectedInput] = useState(inputValueMin);
     const [, forceRender] = useState(0);
     const dragInput = useRef<number | null>(null);
@@ -137,7 +137,7 @@ export const AutomationCurve: React.FC<AutomationCurveProps> = ({ control, input
             className="automation-curve"
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             role="group"
-            aria-label={`${inputLabel} to MIDI control curve`}
+            aria-label={`${dimensionLabel} to MIDI control curve`}
         >
             <rect className="curve-plot-background" x={plot.left} y={plot.top} width={plotWidth} height={plotHeight}
                 onPointerDown={(event) => {
@@ -161,7 +161,7 @@ export const AutomationCurve: React.FC<AutomationCurveProps> = ({ control, input
             </g>)}
 
             <text className="curve-axis-label curve-axis-label-y" transform={`translate(14 ${plot.top + plotHeight / 2}) rotate(-90)`}>MIDI value</text>
-            <text className="curve-axis-label" x={plot.left + plotWidth / 2} y={chartHeight - 4}>{inputLabel}</text>
+            <text className="curve-axis-label" x={plot.left + plotWidth / 2} y={chartHeight - 4}>{dimensionLabel}</text>
 
             <line className="curve-current-input" x1={xForInput(inputValue)} x2={xForInput(inputValue)} y1={plot.top} y2={plot.top + plotHeight} />
             <polyline className="automation-line" points={polylinePoints(control)} />

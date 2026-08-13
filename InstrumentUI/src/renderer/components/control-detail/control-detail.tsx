@@ -7,10 +7,10 @@ interface ControlDetailProps {
     control: Control;
     onInvoke: (control: Control) => void;
     inputValue: number;
-    inputLabel: string;
+    dimensionLabel: string;
 }
 
-export const ControlDetail: React.FC<ControlDetailProps> = ({ control, onInvoke, inputValue, inputLabel }) => {
+export const ControlDetail: React.FC<ControlDetailProps> = ({ control, onInvoke, inputValue, dimensionLabel }) => {
     // The control is the single source of truth - copying its values into state would make them
     // go stale whenever React reuses this component for a different control (e.g. after an import).
     const [, forceRender] = useState(0);
@@ -28,7 +28,7 @@ export const ControlDetail: React.FC<ControlDetailProps> = ({ control, onInvoke,
             <span className="control-label">CC {control.controlNumber}</span>
         </div>
 
-        <AutomationCurve control={control} inputValue={inputValue} inputLabel={inputLabel} />
+        <AutomationCurve control={control} inputValue={inputValue} dimensionLabel={dimensionLabel} />
 
         <div className="control-detail-output">
             <div className="output-readout">

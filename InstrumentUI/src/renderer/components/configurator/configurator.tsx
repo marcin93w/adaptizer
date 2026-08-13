@@ -1,6 +1,6 @@
 import React from "react";
 import Project from "../../domain/project";
-import { InputType, inputValueMax, inputValueMin } from "../../../shared/dtos";
+import { Dimension, inputValueMax, inputValueMin } from "../../../shared/dtos";
 import { Control } from "../../domain/control";
 import "./configurator.scss";
 import AdaptizerKnob from "../adaptizer-knob/adaptizer-knob";
@@ -18,6 +18,20 @@ import { ExportDialog } from "../export-dialog/export-dialog";
 // before the user touches anything is a value the finished song actually contains.
 const startingInputValue = inputValueMin;
 
+// Presentation only. The contract string is what gets persisted; these labels are produced for
+// the screen and no code path turns one back into a dimension. Typed as a total map so a
+// dimension added to the contract cannot reach the picker without a label to show for it.
+const dimensionLabels: Record<Dimension, string> = {
+    [Dimension.VOLUME]: "Volume",
+    [Dimension.HEART_RATE]: "Heart rate",
+    [Dimension.MOVEMENT_SPEED]: "Movement speed",
+    [Dimension.INTENSITY]: "Intensity"
+};
+
+// The picker offers the contract's dimensions and nothing else. Taken from the contract rather
+// than listed here, so a name the player cannot deliver has nowhere to survive on screen.
+const offeredDimensions = Object.values(Dimension);
+
 interface ConfiguratorProps {
     project: Project;
     // The two boundaries the configurator sits on. Defaults are evaluated at render time, so
@@ -28,7 +42,7 @@ interface ConfiguratorProps {
 
 export default function Configurator(
     { project, midiPort = MidiService, electronApi = window.electronAPI }: ConfiguratorProps) {
-    const [selectedInput, setSelectedInput] = React.useState(project.getInputType());
+    const [selectedDimension, setSelectedDimension] = React.useState(project.getDimension());
     const [controls, setControls] = React.useState(project.getControls());
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
     const [inputValue, setInputValue] = React.useState(startingInputValue);
@@ -58,14 +72,14 @@ export default function Configurator(
     React.useEffect(() => {
         setControls(project.getControls());
         setSelectedControl(project.getControls()[0] ?? null);
-        setSelectedInput(project.getInputType());
+        setSelectedDimension(project.getDimension());
         // The export renders the project it was started for, so opening another one ends it
         setIsExportDialogOpen(false);
     }, [project]);
 
-    const handleInputChange = (input: InputType) => {
-        setSelectedInput(input);
-        project.setInputType(input);
+    const handleDimensionChange = (dimension: Dimension) => {
+        setSelectedDimension(dimension);
+        project.setDimension(dimension);
     };
 
     const handleInvokeControl = (control: Control) => {
@@ -79,16 +93,27 @@ export default function Configurator(
         setSelectedControl(newControl);
     }
 
-    const inputLabel = selectedInput.charAt(0).toUpperCase() + selectedInput.slice(1);
+    const dimensionLabel = dimensionLabels[selectedDimension];
 
     return <div id="configurator">
         <div id="workspace">
             <section className="source-panel">
-                <div className="panel-heading">Input</div>
-                <div id="inputs">
-                    <div className={`input-item ${selectedInput === InputType.VOLUME ?  "selected" : ""}`} onClick={() => handleInputChange(InputType.VOLUME)} >Volume</div>
-                    <div className={`input-item ${selectedInput === InputType.INTENSITY ? "selected" : ""}`} onClick={() => handleInputChange(InputType.INTENSITY)}>Intensity</div>
-                    <div className={`input-item ${selectedInput === InputType.EXPRESSION ? "selected" : ""}`} onClick={() => handleInputChange(InputType.EXPRESSION)}>Expression</div>
+                <div className="panel-heading">Dimension</div>
+                <div id="dimensions" role="radiogroup" aria-label="Dimension">
+                    {offeredDimensions.map(dimension => (
+                        <div key={dimension}
+                            className={`dimension-item ${selectedDimension === dimension ? "selected" : ""}`}
+                            role="radio"
+                            aria-checked={selectedDimension === dimension}
+                            tabIndex={0}
+                            onClick={() => handleDimensionChange(dimension)}
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    handleDimensionChange(dimension);
+                                }
+                            }}>{dimensionLabels[dimension]}</div>
+                    ))}
                 </div>
                 <AdaptizerKnob min={inputValueMin} max={inputValueMax} step={1}
                     initialValue={startingInputValue} onChange={setInputValue} />
@@ -116,7 +141,7 @@ export default function Configurator(
         <section id="detail-section">
             <div className="panel-heading">Selected control</div>
             {selectedControl
-                ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} inputLabel={inputLabel} />
+                ? <ControlDetail control={selectedControl} onInvoke={handleInvokeControl} inputValue={inputValue} dimensionLabel={dimensionLabel} />
                 : <div className="detail-placeholder">Select a control above to edit it</div>}
         </section>
         {isExportDialogOpen && <ExportDialog adaptizer={adaptizer} electronApi={electronApi} onClose={() => {

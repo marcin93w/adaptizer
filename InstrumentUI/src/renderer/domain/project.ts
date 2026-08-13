@@ -1,9 +1,9 @@
 import { Control } from "./control";
-import { ControlDto, InputType, midiControlNumberMax, projectFormatVersion, ProjectDto } from "../../shared/dtos";
+import { ControlDto, Dimension, midiControlNumberMax, projectFormatVersion, ProjectDto } from "../../shared/dtos";
 
-export class InputConfig {
+export class ProjectConfig {
   constructor(
-    public type: InputType,
+    public dimension: Dimension,
     public controls: Map<number, Control>,
   ) {}
 }
@@ -21,12 +21,12 @@ class Project {
     return new Project([Control.withDefaultCurve(1)]);
   }
 
-  private _config: InputConfig = new InputConfig(InputType.INTENSITY, new Map());
+  private _config: ProjectConfig = new ProjectConfig(Dimension.INTENSITY, new Map());
   private _projectUpdatedListeners: (() => void)[] = [];
   private _controlAddedListeners: ((control: Control) => void)[] = [];
 
-  setInputType(inputType: InputType) {
-    this._config.type = inputType;
+  setDimension(dimension: Dimension) {
+    this._config.dimension = dimension;
     this.notifyProjectUpdated();
   }
 
@@ -39,8 +39,8 @@ class Project {
     this.notifyProjectUpdated();
   }
 
-  getInputType() {
-    return this._config.type;
+  getDimension() {
+    return this._config.dimension;
   }
 
   getControls(): Control[] {
@@ -78,7 +78,7 @@ class Project {
   toDto(): ProjectDto {
     return {
       formatVersion: projectFormatVersion,
-      inputType: this._config.type,
+      dimension: this._config.dimension,
       controls: this.getControls().map((control: Control) => control.toDto())
     }
   }
@@ -90,14 +90,14 @@ class Project {
     if (dto.formatVersion !== projectFormatVersion) {
       throw new Error(`Unsupported project format. InstrumentUI requires format version ${projectFormatVersion}.`);
     }
-    if (!Object.values(InputType).includes(dto.inputType)) {
-      throw new Error("The project contains an unsupported input type.");
+    if (!Object.values(Dimension).includes(dto.dimension)) {
+      throw new Error("The project contains an unsupported dimension.");
     }
     if (!Array.isArray(dto.controls)) {
       throw new Error("The project controls must be an array.");
     }
     const project = new Project(dto.controls.map((controlDto: ControlDto) => Control.fromDto(controlDto)));
-    project.setInputType(dto.inputType);
+    project.setDimension(dto.dimension);
     return project;
   }
 }

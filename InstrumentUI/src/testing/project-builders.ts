@@ -1,6 +1,6 @@
 import { Control } from "../renderer/domain/control";
 import Project from "../renderer/domain/project";
-import { ControlPointDto, InputType } from "../shared/dtos";
+import { ControlPointDto, Dimension } from "../shared/dtos";
 
 // Named specs keep curve-heavy tests readable and make their defaults explicit.
 
@@ -18,15 +18,15 @@ export const aControl = (spec: ControlSpec = {}): Control => {
 };
 
 export interface ProjectSpec {
-    inputType?: InputType;
+    dimension?: Dimension;
     controls?: Control[];
 }
 
 /** A project holding exactly the controls given, or one default control. */
 export const aProject = (spec: ProjectSpec = {}): Project => {
     const project = new Project(spec.controls ?? [aControl()]);
-    if (spec.inputType !== undefined) {
-        project.setInputType(spec.inputType);
+    if (spec.dimension !== undefined) {
+        project.setDimension(spec.dimension);
     }
     return project;
 };
