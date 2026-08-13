@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.core.content.ContextCompat
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.adaptizerplayer.adaptiveaudio.adaptizer.Adaptizer
@@ -16,6 +17,7 @@ import com.adaptizerplayer.adaptiveaudio.adaptizer.AdaptizerInput
 import com.adaptizerplayer.adaptiveaudio.adaptizer.Dimensions
 import com.adaptizerplayer.adaptiveaudio.adaptizer.InputReadings
 import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.HeartRateInput
+import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.MovementSpeedInput
 import com.adaptizerplayer.adaptiveaudio.adaptizer.inputs.VolumeInput
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngine
 import com.adaptizerplayer.adaptiveaudio.player.AdaptiveAudioEngineStateException
@@ -48,17 +50,19 @@ import com.facebook.react.modules.core.PermissionListener
  */
 @ReactModule(name = NativeAdaptiveAudioSpec.NAME)
 class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
-    NativeAdaptiveAudioSpec(reactContext), LifecycleEventListener {
+    NativeAdaptiveAudioSpec(reactContext), LifecycleEventListener, PermissionListener {
 
   companion object {
     const val NAME: String = NativeAdaptiveAudioSpec.NAME
 
     const val EXPECTED_TRACK_COUNT = AdaptizerTrackSelector.EXPECTED_TRACK_COUNT
     const val PROGRESS_INTERVAL_MS = 250L
+    const val MOVEMENT_SPEED_PERMISSION_REQUEST = 24
 
     private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 2501
     private const val PERMISSION_PREFERENCES = "adaptive_audio_permissions"
     private const val BLUETOOTH_PERMISSION_REQUESTED = "bluetooth_requested"
+    private const val MOVEMENT_SPEED_PERMISSION_ASKED = "movement_speed_asked"
 
     /**
      * The `-1` an input reading is reported as in the `onDimensionChanged`
@@ -81,6 +85,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private var adaptizer: Adaptizer? = null
   private var inputs: List<AdaptizerInput> = emptyList()
   private var heartRateInput: HeartRateInput? = null
+  private var movementSpeedInput: MovementSpeedInput? = null
   private var currentDimension: String = Dimensions.INTENSITY
   private var sourceId: String? = null
   private var playRequested = false
@@ -89,6 +94,8 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private var released = false
   private var bluetoothPermissionRequestInFlight = false
   private var heartRateRequestedForCurrentSource = false
+  private var hostResumed = true
+  private var movementSpeedPermissionRequestInFlight = false
 
   private val progressRunnable = object : Runnable {
     override fun run() {
@@ -168,6 +175,9 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
           // song never creates a second prompt.
           heartRateInput?.release()
         }
+        if (!currentDimension.needsMovementSpeed()) {
+          movementSpeedInput?.release()
+        }
 
         val existingEngine = engine
         val activeEngine = existingEngine ?: createActiveEngine()
@@ -203,6 +213,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         ensureHeartRateInputStarted()
         playRequested = true
         explicitlyPaused = false
+        ensureMovementSpeedAvailable(allowPermissionRequest = true)
         engine!!.play()
         if (engine?.player?.isPlaying == true) {
           reportPlaybackState(STATE_PLAYING)
@@ -250,15 +261,22 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   }
 
   override fun onHostResume() {
+    hostResumed = true
     // If a listener granted a previously denied permission in Android
-    // settings, returning to an already-played heart-rate source makes it
+    // settings, returning to an already-played source makes its inputs
     // available without another play command or prompt.
     onMain {
       if (heartRateRequestedForCurrentSource) ensureHeartRateInputStarted()
+      if (sourceId != null && currentDimension.needsMovementSpeed()) {
+        ensureMovementSpeedAvailable(allowPermissionRequest = false)
+      }
     }
   }
 
-  override fun onHostPause() = Unit
+  override fun onHostPause() {
+    hostResumed = false
+    movementSpeedInput?.release()
+  }
 
   override fun onHostDestroy() {
     onMain { releaseInternal(emitIdle = false) }
@@ -273,6 +291,22 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     super.invalidate()
   }
 
+  override fun onRequestPermissionsResult(
+      requestCode: Int,
+      permissions: Array<String>,
+      grantResults: IntArray
+  ): Boolean {
+    return if (requestCode == MOVEMENT_SPEED_PERMISSION_REQUEST) {
+      movementSpeedPermissionRequestInFlight = false
+      if (hostResumed && hasMovementSpeedPermissions()) {
+        movementSpeedInput?.initialize()
+      }
+      true
+    } else {
+      false
+    }
+  }
+
   private fun onMain(action: () -> Unit) {
     if (Looper.myLooper() == Looper.getMainLooper()) {
       action()
@@ -284,10 +318,14 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private fun createActiveEngine(): AdaptiveAudioEngine {
     val volumeInput = VolumeInput(reactApplicationContext)
     val newHeartRateInput = HeartRateInput(reactApplicationContext)
-    val newAdaptizer = Adaptizer(volumeInput, heartRateInput = newHeartRateInput)
+    val newMovementSpeedInput = MovementSpeedInput(reactApplicationContext)
+    val newAdaptizer = Adaptizer(
+        volumeInput,
+        movementSpeedInput = newMovementSpeedInput,
+        heartRateInput = newHeartRateInput)
     newAdaptizer.onReadingsChange { readings -> onReadingsChanged(readings) }
 
-    val newInputs = listOf<AdaptizerInput>(volumeInput, newHeartRateInput)
+    val newInputs = listOf<AdaptizerInput>(volumeInput, newMovementSpeedInput, newHeartRateInput)
     val newEngine = AdaptiveAudioEngine(reactApplicationContext)
     try {
       // Listeners are wired before native inputs begin reporting. Volume can
@@ -296,6 +334,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       inputs = newInputs
       heartRateInput = newHeartRateInput
       adaptizer = newAdaptizer
+      movementSpeedInput = newMovementSpeedInput
       volumeInput.initialize()
       newEngine.addListener(engineListener)
       newEngine.initialize(newAdaptizer.resolve(currentDimension))
@@ -307,9 +346,66 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       inputs = emptyList()
       heartRateInput = null
       adaptizer = null
+      movementSpeedInput = null
       throw error
     }
   }
+
+  private fun ensureMovementSpeedAvailable(allowPermissionRequest: Boolean) {
+    if (!hostResumed || !currentDimension.needsMovementSpeed()) return
+    if (hasMovementSpeedPermissions()) {
+      movementSpeedInput?.initialize()
+      return
+    }
+    if (!allowPermissionRequest || bluetoothPermissionRequestInFlight ||
+        movementSpeedPermissionRequestInFlight ||
+        movementSpeedPermissionWasAsked()) return
+
+    val activity = getReactApplicationContext().getCurrentActivity() as? PermissionAwareActivity ?: return
+    movementSpeedPermissionRequestInFlight = true
+    markMovementSpeedPermissionAsked()
+    activity.requestPermissions(
+        movementSpeedPermissions(), MOVEMENT_SPEED_PERMISSION_REQUEST, this)
+  }
+
+  private fun hasMovementSpeedPermissions(): Boolean {
+    val hasFineLocation =
+        ContextCompat.checkSelfPermission(
+            reactApplicationContext, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+    val hasActivityRecognition =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            ContextCompat.checkSelfPermission(
+                reactApplicationContext, Manifest.permission.ACTIVITY_RECOGNITION) ==
+                PackageManager.PERMISSION_GRANTED
+    return hasFineLocation && hasActivityRecognition
+  }
+
+  private fun movementSpeedPermissions(): Array<String> = buildList {
+    // Android 12+ ignores a fine-only request, so both foreground location
+    // permissions travel in the same feature-scoped request.
+    add(Manifest.permission.ACCESS_COARSE_LOCATION)
+    add(Manifest.permission.ACCESS_FINE_LOCATION)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      add(Manifest.permission.ACTIVITY_RECOGNITION)
+    }
+  }.toTypedArray()
+
+  private fun movementSpeedPermissionWasAsked(): Boolean =
+      reactApplicationContext
+          .getSharedPreferences(PERMISSION_PREFERENCES, Context.MODE_PRIVATE)
+          .getBoolean(MOVEMENT_SPEED_PERMISSION_ASKED, false)
+
+  private fun markMovementSpeedPermissionAsked() {
+    reactApplicationContext
+        .getSharedPreferences(PERMISSION_PREFERENCES, Context.MODE_PRIVATE)
+        .edit()
+        .putBoolean(MOVEMENT_SPEED_PERMISSION_ASKED, true)
+        .apply()
+  }
+
+  private fun String.needsMovementSpeed(): Boolean =
+      this != Dimensions.VOLUME && this != Dimensions.HEART_RATE
 
   private fun onReadingsChanged(readings: InputReadings) {
     onMain {
@@ -383,7 +479,10 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
                   if (engine != null && sourceId != null && currentDimensionNeedsHeartRate()) {
                     heartRateInput?.initialize()
                   }
+                  ensureMovementSpeedAvailable(allowPermissionRequest = true)
                 }
+              } else {
+                onMain { ensureMovementSpeedAvailable(allowPermissionRequest = true) }
               }
               true
             }
@@ -393,6 +492,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       // again when an activity is in a request-capable state.
       bluetoothPermissionRequestInFlight = false
       preferences.edit().remove(BLUETOOTH_PERMISSION_REQUESTED).apply()
+      ensureMovementSpeedAvailable(allowPermissionRequest = true)
     }
   }
 
@@ -450,6 +550,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     adaptizer = null
     inputs = emptyList()
     heartRateInput = null
+    movementSpeedInput = null
     sourceId = null
     playRequested = false
     explicitlyPaused = false
@@ -494,8 +595,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
           putInt("value", readings.resolve(currentDimension))
           // The per-input readings, demoted to diagnostics: each is its real
           // measurement or -1 when that input is unavailable, so the same
-          // fields say what was read and which inputs are missing. movementSpeed
-          // has no input yet; heartRate is -1 until a bonded strap reports.
+          // fields say what was read and which inputs are missing.
           putInt("volume", readings.volume ?: UNAVAILABLE_READING)
           putInt("movementSpeed", readings.movementSpeed ?: UNAVAILABLE_READING)
           putInt("heartRate", readings.heartRate ?: UNAVAILABLE_READING)
