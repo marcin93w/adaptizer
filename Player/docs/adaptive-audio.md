@@ -205,7 +205,7 @@ was rejected; see the ADR's alternatives section.
 
 | Purpose | Value |
 | --- | --- |
-| Songs API | `https://adaptizer.marcin93w.workers.dev` - `GET /` returns `List<Song>` (`id`, `author`, `album`, `name`, `storage_location`) |
+| Songs API | `https://adaptizer.marcin93w.workers.dev` - `GET /` returns `List<Song>` (`id`, `author`, `album`, `name`, `storage_location`, `dimension`) |
 | Media | `https://pub-fb297744d1fd4584a256f702d29363a8.r2.dev/{storageLocation}/manifest.mpd` |
 | Now-playing label | `"{author} - {name}"` |
 

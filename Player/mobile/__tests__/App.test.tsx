@@ -15,6 +15,7 @@ const SONGS: readonly Song[] = [
     album: 'Motion',
     name: 'Signal in Motion',
     storageLocation: 'songs/signal-in-motion',
+    dimension: 'movementSpeed',
   },
 ];
 
