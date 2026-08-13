@@ -68,7 +68,7 @@ function isAbortError(error: unknown): boolean {
 
 /**
  * Validates that a raw JSON value has the shape of the wire-format Song
- * record documented in `Player/docs/adaptive-audio.md` section 6:
+ * record documented in `Player/docs/adaptive-audio.md` section 7:
  * `{ id: number, author: string, album: string, name: string, storage_location: string, dimension: string }`.
  * Returns the parsed domain `Song` (with `storageLocation` camelCased) or
  * `null` if the value does not match. Deliberately does not use a blind
@@ -105,7 +105,7 @@ function parseSong(value: unknown): Song | null {
 
 /**
  * Fetch-based implementation of `SongsRepository` against the songs
- * catalog API (`Player/docs/adaptive-audio.md` section 6,
+ * catalog API (`Player/docs/adaptive-audio.md` section 7,
  * `GET /` returning a JSON array).
  */
 export class HttpSongsRepository implements SongsRepository {

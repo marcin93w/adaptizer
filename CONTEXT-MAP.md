@@ -43,8 +43,8 @@ the aggregate. And the Player now honours it end to end: the `prepare` metadata
 carries the song's dimension to the native module, which resolves that dimension
 to select the variant, and the meter names it and shows the resolved value.
 
-What is still ahead of the code, all of it Player-side: heart rate and movement
-speed have no input behind them yet, so a song mapped to either is held at 5 and
-the meter says so. Until those inputs land, `intensity` is a one-member
-aggregate equal to `volume`. Where the code and a glossary disagree, the
-glossary is right and the code is behind.
+What is still ahead of the code is Player-side movement speed, so a song mapped
+to it is held at 5 and the meter says so. Heart rate now comes live from an
+already-bonded BLE Heart Rate Profile strap; when it is unavailable,
+`intensity` renormalizes to volume alone. Where the code and a glossary
+disagree, the glossary is right and the code is behind.

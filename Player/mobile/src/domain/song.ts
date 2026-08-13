@@ -2,7 +2,7 @@
  * Domain model for a catalog song.
  *
  * Mirrors the legacy wire model documented in
- * `Player/docs/adaptive-audio.md` section 6 (originally
+ * `Player/docs/adaptive-audio.md` section 7 (originally
  * `app/src/main/java/com/adaptizerplayer/SongsRepository.kt`), with the
  * wire field `storage_location` mapped to camelCase `storageLocation`.
  *
