@@ -1,18 +1,16 @@
 -- Schema and seed data for the `adaptizer` D1 database.
 --
--- This mirrors the live production database as of 2026-08-13. It is
--- idempotent, so it can be replayed against a local or a fresh remote
--- database without clobbering existing rows.
+-- This is the canonical schema for local and fresh remote databases. It is
+-- idempotent, so it can be replayed without clobbering existing rows.
 --
 --   Local:  npm run db:schema:local
 --   Remote: npm run db:schema
 --
--- One-time production migration: this file only ever *creates* the schema,
--- so a `db:schema` run against the already-populated production database is a
--- no-op and will not add the `dimension` column to it. To add the column to a
--- database that predates it, run the ALTER below once by hand. Its
--- `NOT NULL DEFAULT 'intensity'` backfills every existing row to `intensity`
--- automatically, so the live catalog needs no row edits first:
+-- Existing-database upgrade: this file only ever *creates* the schema, so a
+-- `db:schema` run against a database created from an older version is a no-op
+-- and will not add the `dimension` column. Run the ALTER below once for such a
+-- database. Its `NOT NULL DEFAULT 'intensity'` backfills every existing row to
+-- `intensity` automatically:
 --
 --   npx wrangler d1 execute adaptizer --remote \
 --     --command="ALTER TABLE songs ADD COLUMN dimension TEXT NOT NULL DEFAULT 'intensity'"

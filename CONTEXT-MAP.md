@@ -1,6 +1,6 @@
 # Context Map
 
-Adaptizer is four independent components — different stacks, no shared workspace
+Adaptizer is three independent components — different stacks, no shared workspace
 — each treated as its own context with its own glossary.
 
 ## Contexts

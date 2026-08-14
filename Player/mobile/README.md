@@ -32,15 +32,11 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 
 ## Android configuration
 
-- `applicationId` / `namespace`: **`com.adaptizerplayer.rn`** - a
-  **temporary** ID, kept from when this app installed side by side with the
-  now-deleted legacy app. It must change to the production
-  `com.adaptizerplayer` identity, with production signing and a correct
-  `versionCode`/`versionName`, before any real release.
+- `applicationId` / `namespace`: **`com.adaptizerplayer.rn`** for development
+  builds. A production release uses the `com.adaptizerplayer` identity,
+  production signing, and release `versionCode`/`versionName` values.
 - `minSdkVersion`: 24
-- `compileSdkVersion` / `targetSdkVersion`: 35 (pinned down from the RN
-  0.86 template's default of 36 to match what's actually installed in
-  this environment - see "Known limitations" below).
+- `compileSdkVersion` / `targetSdkVersion`: 35
 
 ## Running
 
@@ -114,20 +110,12 @@ cd mobile
 npx tsc --noEmit
 ```
 
-## Known limitations / follow-ups
+## Platform requirements and limits
 
-- **Android NDK / CMake were not pre-installed** in this environment
-  (only `platforms/android-35` and `build-tools/35.0.0` & `35.0.1` were
-  present under the Android SDK, no `ndk/`, `cmake/` or
-  `cmdline-tools/`). React Native's New Architecture builds native
-  TurboModule/Fabric glue (`libappmodules.so`) via CMake and requires
-  the NDK. The Android Gradle Plugin auto-downloaded and installed
-  `ndk;27.1.12297006` and `cmake;3.22.1` on the first `assembleDebug`
-  run (accepting the already-present SDK license), so no manual
-  SDK Manager step was needed and the New Architecture was **not**
-  disabled. If a future environment has no network access during the
-  first build, pre-install those exact components via Android Studio's
-  SDK Manager.
+- React Native's New Architecture builds TurboModule/Fabric native glue with
+  **NDK 27.1.12297006** and **CMake 3.22.1**. Gradle can install them when the
+  Android SDK is online and licensed; offline build environments must install
+  those versions through Android Studio's SDK Manager first.
 - `mobile/android/local.properties` (gitignored) points `sdk.dir` at the
   local Android SDK and must exist locally for Gradle to resolve the SDK;
   it is not committed.

@@ -49,8 +49,9 @@ Three contracts hold across the whole set:
   mid-song, without a restart.
 
 `registerChangeListener` has **one listener slot**: registering twice silently
-overwrites the first callback. Latent today - `Adaptizer` registers exactly once
-per input - but it is a trap for a second observer.
+overwrites the first callback. `Adaptizer` is the sole registrant and registers
+exactly once per input; any second observer would require a multi-listener
+contract instead of another registration.
 
 `Adaptizer` owns the inputs and hands out an `InputReadings` snapshot — one
 nullable reading per input, `null` meaning unavailable. `InputReadings.resolve`
@@ -209,12 +210,6 @@ The input starts updates only in the foreground. Host pause releases the
 location and activity subscriptions and clears both measurements immediately,
 making the input unavailable instead of retaining a stale reading. Host resume
 restarts it when permissions are present and the current dimension needs it.
-
-There was previously an accelerometer input, weighted 0.25, reading phone shake.
-It was deleted: shake is not a meaningful measure of listening context, and
-telling a listener to shake their phone to hear the song change is not a
-feature. The legacy `app/` Android module went with it, since it constructed
-that input directly.
 
 ## 5. Manifest contract
 

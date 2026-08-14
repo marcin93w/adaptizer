@@ -90,7 +90,7 @@ the same string is typed into the [catalog](../API/README.md) and compared by th
 
 Instrument renders your song into a DASH stream — one variant per input level
 (0..9), so the player can switch between them as the listener context changes.
-Only Ableton Live is supported for now.
+Song export supports Ableton Live only.
 
 Additional prerequisites:
 
