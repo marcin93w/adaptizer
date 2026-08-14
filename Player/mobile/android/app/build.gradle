@@ -126,7 +126,7 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    // The bridge consumes the same adaptive-audio library as the legacy app.
+    // The bridge consumes the Kotlin adaptive-audio library directly.
     implementation project(":adaptive-audio")
 
     // Instrumentation tests exercise the RN host and module lifecycle on an

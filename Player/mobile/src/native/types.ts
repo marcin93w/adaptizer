@@ -114,10 +114,11 @@ export interface ProgressEvent {
  * `null` means that input was unavailable when the snapshot was taken.
  * Diagnostics only: `DimensionChangedEvent.value` is what drives selection.
  *
- * One field per input the resolver reasons about. `movementSpeed` has no input
- * behind it yet. `heartRate` is `null` when Bluetooth permission, BLE hardware
- * or a bonded/connected strap is unavailable — all deliberately the same
- * state at this boundary.
+ * One field per input the resolver reasons about. `movementSpeed` is `null`
+ * without the required permissions, a moving activity, or foreground updates.
+ * `heartRate` is `null` when Bluetooth permission, BLE hardware, or a
+ * bonded/connected strap is unavailable — all deliberately the same state at
+ * this boundary.
  */
 export interface DimensionReadings {
   readonly volume: number | null;

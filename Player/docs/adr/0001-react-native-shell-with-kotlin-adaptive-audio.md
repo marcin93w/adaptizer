@@ -32,6 +32,8 @@ A decision is needed on: how the two runtimes are organized in the repository, w
 
 **Update, 2026-08-13 (decision 9 superseded).** `app/` was deleted as part of the adaptation-dimensions work ([issue #22](https://github.com/marcin93w/adaptizer/issues/22)), not as an isolated deletion-only change. It constructed the accelerometer input directly, and that input was being deleted as a mistake, so leaving the module in place would have broken the Gradle build for the whole project. Rollback to the legacy app remains a branch/tag operation, just to a commit before that change rather than to the tip. Everything else here stands.
 
+**Update, 2026-08-14 (decisions 2 and 8 evolved).** The Kotlin library now resolves the song's named dimension from device volume, BLE heart rate, and movement speed; the accelerometer is no longer an input. The bridge event is now `onDimensionChanged`, carrying the resolved dimension and value plus per-input diagnostics. Kotlin still exclusively owns input handling, dimension resolution, ExoPlayer, and representation selection, so the runtime boundary established by this ADR is unchanged. See the repository-wide [dimension-by-name ADR](../../../docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md) and the [current bridge contract](../native-bridge-contract.md).
+
 ## Consequences
 
 **Positive**

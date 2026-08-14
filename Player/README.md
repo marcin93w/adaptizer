@@ -9,13 +9,18 @@ A song declares one **dimension** — the axis a track index 0..9 means. The
 player measures the device-side **inputs** behind the four dimensions and
 resolves any of them to a track index.
 
-A song's dimension now reaches the resolver end to end: the catalog records it,
-the React Native client reads it, and the native bridge carries it down in the
-`prepare` metadata so the player honours the dimension its author chose. Device
-Device volume and a bonded BLE Heart Rate Profile strap are the available
-inputs. `heartRate` songs follow the strap live; `intensity` includes it at
-weight 0.2 when available and renormalizes it away otherwise. `movementSpeed`
-songs remain held at 5 until that input lands.
+The catalog records the song's dimension, the React Native client narrows it,
+and the native bridge carries it in `prepare` metadata so the resolver honours
+the dimension its author chose. The available inputs are device volume, a
+bonded BLE Heart Rate Profile strap, and movement speed from fused location plus
+activity recognition. `intensity` combines available inputs with weights 0.5,
+0.2, and 0.3 respectively and renormalizes when an input is unavailable.
+
+Heart-rate and movement-speed permissions are requested only when playback
+first needs them. A denied permission, missing capability, unbonded strap,
+stationary activity, or backgrounded movement subscription makes that input
+unavailable without stopping playback. A single dimension with an unavailable
+input is held at 5; `intensity` excludes unavailable inputs.
 
 ## Modules
 
