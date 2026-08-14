@@ -49,3 +49,18 @@ export interface ExportTrackDto {
 export interface ExportResultDto {
   error: string | null;
 }
+
+// Everything a publish needs: where the export's eleven files sit on disk, the catalog
+// metadata the producer typed, and the dimension read from the loaded project (not retyped).
+// `dimension` rides the identical-string contract - it is sent to the Worker byte-identical.
+export interface PublishRequestDto {
+  folder: string;
+  author: string;
+  album: string;
+  name: string;
+  dimension: Dimension;
+}
+
+export interface PublishResultDto {
+  error: string | null;
+}
