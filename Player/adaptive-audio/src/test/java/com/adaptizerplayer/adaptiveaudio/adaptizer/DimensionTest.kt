@@ -13,10 +13,14 @@ import org.junit.Test
  * up. That banker's rounding is inherited from the original intensity formula
  * and is pinned below.
  */
-class InputReadingsTest {
+class DimensionTest {
 
     private fun readings(volume: Int?, movementSpeed: Int? = null, heartRate: Int? = null) =
         InputReadings(volume = volume, movementSpeed = movementSpeed, heartRate = heartRate)
+
+    /** Resolve [dimension] against this snapshot, the way [Adaptizer] does. */
+    private fun InputReadings.resolve(dimension: String): Int =
+        Dimensions.of(dimension).resolve(this)
 
     // --- Single dimensions ---------------------------------------------------
 

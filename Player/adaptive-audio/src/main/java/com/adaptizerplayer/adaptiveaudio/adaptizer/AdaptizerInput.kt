@@ -22,8 +22,8 @@ interface AdaptizerInput {
      * [isAvailable]; callers must not read it otherwise.
      *
      * An input never fabricates a reading: it reports what it measured or it
-     * reports itself unavailable. Inventing a stand-in value is the
-     * [resolver's][InputReadings.resolve] job, not an input's, so a value in
+     * reports itself unavailable. Inventing a stand-in value is a
+     * [dimension's][Dimension.resolve] job, not an input's, so a value in
      * the aggregate is always a real measurement.
      */
     fun getCurrentValue(): Int

@@ -201,7 +201,7 @@ class AdaptizerTest {
 
         val resolvedHeartRates = mutableListOf<Int>()
         adaptizer.onReadingsChange { readings ->
-            resolvedHeartRates.add(readings.resolve(Dimensions.HEART_RATE))
+            resolvedHeartRates.add(Dimensions.of(Dimensions.HEART_RATE).resolve(readings))
         }
 
         heartRate.measure(6)
@@ -248,7 +248,7 @@ class AdaptizerTest {
 
         val observed = mutableListOf<Int>()
         adaptizer.onReadingsChange { readings ->
-            observed.add(readings.resolve(Dimensions.INTENSITY))
+            observed.add(Dimensions.of(Dimensions.INTENSITY).resolve(readings))
         }
 
         volume.measure(8)          // (8*0.5) / 0.8 = 5

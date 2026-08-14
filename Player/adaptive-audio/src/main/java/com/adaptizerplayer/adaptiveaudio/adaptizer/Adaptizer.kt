@@ -27,7 +27,7 @@ class Adaptizer(
     )
 
     /** The value of [dimension] against the readings current at this instant. */
-    fun resolve(dimension: String): Int = currentReadings().resolve(dimension)
+    fun resolve(dimension: String): Int = Dimensions.of(dimension).resolve(currentReadings())
 
     /**
      * Registers [onChange] to receive a fresh snapshot whenever any input
