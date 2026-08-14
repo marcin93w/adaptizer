@@ -11,6 +11,7 @@ import MidiService from "../../services/midi-service";
 import { MidiPort } from "../../services/midi-port";
 import { ElectronApi } from "../../../shared/electron-api";
 import { ExportDialog } from "../export-dialog/export-dialog";
+import { PublishDialog } from "../publish-dialog/publish-dialog";
 
 // The input level the app starts on, held in one place because the knob, the control list and
 // the adaptizer all have to agree about it on the very first render. It is the bottom of the
@@ -47,6 +48,9 @@ export default function Configurator(
     const [selectedControl, setSelectedControl] = React.useState<Control | null>(project.getControls()[0]);
     const [inputValue, setInputValue] = React.useState(startingInputValue);
     const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+    const [isPublishDialogOpen, setIsPublishDialogOpen] = React.useState(false);
+    // The name the main process defaulted from the .adz, carried on the publishRequested event
+    const [publishDefaultName, setPublishDefaultName] = React.useState("");
 
     // The adaptizer starts sending as soon as it is built, so it has to be built with the input
     // the knob is actually on - otherwise opening a project mid-audition announces every control
@@ -61,6 +65,11 @@ export default function Configurator(
 
     React.useEffect(() => electronApi.onExportRequested(() => setIsExportDialogOpen(true)), [electronApi]);
 
+    React.useEffect(() => electronApi.onPublishRequested((defaultName) => {
+        setPublishDefaultName(defaultName);
+        setIsPublishDialogOpen(true);
+    }), [electronApi]);
+
     React.useEffect(() => {
         adaptizer.initialize();
     }, [adaptizer]);
@@ -73,8 +82,10 @@ export default function Configurator(
         setControls(project.getControls());
         setSelectedControl(project.getControls()[0] ?? null);
         setSelectedDimension(project.getDimension());
-        // The export renders the project it was started for, so opening another one ends it
+        // The export renders the project it was started for, and a publish carries that project's
+        // dimension, so opening another one ends both dialogs
         setIsExportDialogOpen(false);
+        setIsPublishDialogOpen(false);
     }, [project]);
 
     const handleDimensionChange = (dimension: Dimension) => {
@@ -148,5 +159,11 @@ export default function Configurator(
             setIsExportDialogOpen(false);
             adaptizer.setInput(inputValue);
         }} />}
+        {isPublishDialogOpen && <PublishDialog
+            dimension={selectedDimension}
+            dimensionLabel={dimensionLabel}
+            defaultName={publishDefaultName}
+            electronApi={electronApi}
+            onClose={() => setIsPublishDialogOpen(false)} />}
     </div>;
 }

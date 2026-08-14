@@ -1,5 +1,5 @@
 import { ElectronApi } from "../shared/electron-api";
-import { ExportResultDto, ExportSettingsDto, ProjectDto } from "../shared/dtos";
+import { ExportResultDto, ExportSettingsDto, ProjectDto, PublishRequestDto } from "../shared/dtos";
 
 // An in-memory stand-in for window.electronAPI, so the renderer can be driven without
 // Electron and without the PowerShell/Ableton/ffmpeg chain behind it.
@@ -16,7 +16,8 @@ export type ApiCall =
     | { name: "checkExportTools"; settings: ExportSettingsDto }
     | { name: "exportTrack"; outputPath: string; trackIndex: number }
     | { name: "convertToDash"; settings: ExportSettingsDto }
-    | { name: "cancelConversion" };
+    | { name: "cancelConversion" }
+    | { name: "publish"; request: PublishRequestDto };
 
 export interface ExportedTrack {
     outputPath: string;
@@ -29,11 +30,15 @@ export interface FakeElectronApi extends ElectronApi {
     readonly exportedTracks: readonly ExportedTrack[];
     readonly sentProjects: readonly ProjectDto[];
     readonly cancelConversionCount: number;
+    /** Every publish the renderer asked the main process for, in order. */
+    readonly publishRequests: readonly PublishRequestDto[];
 
     // --- drive main-process outcomes -------------------------------------------
     failCheckExportTools(message: string): void;
     failTrackExport(trackIndex: number, message: string): void;
     failConversion(message: string): void;
+    /** The error the next publish returns, mirroring a missing key or a non-2xx from the Worker. */
+    failPublish(message: string): void;
     /** What the user "picks" in the native dialog; null means they cancelled it. */
     setSelectedExportFolder(path: string | null): void;
     setSelectedPackager(path: string | null): void;
@@ -46,9 +51,11 @@ export interface FakeElectronApi extends ElectronApi {
     // --- simulate the main process pushing to the renderer ---------------------
     emitProjectOpened(project: ProjectDto): void;
     emitExportRequested(): void;
+    /** Opens the Publish dialog, carrying the .adz name the main process would default. */
+    emitPublishRequested(defaultName: string): void;
 
     /** Live listener counts - the app must not accumulate these across remounts. */
-    readonly listenerCounts: { projectOpened: number; exportRequested: number };
+    readonly listenerCounts: { projectOpened: number; exportRequested: number; publishRequested: number };
 }
 
 const ok: ExportResultDto = { error: null };
@@ -57,11 +64,13 @@ export const createFakeElectronApi = (): FakeElectronApi => {
     const calls: ApiCall[] = [];
     const projectOpenedListeners: ((project: ProjectDto) => void)[] = [];
     const exportRequestedListeners: (() => void)[] = [];
+    const publishRequestedListeners: ((defaultName: string) => void)[] = [];
     const exportTrackHooks: ((trackIndex: number) => void)[] = [];
     const convertHooks: (() => void)[] = [];
 
     let toolsError: string | null = null;
     let conversionError: string | null = null;
+    let publishError: string | null = null;
     const trackErrors = new Map<number, string>();
     let selectedExportFolder: string | null = null;
     let selectedPackager: string | null = null;
@@ -88,10 +97,16 @@ export const createFakeElectronApi = (): FakeElectronApi => {
         get cancelConversionCount() {
             return cancelConversionCount;
         },
+        get publishRequests(): PublishRequestDto[] {
+            return calls
+                .filter((call): call is Extract<ApiCall, { name: "publish" }> => call.name === "publish")
+                .map(call => call.request);
+        },
         get listenerCounts() {
             return {
                 projectOpened: projectOpenedListeners.length,
-                exportRequested: exportRequestedListeners.length
+                exportRequested: exportRequestedListeners.length,
+                publishRequested: publishRequestedListeners.length
             };
         },
 
@@ -160,6 +175,21 @@ export const createFakeElectronApi = (): FakeElectronApi => {
             }
         },
 
+        onPublishRequested(callback: (defaultName: string) => void) {
+            publishRequestedListeners.push(callback);
+            return () => {
+                const at = publishRequestedListeners.indexOf(callback);
+                if (at >= 0) {
+                    publishRequestedListeners.splice(at, 1);
+                }
+            };
+        },
+
+        async publish(request: PublishRequestDto) {
+            record({ name: "publish", request });
+            return publishError ? { error: publishError } : ok;
+        },
+
         // --- drivers ------------------------------------------------------------
         failCheckExportTools(message: string) {
             toolsError = message;
@@ -169,6 +199,9 @@ export const createFakeElectronApi = (): FakeElectronApi => {
         },
         failConversion(message: string) {
             conversionError = message;
+        },
+        failPublish(message: string) {
+            publishError = message;
         },
         setSelectedExportFolder(path: string | null) {
             selectedExportFolder = path;
@@ -187,6 +220,9 @@ export const createFakeElectronApi = (): FakeElectronApi => {
         },
         emitExportRequested() {
             exportRequestedListeners.forEach(listener => listener());
+        },
+        emitPublishRequested(defaultName: string) {
+            publishRequestedListeners.forEach(listener => listener(defaultName));
         }
     };
 };

@@ -24,6 +24,8 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW.
   for an example.
 - **Export the song** — `File → Export Ableton Project`. See
   [Exporting a song](#exporting-a-song).
+- **Publish the song** — `File → Publish Song` posts a finished export to the live
+  [catalog](../API/README.md) in one step. See [Publishing a song](#publishing-a-song).
 
 If no output port named `Adaptizer` is found, a warning bar appears with a
 refresh button.
@@ -111,18 +113,52 @@ Additional prerequisites:
 
 Each input level is sent to Ableton as MIDI before its track is rendered, so
 every track sounds the way the knob sounds at that value. The rendered
-`0.wav`..`9.wav` files are then encoded and packaged — host the resulting
-`manifest.mpd` in the same directory as the `.webm` files. See
-[API](../API/README.md) for publishing the result.
+`0.wav`..`9.wav` files are then encoded and packaged into `manifest.mpd` and
+`audio0_dash.webm`..`audio9_dash.webm` in the output folder. Publish that folder
+to the live catalog with [Publishing a song](#publishing-a-song).
+
+## Publishing a song
+
+`File → Publish Song` turns a finished export into a published song in one step,
+without leaving the app: it posts the export and its catalog metadata to the
+[Worker](../API/README.md), which writes the audio to storage and the catalog row
+(see [ADR-0002](../docs/adr/0002-publishing-proxies-audio-through-the-worker.md)).
+On success the song is live in the catalog and streams in the
+[player](../Player/README.md).
+
+The dialog collects:
+
+- *Name* — pre-filled from the `.adz` file name; the title the song is published under.
+- *Author* and *Album* — remembered between publishes, since they repeat across a producer's songs.
+- *Export folder* — the folder [Export](#exporting-a-song) wrote `manifest.mpd` and the
+  ten `audioN_dash.webm` files into.
+
+The song's *dimension* is read from the open project, not retyped, so it reaches
+the catalog spelled exactly as it was authored.
+
+### The publish key
+
+Publishing is gated by a single shared key (`PUBLISH_API_KEY`), the same secret the
+Worker checks (see [API](../API/README.md#the-publish-key)). Instrument reads it at
+launch from a gitignored `.env` beside this README, so it is never compiled into the
+packaged app:
+
+```
+PUBLISH_API_KEY = "the-same-key-the-worker-has"
+```
+
+A missing key stops a publish before any request is made, with a message saying so.
+Set `PUBLISH_API_KEY` in the environment instead of the file if you prefer; the
+environment wins.
 
 ## Project structure
 
 ```
 src/
-  main/       Electron main process — window, application menu, .adz project load/save, export
+  main/       Electron main process — window, application menu, .adz project load/save, export, publish
     scripts/     PowerShell scripts driving the Ableton export and the DASH conversion
   renderer/   React UI
-    components/  knob, per-control editor, MIDI connection warning, export dialog
+    components/  knob, per-control editor, MIDI connection warning, export dialog, publish dialog
     domain/      Project, Control, Adaptizer (input level → CC value calculation), Exporter
     services/    Web MIDI access and CC message sending
   shared/     DTOs and IPC event names shared by both processes

@@ -1,8 +1,10 @@
 import { Menu, MenuItemConstructorOptions } from "electron";
 import { ProjecManager } from "./project-manager";
 import { ExportManager } from "./export-manager";
+import { PublishManager } from "./publish-manager";
 
-export const createMenu = (pojectManager: ProjecManager, exportManager: ExportManager) => {
+export const createMenu = (
+    pojectManager: ProjecManager, exportManager: ExportManager, publishManager: PublishManager) => {
   const template: MenuItemConstructorOptions[] = [
     {
         label: 'File',
@@ -28,6 +30,11 @@ export const createMenu = (pojectManager: ProjecManager, exportManager: ExportMa
             label: 'Export Ableton Project',
             click: () => {
                 exportManager.requestExport();
+            }
+        }, {
+            label: 'Publish Song',
+            click: () => {
+                publishManager.requestPublish();
             }
         }]
     }];

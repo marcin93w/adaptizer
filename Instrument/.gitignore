@@ -4,3 +4,4 @@ release
 coverage
 .vscode
 .parcel-cache
+.env

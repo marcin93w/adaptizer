@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createFakeElectronApi } from "../fake-electron-api";
-import { ExportSettingsDto } from "../../shared/dtos";
+import { Dimension, ExportSettingsDto, PublishRequestDto } from "../../shared/dtos";
 
 const settings: ExportSettingsDto = { outputPath: "C:/out", bpm: 120, packagerPath: "" };
 
@@ -74,6 +74,36 @@ describe("the fake electron API", () => {
         api.emitExportRequested();
 
         expect(onExport).toHaveBeenCalledTimes(1);
+    });
+
+    it("carries the default name when the main process opens the publish dialog", () => {
+        const api = createFakeElectronApi();
+        const onPublish = vi.fn();
+        api.onPublishRequested(onPublish);
+
+        api.emitPublishRequested("My Song");
+
+        expect(onPublish).toHaveBeenCalledWith("My Song");
+    });
+
+    it("succeeds a publish by default and logs what it was asked to publish", async () => {
+        const api = createFakeElectronApi();
+        const request: PublishRequestDto = {
+            folder: "C:/out", author: "Wednesday Habits", album: "Demo",
+            name: "My Song", dimension: Dimension.INTENSITY
+        };
+
+        await expect(api.publish(request)).resolves.toEqual({ error: null });
+        expect(api.publishRequests).toEqual([request]);
+    });
+
+    it("returns the failure the test set, mirroring a missing key or a non-2xx", async () => {
+        const api = createFakeElectronApi();
+        api.failPublish("Publish failed (401): Unauthorized.");
+
+        await expect(api.publish({
+            folder: "C:/out", author: "A", album: "B", name: "C", dimension: Dimension.VOLUME
+        })).resolves.toEqual({ error: "Publish failed (401): Unauthorized." });
     });
 
     it("stops delivering to a listener that unsubscribed", () => {

@@ -7,10 +7,12 @@ import {
   exportTrackRequest,
   projectOpenedEvent,
   projectUpdatedEvent,
+  publishRequest,
+  publishRequestedEvent,
   selectExportFolderRequest,
   selectPackagerRequest
 } from "../shared/actions";
-import { ExportSettingsDto, ProjectDto } from "../shared/dtos";
+import { ExportSettingsDto, ProjectDto, PublishRequestDto } from "../shared/dtos";
 import { ElectronApi } from "../shared/electron-api";
 
 declare global {
@@ -38,5 +40,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke(exportTrackRequest, { outputPath, trackIndex }),
   checkExportTools: (settings: ExportSettingsDto) => ipcRenderer.invoke(checkExportToolsRequest, settings),
   convertToDash: (settings: ExportSettingsDto) => ipcRenderer.invoke(convertToDashRequest, settings),
-  cancelConversion: () => ipcRenderer.invoke(cancelConversionRequest)
+  cancelConversion: () => ipcRenderer.invoke(cancelConversionRequest),
+  // Returns the unsubscribe, so a renderer that remounts does not end up with two listeners
+  onPublishRequested: (callback: (defaultName: string) => void) => {
+    const listener = (_: unknown, defaultName: string) => callback(defaultName);
+    ipcRenderer.on(publishRequestedEvent, listener);
+    return () => ipcRenderer.removeListener(publishRequestedEvent, listener);
+  },
+  publish: (request: PublishRequestDto) => ipcRenderer.invoke(publishRequest, request)
 });

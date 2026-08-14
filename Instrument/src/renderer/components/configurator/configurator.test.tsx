@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Configurator from "./configurator";
 import Project from "../../domain/project";
+import { Dimension } from "../../../shared/dtos";
 import { createFakeElectronApi, FakeElectronApi } from "../../../testing/fake-electron-api";
 import { createFakeMidiPort, FakeMidiPort } from "../../../testing/fake-midi-port";
 import { aControl, aProject } from "../../../testing/project-builders";
@@ -50,6 +51,12 @@ const openExportDialog = async (api: FakeElectronApi) => {
 
 const isExportDialogOpen = () => screen.queryByText("Export Ableton project") !== null;
 
+const openPublishDialog = async (api: FakeElectronApi, defaultName = "My Song") => {
+    await act(async () => api.emitPublishRequested(defaultName));
+};
+
+const isPublishDialogOpen = () => screen.queryByText("Publish song") !== null;
+
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
@@ -93,6 +100,39 @@ describe("choosing the dimension the song adapts to", () => {
         fireEvent.click(screen.getByRole("radio", { name: "Heart rate" }));
 
         expect(screen.getByRole("group", { name: "Heart rate to MIDI control curve" })).toBeInTheDocument();
+    });
+});
+
+describe("publishing the loaded project", () => {
+    it("publishes the .adz name and the project's dimension without the producer retyping either", async () => {
+        const { api } = await setUp(aProject({ controls: [aControl({ cc: 1 })], dimension: Dimension.VOLUME }));
+        api.setSelectedExportFolder("C:/exports/song");
+
+        await openPublishDialog(api, "My Song");
+        // The name arrives from the .adz and the dimension from the project - neither is retyped
+        expect(screen.getByLabelText(/Name/)).toHaveValue("My Song");
+        fireEvent.change(screen.getByLabelText(/Author/), { target: { value: "Wednesday Habits" } });
+        fireEvent.change(screen.getByLabelText(/Album/), { target: { value: "Demo" } });
+        await act(async () => fireEvent.click(screen.getByRole("button", { name: "Browse for export folder" })));
+        await act(async () => fireEvent.click(screen.getByRole("button", { name: /^Publish/ })));
+
+        expect(api.publishRequests).toEqual([{
+            folder: "C:/exports/song",
+            author: "Wednesday Habits",
+            album: "Demo",
+            name: "My Song",
+            dimension: Dimension.VOLUME
+        }]);
+    });
+
+    it("ends the publish the old project started when another is opened", async () => {
+        const { api, showProject } = await setUp();
+        await openPublishDialog(api);
+        expect(isPublishDialogOpen()).toBe(true);
+
+        await showProject(aProject({ controls: [aControl({ cc: 7 })] }));
+
+        expect(isPublishDialogOpen()).toBe(false);
     });
 });
 

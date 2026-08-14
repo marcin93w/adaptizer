@@ -73,7 +73,9 @@ Publishing is one authenticated `POST /` (see
 `dimension`) plus the eleven export files (`manifest.mpd` and `audio0`..`audio9`,
 the DASH output of `e <outputPath> <bpm>`). The Worker writes the audio into the
 `adaptizer` bucket under a slug derived from `name`, then upserts the catalog
-row. Instrument's Publish button drives this; it is also runnable by hand.
+row. Instrument's `File → Publish Song` drives this
+([Instrument/README.md](../Instrument/README.md#publishing-a-song)); the `curl`
+below is the same request by hand, for when there is no export open in Instrument.
 
 `dimension` is stored opaque — send the name the song was authored against, one
 of `volume`, `heartRate`, `movementSpeed`, `intensity`, spelled byte-identically
