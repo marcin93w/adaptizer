@@ -12,5 +12,14 @@ binding = "db"
 database_name = "adaptizer"
 database_id = "833c14d9-eefb-4e9f-b005-b037f601bc32"
 
+# The audio bucket. The read path needs no R2 binding - the Player streams
+# straight off the public bucket - so this exists solely for the publish write
+# path, which proxies audio through the Worker into R2 (see ADR-0002). Like the
+# D1 binding above, it MUST stay declared here or `env.bucket` is undefined and
+# `POST /` fails.
+[[r2_buckets]]
+binding = "bucket"
+bucket_name = "adaptizer"
+
 [observability]
 enabled = true
