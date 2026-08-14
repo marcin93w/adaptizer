@@ -6,7 +6,7 @@ Real-time listener context as MIDI input for music production.
 
 Adaptizer maps *real-world listener context* — how the song is being listened to — to MIDI CC messages in your DAW. 
 You pick the dimension your song adapts along, for example, volume, listener heart rate, movement speed, or a combination of them, and use it however you like to adapt the song to the listener's situation. 
-It opens an entirely new dimension for music production, one that connects the artist with the listener in a unique way.
+<br>It opens an entirely new dimension for music production, one that connects the artist with the listener in a unique way.
 
 Once the song is ready, Adaptizer helps you export it in multiple variants, in a format ready to stream from the Adaptizer mobile app. 
 The player app measures the listener's context on the device and smoothly switches to the matching variant while the song plays.
@@ -17,9 +17,9 @@ Adaptizer relies on the MIDI protocol, so it works with any DAW. Exporting autom
 
 | Component | What it is |
 | --- | --- |
-| [Instrument](Instrument/README.md) | Desktop (Electron) editor for producers: pick the song's dimension, configure the dimension → MIDI CC mapping, audition it live, and export the song as a DASH stream. |
-| [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and switches tracks in real time. |
-| [API](API/README.md) | Cloudflare Worker serving the songs catalog to the Player. Audio is served from an R2 bucket. |
+| [Instrument](Instrument/README.md) | Desktop editor for producers: pick the song's dimension, configure the MIDI CC mapping, and play with it in your favorite DAW. When ready, export the song in a streamable format. <br> *NOTE: Three external tools are needed to use the Adaptizer: LoopMIDI, FFmpeg, and Shaka packager, see setup instructions in the Instrument readme.* |
+| [Player](Player/README.md) | Android app that streams a song, measures listener context on the device and adapts audio in real time. |
+| [API](API/README.md) | API serving the songs catalog to the Player. Audio and API are hosted on Claudflare. |
 
 ## Publishing a song
 
