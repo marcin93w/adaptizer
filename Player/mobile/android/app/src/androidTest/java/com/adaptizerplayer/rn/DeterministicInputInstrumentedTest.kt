@@ -26,7 +26,7 @@ class DeterministicInputInstrumentedTest {
     val adaptizer = Adaptizer(volume)
     adaptizer.onReadingsChange {
       observed +=
-          "${it.resolve(Dimensions.INTENSITY)}:${it.resolve(Dimensions.VOLUME)}"
+          "${Dimensions.of(Dimensions.INTENSITY).resolve(it)}:${Dimensions.of(Dimensions.VOLUME).resolve(it)}"
     }
 
     assertEquals(0, adaptizer.resolve(Dimensions.INTENSITY))
