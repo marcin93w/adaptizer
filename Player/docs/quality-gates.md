@@ -1,8 +1,8 @@
 # Quality gates - `Player/mobile`
 
-The single local command that mirrors CI, what each gate checks, how to
-reproduce the Android debug build locally, and where local and CI intentionally
-diverge.
+The single local command that mirrors pull-request CI, what each gate checks,
+how to reproduce the post-merge standalone Android build locally, and where
+local and CI intentionally diverge.
 
 ---
 
@@ -43,13 +43,17 @@ with `npm run <script>`:
 `android/.kotlin/`, `ios/build/`, `ios/Pods/`, generated Xcode project and
 asset-catalog files, `coverage/`, `license-report.json` and `package-lock.json`.
 
-## 3. Reproducing the Android debug build locally
+## 3. Reproducing the standalone Android build locally
 
-CI builds `Player/mobile/android` with `./gradlew assembleDebug` on a clean
-checkout (JDK 17, Android SDK installed fresh, no `local.properties`). Locally:
+After Player changes land on `master`, CI builds `Player/mobile/android` with
+`./gradlew assembleRelease` on a clean checkout (JDK 17, Android SDK installed
+fresh, no `local.properties`). The release variant bundles the React Native
+JavaScript, so the resulting APK runs without Metro or Expo. It currently uses
+the debug signing configuration and is intended for direct testing, not store
+distribution. Locally:
 
 ```bash
-cd Player/mobile/android && ./gradlew assembleDebug
+cd Player/mobile/android && ./gradlew assembleRelease
 ```
 
 Notes:
@@ -67,9 +71,9 @@ Notes:
   Gradle Plugin falls back to `ANDROID_HOME` / `ANDROID_SDK_ROOT` when it is
   missing, which is what CI relies on. Locally, Android Studio regenerates it
   automatically and it takes precedence - you do not need to delete it.
-- The debug APK is written to
-  `Player/mobile/android/app/build/outputs/apk/debug/`. CI uploads it as the
-  `player-mobile-debug-apk` artifact.
+- The standalone APK is written to
+  `Player/mobile/android/app/build/outputs/apk/release/`. CI uploads it as the
+  `player-mobile-standalone-apk` artifact.
 - This does **not** touch the repo-root Gradle files under `Player/`.
 
 ### Kotlin library tests
@@ -95,25 +99,25 @@ then, in a second shell, `adb reverse tcp:8081 tcp:8081` before running
 
 ## 4. What CI runs that `npm run verify` does not
 
-The workflow is `.github/workflows/player-mobile.yml` at the **monorepo root** -
-GitHub only reads `.github/` at the git root of `mp5`, not inside `Player/`. It
-is path-filtered to `Player/mobile/**`, `Player/adaptive-audio/**`,
-`Player/test-media/**` and the workflow file itself, so changes to sibling
-project (`Instrument/`) never triggers it.
+The workflows are under `.github/workflows/` at the **monorepo root** - GitHub
+only reads `.github/` at the git root of `mp5`, not inside `Player/`.
 
-Three jobs:
+Pull requests run `.github/workflows/player-mobile.yml`, path-filtered to
+`Player/mobile/**`, `Player/adaptive-audio/**`, `Player/test-media/**` and the
+workflow file itself. It has two jobs and deliberately produces no APK:
 
 1. **`checks`** - `npm ci`, then `format:check`, `lint`, `typecheck`, `test:ci`.
    This is `verify` plus coverage, and the part `npm run verify` reproduces.
-2. **`android-debug-build`** - JDK 17 (Temurin) plus Android SDK setup, then
-   `./gradlew assembleDebug` in `Player/mobile/android`, with the debug APK
-   uploaded as an artifact. `npm run verify` does **not** build the Android app;
-   reproduce it per section 3 or let CI do it.
-3. **`audit`** - `npm audit --audit-level=high` and the `license-report` script,
+2. **`audit`** - `npm audit --audit-level=high` and the `license-report` script,
    both `continue-on-error: true`: evidence uploaded as artifacts, not merge
    gates. Neither runs as part of `verify`.
 
-The Gradle cache in `android-debug-build` is keyed on a hash of the Gradle
-build/config files (`android/**/*.gradle*` and `gradle-wrapper.properties`), not
-a static key, so a dependency version bump invalidates the cache instead of
-silently building against stale dependencies.
+Pushes to `master` that change anything under `Player/**` run
+`.github/workflows/player-mobile-apk.yml`. Its `android-release-build` job runs
+`assembleRelease` and uploads `player-mobile-standalone-apk`. This build is not
+part of pull-request CI and is not reproduced by `npm run verify`.
+
+The APK workflow's Gradle cache is keyed on a hash of the Gradle build/config
+files (`android/**/*.gradle*` and `gradle-wrapper.properties`), not a static key,
+so a dependency version bump invalidates the cache instead of silently building
+against stale dependencies.
