@@ -72,8 +72,8 @@ Notes:
   missing, which is what CI relies on. Locally, Android Studio regenerates it
   automatically and it takes precedence - you do not need to delete it.
 - The standalone APK is written to
-  `Player/mobile/android/app/build/outputs/apk/release/`. CI uploads it as the
-  `player-mobile-standalone-apk` artifact.
+  `Player/mobile/android/app/build/outputs/apk/release/app-release.apk`. CI
+  uploads that file directly, without wrapping it in a ZIP archive.
 - This does **not** touch the repo-root Gradle files under `Player/`.
 
 ### Kotlin library tests
@@ -114,8 +114,8 @@ workflow file itself. It has two jobs and deliberately produces no APK:
 
 Pushes to `master` that change anything under `Player/**` run
 `.github/workflows/player-mobile-apk.yml`. Its `android-release-build` job runs
-`assembleRelease` and uploads `player-mobile-standalone-apk`. This build is not
-part of pull-request CI and is not reproduced by `npm run verify`.
+`assembleRelease` and uploads `app-release.apk` directly. This build is not part
+of pull-request CI and is not reproduced by `npm run verify`.
 
 The APK workflow's Gradle cache is keyed on a hash of the Gradle build/config
 files (`android/**/*.gradle*` and `gradle-wrapper.properties`), not a static key,

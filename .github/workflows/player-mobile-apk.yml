@@ -68,9 +68,9 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload standalone APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: player-mobile-standalone-apk
-          path: Player/mobile/android/app/build/outputs/apk/release/*.apk
+          path: Player/mobile/android/app/build/outputs/apk/release/app-release.apk
+          archive: false
           if-no-files-found: error
           retention-days: 14
