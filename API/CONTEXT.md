@@ -1,8 +1,11 @@
 # API
 
 The catalog of published Adaptizer songs. It answers one question — what songs
-exist and where each one's audio lives — and nothing else. Audio never passes
-through it.
+exist and where each one's audio lives. Audio is never *served* through it: a
+listener streams straight off the public R2 bucket. The one exception is the
+write path — publishing proxies a song's audio through the Worker into R2 behind
+a single API key, so no bucket-write credential ever reaches the producer's
+machine (see [ADR-0002](../docs/adr/0002-publishing-proxies-audio-through-the-worker.md)).
 
 ## Language
 
@@ -27,8 +30,16 @@ One rendered version of a song, corresponding to a single dimension value 0..9. 
 _Avoid_: Track, representation
 
 **Published**:
-A song is published once its audio is uploaded and its catalog row exists. Both steps are done by hand.
+A song is published once its audio is uploaded and its catalog row exists. Both steps happen as one authenticated publish from Instrument, not by hand.
 _Avoid_: Released, live, deployed
+
+**Publish**:
+The single authenticated operation that turns an export into a published song: Instrument sends the export and the row's metadata to the Worker in one request, and the Worker writes the audio to R2 and then the row. Re-publishing the same song overwrites it in place.
+_Avoid_: Upload, deploy, release
+
+**Publish key**:
+The one shared API key that gates the write path, sent as a bearer token and compared by the Worker. The read path requires none. There is a single producer, so a single key; per-producer identity is a later redesign.
+_Avoid_: Token, credential, secret
 
 ## The identical-string contract
 

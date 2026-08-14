@@ -26,6 +26,6 @@ nothing a producer or the catalog sees.
 ## Relationships
 
 - **Instrument → Player**: a song's **dimension** is chosen in Instrument and honoured by the Player. Both name it with the identical string — see [ADR-0001](./docs/adr/0001-songs-declare-their-adaptation-dimension-by-name.md).
-- **Instrument → API**: an export produces the ten track variants and the manifest; a catalog row is then written by hand, recording the song's dimension.
-- **API → Player**: the Player fetches the catalog and reads each song's `storage_location` and `dimension`. Audio itself never passes through the API.
+- **Instrument → API**: an export produces the ten track variants and the manifest; Instrument then publishes them to the Worker in one authenticated request, which writes the audio to R2 and the catalog row, recording the song's dimension (see [ADR-0002](./docs/adr/0002-publishing-proxies-audio-through-the-worker.md)). This is the one place audio passes through the API.
+- **API → Player**: the Player fetches the catalog and reads each song's `storage_location` and `dimension`. Audio never passes through the API on this read path — the Player streams straight off public R2.
 - **Player internal**: **inputs** exist only here. Instrument and the API know about dimensions and never about the signals behind them.
