@@ -2,14 +2,8 @@
 
 package com.adaptizerplayer.rn.adaptiveaudio
 
-import android.Manifest
-import android.bluetooth.BluetoothManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.core.content.ContextCompat
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import com.adaptizerplayer.adaptiveaudio.adaptizer.Adaptizer
@@ -57,13 +51,6 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
 
     const val EXPECTED_TRACK_COUNT = AdaptizerTrackSelector.EXPECTED_TRACK_COUNT
     const val PROGRESS_INTERVAL_MS = 250L
-    const val MOVEMENT_SPEED_PERMISSION_REQUEST = 24
-
-    private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 2501
-    private const val PERMISSION_PREFERENCES = "adaptive_audio_permissions"
-    private const val BLUETOOTH_PERMISSION_REQUESTED = "bluetooth_requested"
-    private const val MOVEMENT_SPEED_PERMISSION_ASKED = "movement_speed_asked"
-
     /**
      * The `-1` an input reading is reported as in the `onDimensionChanged`
      * diagnostics when that input is unavailable - inputs never fabricate a
@@ -84,18 +71,14 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
   private var engine: AdaptiveAudioEngine? = null
   private var adaptizer: Adaptizer? = null
   private var inputs: List<AdaptizerInput> = emptyList()
-  private var heartRateInput: HeartRateInput? = null
-  private var movementSpeedInput: MovementSpeedInput? = null
+  private var inputActivationCoordinator: InputActivationCoordinator? = null
   private var currentDimension: String = Dimensions.INTENSITY
   private var sourceId: String? = null
   private var playRequested = false
   private var explicitlyPaused = false
   private var lastPlaybackState: String? = null
   private var released = false
-  private var bluetoothPermissionRequestInFlight = false
-  private var heartRateRequestedForCurrentSource = false
   private var hostResumed = true
-  private var movementSpeedPermissionRequestInFlight = false
 
   private val progressRunnable = object : Runnable {
     override fun run() {
@@ -168,16 +151,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         // so the first engine seeds its index from it and a song switch never
         // resolves the previous song's dimension.
         currentDimension = dimensionFrom(metadata)
-        heartRateRequestedForCurrentSource = false
-        if (!currentDimensionNeedsHeartRate()) {
-          // A BLE input is owned only while the current song can consume it.
-          // Permission history remains persisted, so returning to a heart-rate
-          // song never creates a second prompt.
-          heartRateInput?.release()
-        }
-        if (!currentDimension.needsMovementSpeed()) {
-          movementSpeedInput?.release()
-        }
+        inputActivationCoordinator?.onSourcePrepared(currentDimension)
 
         val existingEngine = engine
         val activeEngine = existingEngine ?: createActiveEngine()
@@ -209,11 +183,9 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     onMain {
       if (!checkPrepared()) return@onMain
       try {
-        heartRateRequestedForCurrentSource = currentDimensionNeedsHeartRate()
-        ensureHeartRateInputStarted()
         playRequested = true
         explicitlyPaused = false
-        ensureMovementSpeedAvailable(allowPermissionRequest = true)
+        inputActivationCoordinator?.onPlaybackRequested()
         engine!!.play()
         if (engine?.player?.isPlaying == true) {
           reportPlaybackState(STATE_PLAYING)
@@ -262,20 +234,12 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
 
   override fun onHostResume() {
     hostResumed = true
-    // If a listener granted a previously denied permission in Android
-    // settings, returning to an already-played source makes its inputs
-    // available without another play command or prompt.
-    onMain {
-      if (heartRateRequestedForCurrentSource) ensureHeartRateInputStarted()
-      if (sourceId != null && currentDimension.needsMovementSpeed()) {
-        ensureMovementSpeedAvailable(allowPermissionRequest = false)
-      }
-    }
+    onMain { inputActivationCoordinator?.onHostResume() }
   }
 
   override fun onHostPause() {
     hostResumed = false
-    movementSpeedInput?.release()
+    onMain { inputActivationCoordinator?.onHostPause() }
   }
 
   override fun onHostDestroy() {
@@ -296,15 +260,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       permissions: Array<String>,
       grantResults: IntArray
   ): Boolean {
-    return if (requestCode == MOVEMENT_SPEED_PERMISSION_REQUEST) {
-      movementSpeedPermissionRequestInFlight = false
-      if (hostResumed && hasMovementSpeedPermissions()) {
-        movementSpeedInput?.initialize()
-      }
-      true
-    } else {
-      false
-    }
+    return inputActivationCoordinator?.onRequestPermissionsResult(requestCode, grantResults) ?: false
   }
 
   private fun onMain(action: () -> Unit) {
@@ -319,6 +275,20 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     val volumeInput = VolumeInput(reactApplicationContext)
     val newHeartRateInput = HeartRateInput(reactApplicationContext)
     val newMovementSpeedInput = MovementSpeedInput(reactApplicationContext)
+    val newInputActivationCoordinator =
+        InputActivationCoordinator { permissions, requestCode ->
+          val activity =
+              getReactApplicationContext().getCurrentActivity() as? PermissionAwareActivity
+                  ?: return@InputActivationCoordinator false
+          activity.requestPermissions(permissions, requestCode, this)
+          true
+        }
+    newInputActivationCoordinator.register(
+        HeartRateInputActivation(
+            reactApplicationContext, newHeartRateInput, newInputActivationCoordinator))
+    newInputActivationCoordinator.register(
+        MovementSpeedInputActivation(
+            reactApplicationContext, newMovementSpeedInput, newInputActivationCoordinator))
     val newAdaptizer = Adaptizer(
         volumeInput,
         movementSpeedInput = newMovementSpeedInput,
@@ -332,9 +302,10 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
       // start immediately; BLE deliberately waits until play() for a song
       // whose dimension consumes heart rate.
       inputs = newInputs
-      heartRateInput = newHeartRateInput
       adaptizer = newAdaptizer
-      movementSpeedInput = newMovementSpeedInput
+      inputActivationCoordinator = newInputActivationCoordinator
+      newInputActivationCoordinator.onSourcePrepared(currentDimension)
+      if (!hostResumed) newInputActivationCoordinator.onHostPause()
       volumeInput.initialize()
       newEngine.addListener(engineListener)
       newEngine.initialize(newAdaptizer.resolve(currentDimension))
@@ -344,68 +315,12 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     } catch (error: Exception) {
       newInputs.asReversed().forEach { it.release() }
       inputs = emptyList()
-      heartRateInput = null
       adaptizer = null
-      movementSpeedInput = null
+      newInputActivationCoordinator.release()
+      inputActivationCoordinator = null
       throw error
     }
   }
-
-  private fun ensureMovementSpeedAvailable(allowPermissionRequest: Boolean) {
-    if (!hostResumed || !currentDimension.needsMovementSpeed()) return
-    if (hasMovementSpeedPermissions()) {
-      movementSpeedInput?.initialize()
-      return
-    }
-    if (!allowPermissionRequest || bluetoothPermissionRequestInFlight ||
-        movementSpeedPermissionRequestInFlight ||
-        movementSpeedPermissionWasAsked()) return
-
-    val activity = getReactApplicationContext().getCurrentActivity() as? PermissionAwareActivity ?: return
-    movementSpeedPermissionRequestInFlight = true
-    markMovementSpeedPermissionAsked()
-    activity.requestPermissions(
-        movementSpeedPermissions(), MOVEMENT_SPEED_PERMISSION_REQUEST, this)
-  }
-
-  private fun hasMovementSpeedPermissions(): Boolean {
-    val hasFineLocation =
-        ContextCompat.checkSelfPermission(
-            reactApplicationContext, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-    val hasActivityRecognition =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-            ContextCompat.checkSelfPermission(
-                reactApplicationContext, Manifest.permission.ACTIVITY_RECOGNITION) ==
-                PackageManager.PERMISSION_GRANTED
-    return hasFineLocation && hasActivityRecognition
-  }
-
-  private fun movementSpeedPermissions(): Array<String> = buildList {
-    // Android 12+ ignores a fine-only request, so both foreground location
-    // permissions travel in the same feature-scoped request.
-    add(Manifest.permission.ACCESS_COARSE_LOCATION)
-    add(Manifest.permission.ACCESS_FINE_LOCATION)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      add(Manifest.permission.ACTIVITY_RECOGNITION)
-    }
-  }.toTypedArray()
-
-  private fun movementSpeedPermissionWasAsked(): Boolean =
-      reactApplicationContext
-          .getSharedPreferences(PERMISSION_PREFERENCES, Context.MODE_PRIVATE)
-          .getBoolean(MOVEMENT_SPEED_PERMISSION_ASKED, false)
-
-  private fun markMovementSpeedPermissionAsked() {
-    reactApplicationContext
-        .getSharedPreferences(PERMISSION_PREFERENCES, Context.MODE_PRIVATE)
-        .edit()
-        .putBoolean(MOVEMENT_SPEED_PERMISSION_ASKED, true)
-        .apply()
-  }
-
-  private fun String.needsMovementSpeed(): Boolean =
-      this != Dimensions.VOLUME && this != Dimensions.HEART_RATE
 
   private fun onReadingsChanged(readings: InputReadings) {
     onMain {
@@ -436,90 +351,6 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         Dimensions.INTENSITY
       }
 
-  /**
-   * Bluetooth permissions are requested at the first play of a dimension
-   * that can consume heart rate, never at module/app initialization or
-   * prepare time. The persisted attempted bit makes a denial final until the
-   * listener changes it in Android settings; playback continues either way.
-   */
-  private fun ensureHeartRateInputStarted() {
-    val input = heartRateInput ?: return
-    if (!currentDimensionNeedsHeartRate() || !hasBleCapability()) return
-
-    val requiredPermissions = requiredBluetoothPermissions()
-    if (hasBluetoothPermissions(requiredPermissions)) {
-      input.initialize()
-      return
-    }
-
-    val preferences =
-        reactApplicationContext.getSharedPreferences(PERMISSION_PREFERENCES, Context.MODE_PRIVATE)
-    if (bluetoothPermissionRequestInFlight ||
-        preferences.getBoolean(BLUETOOTH_PERMISSION_REQUESTED, false)) {
-      return
-    }
-
-    val permissionActivity =
-        reactApplicationContext.getCurrentActivity() as? PermissionAwareActivity ?: return
-    bluetoothPermissionRequestInFlight = true
-    preferences.edit().putBoolean(BLUETOOTH_PERMISSION_REQUESTED, true).apply()
-
-    try {
-      permissionActivity.requestPermissions(
-          requiredPermissions,
-          BLUETOOTH_PERMISSION_REQUEST_CODE,
-          PermissionListener { requestCode, _, grantResults ->
-            if (requestCode != BLUETOOTH_PERMISSION_REQUEST_CODE) {
-              false
-            } else {
-              bluetoothPermissionRequestInFlight = false
-              if (grantResults.size == requiredPermissions.size &&
-                  grantResults.all { result -> result == PackageManager.PERMISSION_GRANTED }) {
-                onMain {
-                  if (engine != null && sourceId != null && currentDimensionNeedsHeartRate()) {
-                    heartRateInput?.initialize()
-                  }
-                  ensureMovementSpeedAvailable(allowPermissionRequest = true)
-                }
-              } else {
-                onMain { ensureMovementSpeedAvailable(allowPermissionRequest = true) }
-              }
-              true
-            }
-          })
-    } catch (_: RuntimeException) {
-      // No prompt actually reached the listener, so a later play may try
-      // again when an activity is in a request-capable state.
-      bluetoothPermissionRequestInFlight = false
-      preferences.edit().remove(BLUETOOTH_PERMISSION_REQUESTED).apply()
-      ensureMovementSpeedAvailable(allowPermissionRequest = true)
-    }
-  }
-
-  private fun currentDimensionNeedsHeartRate(): Boolean =
-      when (currentDimension) {
-        Dimensions.VOLUME, Dimensions.MOVEMENT_SPEED -> false
-        else -> true // heartRate, intensity, and unknown names resolved as intensity
-      }
-
-  private fun hasBleCapability(): Boolean =
-      reactApplicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) &&
-          (reactApplicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)
-              ?.adapter != null
-
-  private fun requiredBluetoothPermissions(): Array<String> =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
-      } else {
-        // Android 6-11 gate BLE scan results behind location permission even
-        // though this scan is declared and used as never-for-location.
-        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-      }
-
-  private fun hasBluetoothPermissions(requiredPermissions: Array<String>): Boolean =
-      requiredPermissions.all { permission ->
-        reactApplicationContext.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-      }
 
   private fun checkUsable(): Boolean {
     if (released) {
@@ -545,16 +376,15 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
     stopProgressUpdates()
     engine?.removeListener(engineListener)
     engine?.release()
+    inputActivationCoordinator?.release()
     inputs.asReversed().forEach { it.release() }
     engine = null
     adaptizer = null
     inputs = emptyList()
-    heartRateInput = null
-    movementSpeedInput = null
+    inputActivationCoordinator = null
     sourceId = null
     playRequested = false
     explicitlyPaused = false
-    heartRateRequestedForCurrentSource = false
     lastPlaybackState = null
     released = permanent
     if (shouldEmitIdle) {
