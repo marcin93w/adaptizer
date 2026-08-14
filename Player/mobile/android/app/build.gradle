@@ -128,6 +128,9 @@ dependencies {
     implementation("com.facebook.react:react-android")
     // The bridge consumes the Kotlin adaptive-audio library directly.
     implementation project(":adaptive-audio")
+    implementation libs.play.services.location
+
+    testImplementation libs.junit
 
     // Instrumentation tests exercise the RN host and module lifecycle on an
     // emulator. They intentionally do not add a production runtime dependency.
