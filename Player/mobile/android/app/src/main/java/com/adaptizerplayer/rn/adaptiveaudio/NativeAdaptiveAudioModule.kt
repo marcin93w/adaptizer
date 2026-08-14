@@ -194,7 +194,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
           // for the next reading. (The first engine already did this in
           // createActiveEngine.)
           adaptizer?.currentReadings()?.let { readings ->
-            activeEngine.changeTrack(readings.resolve(currentDimension))
+            activeEngine.changeTrack(Dimensions.of(currentDimension).resolve(readings))
             emitDimensionChanged(readings)
           }
         }
@@ -417,7 +417,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
         // This is the only native track-selection path. The JS contract has
         // no setDimension/selectTrack command by design. The current song's
         // dimension - not a fixed one - decides which variant plays.
-        val trackIndex = readings.resolve(currentDimension)
+        val trackIndex = Dimensions.of(currentDimension).resolve(readings)
         activeEngine.changeTrack(trackIndex)
         emitCurrentTrackChanged(trackIndex)
       } catch (error: Exception) {
@@ -592,7 +592,7 @@ class NativeAdaptiveAudioModule(reactContext: ReactApplicationContext) :
           // The current song's dimension, echoed back as-is, and the resolved
           // value that actually drives track selection.
           putString("dimension", currentDimension)
-          putInt("value", readings.resolve(currentDimension))
+          putInt("value", Dimensions.of(currentDimension).resolve(readings))
           // The per-input readings, demoted to diagnostics: each is its real
           // measurement or -1 when that input is unavailable, so the same
           // fields say what was read and which inputs are missing.

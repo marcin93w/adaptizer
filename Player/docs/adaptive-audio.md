@@ -54,9 +54,10 @@ exactly once per input; any second observer would require a multi-listener
 contract instead of another registration.
 
 `Adaptizer` owns the inputs and hands out an `InputReadings` snapshot — one
-nullable reading per input, `null` meaning unavailable. `InputReadings.resolve`
-is the one resolver function, and the only place the single-versus-aggregate
-distinction is drawn:
+nullable reading per input, `null` meaning unavailable. A `Dimension` turns that
+snapshot into a value; the single-versus-aggregate distinction is the two types
+behind it, `SingleDimension` and `AggregateDimension`, selected by name in
+`Dimensions.of`:
 
 - A **single dimension** is its input's reading, or **held at `5`** — the middle
   of the range, not the bottom — while that input is unavailable.
@@ -84,8 +85,8 @@ JS on the `onDimensionChanged` event — see
 ### The aggregate weights
 
 `volume` 0.5, `movementSpeed` 0.3, `heartRate` 0.2, written down in exactly one
-place — the member list in `InputReadings.aggregate()`, which pairs each reading
-with its own weight. They are renormalized over whatever is available (the
+place — the `AggregateDimension` member list in `Dimensions`, which pairs each
+reading with its own weight. They are renormalized over whatever is available (the
 implementation divides by the weight actually present, which is the same thing),
 so they only need to sum to `1.0` when every member is available.
 
@@ -111,9 +112,9 @@ Two properties worth knowing before touching the formula:
    `VolumeInputTest`.
 2. **`Adaptizer`** - pass it in the matching constructor parameter. An input
    left unwired is indistinguishable from one reporting itself unavailable.
-3. **The member list in `InputReadings.aggregate()`** - only if the aggregate
-   should gain a member; changing a weight is a one-line change there and
-   nothing else.
+3. **The `AggregateDimension` member list in `Dimensions`** - only if the
+   aggregate should gain a member; changing a weight is a one-line change there
+   and nothing else.
 4. **The bridge payload** - `onDimensionChanged` ships one diagnostic field per
    input (`volume`, `movementSpeed`, `heartRate`, each `-1` when unavailable),
    so it gains one too. That is a contract change: see

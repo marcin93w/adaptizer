@@ -67,12 +67,12 @@ never re-cased, never mapped, never parsed — only compared. See
 
 This context is the end of that chain and the only one that interprets the name.
 The set is flat and closed: the distinction between a **single dimension** and
-the **aggregate dimension** is drawn in one resolver function, which switches on
-the name and either returns an input's reading or computes the weighted mean.
-Nothing above that function — not the bridge, not the catalog, not the UI —
-carries which kind a dimension is. An unrecognised name resolves to `intensity`
-and is logged, so a fifth dimension in the catalog does not break an installed
-app.
+the **aggregate dimension** is reified as two types — `SingleDimension` returns
+an input's reading, `AggregateDimension` computes the weighted mean — selected
+by name in `Dimensions.of`. Nothing above that lookup — not the bridge, not the
+catalog, not the UI — carries which kind a dimension is. An unrecognised name
+resolves to `intensity` and is logged, so a fifth dimension in the catalog does
+not break an installed app.
 
 The Player is the listener side of the producer/player line, and the only
 context with **inputs**. An input appears in nothing a producer or the catalog
